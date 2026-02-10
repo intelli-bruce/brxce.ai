@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bruce Choe — brxce.ai</title>
+  <meta name="description" content="에이전틱 워크플로우 · OpenClaw × ClaudeCode로 회사를 굴리는 개발자 CEO">
+  <meta property="og:title" content="Bruce Choe — brxce.ai">
+  <meta property="og:description" content="에이전틱 워크플로우 · 수십 개의 AI 에이전트를 직접 빌딩하며 얻은 실전 인사이트">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://brxce.ai">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0a0a0a;
+      color: #fafafa;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 60px 20px;
+    }
+
+    .container {
+      max-width: 420px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .profile-pic {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      border: 2px solid #333;
+      margin-bottom: 16px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+    }
+
+    .profile-pic img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .name {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .handle {
+      font-size: 14px;
+      color: #888;
+      margin-bottom: 20px;
+    }
+
+    .bio {
+      text-align: center;
+      font-size: 14px;
+      line-height: 1.7;
+      color: #ccc;
+      margin-bottom: 36px;
+    }
+
+    .bio .accent {
+      color: #fafafa;
+      font-weight: 500;
+    }
+
+    .links {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .link-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 16px 20px;
+      border-radius: 12px;
+      background: #141414;
+      border: 1px solid #222;
+      color: #fafafa;
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+
+    .link-btn:hover {
+      background: #1a1a1a;
+      border-color: #444;
+      transform: translateY(-1px);
+    }
+
+    .link-btn .icon {
+      font-size: 18px;
+      width: 24px;
+      text-align: center;
+    }
+
+    .link-btn.primary {
+      background: #fafafa;
+      color: #0a0a0a;
+      border-color: #fafafa;
+      font-weight: 600;
+    }
+
+    .link-btn.primary:hover {
+      background: #e0e0e0;
+      border-color: #e0e0e0;
+    }
+
+    .divider {
+      width: 40px;
+      height: 1px;
+      background: #333;
+      margin: 24px 0;
+    }
+
+    .footer {
+      margin-top: 40px;
+      font-size: 12px;
+      color: #555;
+    }
+
+    .footer a {
+      color: #555;
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      color: #888;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      font-size: 12px;
+      color: #aaa;
+      margin: 2px;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 32px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Profile -->
+    <div class="profile-pic">🦞</div>
+    <h1 class="name">Bruce Choe</h1>
+    <p class="handle">@brxce.ai</p>
+
+    <!-- Bio -->
+    <div class="bio">
+      <span class="accent">✦ 에이전틱 워크플로우</span><br>
+      ✦ OpenClaw × ClaudeCode로 회사를 굴리는 개발자 CEO<br>
+      ✦ 수십 개의 AI 에이전트를 직접 빌딩하며 얻은 실전 인사이트<br>
+      ✦ 직접 활용해 본 결과를 공유합니다.
+    </div>
+
+    <!-- Tags -->
+    <div class="tags">
+      <span class="tag">에이전틱 워크플로우</span>
+      <span class="tag">OpenClaw</span>
+      <span class="tag">ClaudeCode</span>
+      <span class="tag">AI Agents</span>
+    </div>
+
+    <!-- Links -->
+    <div class="links">
+      <a href="https://www.threads.com/@brxce.ai" class="link-btn primary" target="_blank" rel="noopener">
+        <span class="icon">🔗</span>
+        Threads (@brxce.ai)
+      </a>
+
+      <a href="https://x.com/brxce_ai" class="link-btn" target="_blank" rel="noopener">
+        <span class="icon">𝕏</span>
+        X (@brxce_ai)
+      </a>
+
+      <a href="https://www.linkedin.com/in/brxce" class="link-btn" target="_blank" rel="noopener">
+        <span class="icon">💼</span>
+        LinkedIn
+      </a>
+
+      <a href="https://www.brxce.com" class="link-btn" target="_blank" rel="noopener">
+        <span class="icon">🚀</span>
+        BRXCE — 프로젝트 관리
+      </a>
+
+      <a href="https://intellieffect.com" class="link-btn" target="_blank" rel="noopener">
+        <span class="icon">⚡</span>
+        IntelliEffect
+      </a>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>© 2026 Bruce Choe</p>
+    </div>
+  </div>
+</body>
+</html>
