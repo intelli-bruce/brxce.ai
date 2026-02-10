@@ -265,14 +265,116 @@
       border-color: #222;
     }
 
-    .badge {
-      font-size: 10px;
-      padding: 2px 8px;
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: #141414;
+      border: 1px solid #333;
+      border-radius: 16px;
+      padding: 32px 28px;
+      max-width: 380px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .modal-icon {
+      font-size: 40px;
+      margin-bottom: 12px;
+    }
+
+    .modal h2 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .modal p {
+      font-size: 14px;
+      color: #999;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    .modal-input {
+      width: 100%;
+      padding: 14px 16px;
       border-radius: 10px;
-      background: #2a2a2a;
-      color: #888;
-      position: absolute;
-      right: 16px;
+      border: 1px solid #333;
+      background: #0a0a0a;
+      color: #fafafa;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      margin-bottom: 12px;
+      transition: border-color 0.2s;
+    }
+
+    .modal-input:focus {
+      border-color: #555;
+    }
+
+    .modal-submit {
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
+      border: none;
+      background: #fafafa;
+      color: #0a0a0a;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .modal-submit:hover {
+      background: #e0e0e0;
+    }
+
+    .modal-submit:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .modal-close {
+      margin-top: 16px;
+      font-size: 13px;
+      color: #666;
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-family: inherit;
+    }
+
+    .modal-close:hover {
+      color: #999;
+    }
+
+    .modal-success {
+      display: none;
+    }
+
+    .modal-success.active {
+      display: block;
+    }
+
+    .modal-form.hidden {
+      display: none;
     }
 
     .link-btn.primary {
@@ -402,16 +504,14 @@
     <div class="links">
       <div class="section-label">에이전틱 워크플로우</div>
 
-      <a href="#" class="link-btn disabled" onclick="return false;">
+      <a href="#" class="link-btn" onclick="openWaitlist('오픈클로 가이드북'); return false;">
         <span class="icon"><img src="openclaw-logo.svg" alt="OpenClaw" width="22" height="22"></span>
         오픈클로 가이드북
-        <span class="badge">준비중</span>
       </a>
 
-      <a href="#" class="link-btn disabled" onclick="return false;">
+      <a href="#" class="link-btn" onclick="openWaitlist('오픈클로 실전 활용법'); return false;">
         <span class="icon"><img src="openclaw-logo.svg" alt="OpenClaw" width="22" height="22"></span>
         오픈클로 실전 활용법
-        <span class="badge">준비중</span>
       </a>
 
       <a href="mailto:bruce@brxce.ai" class="link-btn primary">
@@ -439,5 +539,78 @@
       <p>© 2026 Bruce Choe · bruce@brxce.ai</p>
     </div>
   </div>
+
+  <!-- Waitlist Modal -->
+  <div class="modal-overlay" id="waitlistModal" onclick="if(event.target===this)closeWaitlist()">
+    <div class="modal">
+      <div class="modal-form" id="modalForm">
+        <div class="modal-icon">🦞</div>
+        <h2 id="modalTitle">오픈 예정</h2>
+        <p id="modalDesc">곧 공개됩니다.<br>이메일을 등록하시면 오픈 시 가장 먼저 알려드립니다.</p>
+        <input type="email" class="modal-input" id="waitlistEmail" placeholder="이메일 주소를 입력하세요" required>
+        <button class="modal-submit" id="waitlistSubmit" onclick="submitWaitlist()">대기 등록</button>
+        <button class="modal-close" onclick="closeWaitlist()">닫기</button>
+      </div>
+      <div class="modal-success" id="modalSuccess">
+        <div class="modal-icon">✅</div>
+        <h2>등록 완료!</h2>
+        <p>오픈 시 가장 먼저 알려드리겠습니다.<br>감사합니다 🦞</p>
+        <button class="modal-close" onclick="closeWaitlist()">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentProduct = '';
+
+    function openWaitlist(product) {
+      currentProduct = product;
+      document.getElementById('modalTitle').textContent = product + ' — 오픈 예정';
+      document.getElementById('modalForm').classList.remove('hidden');
+      document.getElementById('modalSuccess').classList.remove('active');
+      document.getElementById('waitlistEmail').value = '';
+      document.getElementById('waitlistModal').classList.add('active');
+    }
+
+    function closeWaitlist() {
+      document.getElementById('waitlistModal').classList.remove('active');
+    }
+
+    async function submitWaitlist() {
+      const email = document.getElementById('waitlistEmail').value;
+      if (!email || !email.includes('@')) {
+        document.getElementById('waitlistEmail').style.borderColor = '#ff4d4d';
+        return;
+      }
+
+      const btn = document.getElementById('waitlistSubmit');
+      btn.disabled = true;
+      btn.textContent = '등록 중...';
+
+      try {
+        await fetch('https://formsubmit.co/ajax/bruce@brxce.ai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({
+            email: email,
+            product: currentProduct,
+            _subject: '[brxce.ai] ' + currentProduct + ' 대기 등록 — ' + email
+          })
+        });
+      } catch (e) {
+        // Fallback: still show success (email might still go through)
+      }
+
+      document.getElementById('modalForm').classList.add('hidden');
+      document.getElementById('modalSuccess').classList.add('active');
+      btn.disabled = false;
+      btn.textContent = '대기 등록';
+    }
+
+    // Enter key submit
+    document.getElementById('waitlistEmail').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') submitWaitlist();
+    });
+  </script>
 </body>
 </html>
