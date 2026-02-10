@@ -207,17 +207,22 @@
     .section-label {
       font-size: 13px;
       font-weight: 600;
-      color: #999;
+      color: #888;
       letter-spacing: 0.5px;
       margin-top: 32px;
       margin-bottom: 4px;
       text-align: center;
-      padding-bottom: 8px;
-      border-bottom: 1px solid #222;
-      width: 60%;
-      align-self: center;
-      margin-left: auto;
-      margin-right: auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section-label::before,
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #333;
     }
 
     .link-btn {
@@ -507,7 +512,7 @@
 
     <!-- Links -->
     <div class="links">
-      <div class="section-label">— 에이전틱 워크플로우 —</div>
+      <div class="section-label">에이전틱 워크플로우</div>
 
       <a href="#" class="link-btn" onclick="openWaitlist('오픈클로 가이드북'); return false;">
         <span class="icon"><img src="openclaw-logo.svg" alt="OpenClaw" width="22" height="22"></span>
@@ -524,14 +529,14 @@
         에이전틱 워크플로우 도입 문의
       </a>
 
-      <div class="section-label">— 서비스 —</div>
+      <div class="section-label">서비스</div>
 
       <a href="https://www.brxce.com" class="link-btn" target="_blank" rel="noopener">
         <span class="icon">🚀</span>
         BRXCE — 프로젝트 관리
       </a>
 
-      <div class="section-label">— SI · 개발 외주 —</div>
+      <div class="section-label">SI · 개발 외주</div>
 
       <a href="https://intellieffect.com" class="link-btn" target="_blank" rel="noopener">
         <span class="icon">⚡</span>
