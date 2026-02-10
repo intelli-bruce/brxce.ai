@@ -624,15 +624,13 @@
       btn.textContent = '등록 중...';
 
       try {
-        await fetch('https://formsubmit.co/ajax/bruce@brxce.ai', {
+        await fetch('/api/submit', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             email: email,
-            product: currentProduct,
-            _subject: '[brxce.ai] ' + currentProduct + ' 대기 등록 — ' + email,
-            _autoresponse: '안녕하세요, Bruce입니다 🦞\n\n' + currentProduct + ' 대기 등록 감사합니다!\n오픈하면 가장 먼저 보내드리겠습니다.\n\n기다리시는 동안, 에이전틱 워크플로우가 궁금하시다면:\n→ Threads: https://threads.com/@brxce.ai\n\n혹시 당장 우리 회사에도 도입하고 싶으시다면:\n→ 30분 무료 상담 예약: https://cal.com/brxce.ai/30min\n\n감사합니다 🦞\nBruce Choe\nbrxce.ai',
-            _template: 'box'
+            type: 'waitlist',
+            product: currentProduct
           })
         });
       } catch (e) {}
@@ -666,15 +664,12 @@
       btn.textContent = '접수 중...';
 
       try {
-        await fetch('https://formsubmit.co/ajax/bruce@brxce.ai', {
+        await fetch('/api/submit', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             email: email,
-            type: '에이전틱 워크플로우 도입 문의',
-            _subject: '[brxce.ai] 에이전틱 워크플로우 도입 문의 — ' + email,
-            _autoresponse: '안녕하세요, Bruce입니다 🦞\n\n에이전틱 워크플로우 도입 문의 감사합니다!\n\n현재 업무 프로세스를 듣고, OpenClaw × ClaudeCode를 활용한 에이전틱 워크플로우 적용 가능 여부를 진단해드리겠습니다.\n\n24시간 내에 연락드리겠습니다.\n이 메일에 직접 답장 주셔도 됩니다.\n\n감사합니다 🦞\nBruce Choe\nbrxce.ai',
-            _template: 'box'
+            type: 'inquiry'
           })
         });
       } catch (e) {}

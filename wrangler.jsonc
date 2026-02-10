@@ -1,7 +1,9 @@
 {
   "name": "brxce-ai",
+  "main": "worker.js",
   "compatibility_date": "2026-02-10",
+  "account_id": "dc422c8a463a677d2c0da2bf97d3115f",
   "assets": {
-    "directory": "./"
+    "directory": "./public"
   }
 }
