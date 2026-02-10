@@ -230,6 +230,7 @@
       font-size: 15px;
       font-weight: 500;
       transition: all 0.2s ease;
+      position: relative;
     }
 
     .link-btn:hover {
@@ -265,12 +266,13 @@
     }
 
     .badge {
-      font-size: 11px;
+      font-size: 10px;
       padding: 2px 8px;
       border-radius: 10px;
       background: #2a2a2a;
       color: #888;
-      margin-left: 4px;
+      position: absolute;
+      right: 16px;
     }
 
     .link-btn.primary {
@@ -402,12 +404,14 @@
 
       <a href="#" class="link-btn disabled" onclick="return false;">
         <span class="icon"><img src="openclaw-logo.svg" alt="OpenClaw" width="22" height="22"></span>
-        오픈클로 가이드북 <span class="badge">준비중</span>
+        오픈클로 가이드북
+        <span class="badge">준비중</span>
       </a>
 
       <a href="#" class="link-btn disabled" onclick="return false;">
         <span class="icon"><img src="openclaw-logo.svg" alt="OpenClaw" width="22" height="22"></span>
-        오픈클로 실전 활용법 <span class="badge">준비중</span>
+        오픈클로 실전 활용법
+        <span class="badge">준비중</span>
       </a>
 
       <a href="mailto:bruce@brxce.ai" class="link-btn primary">
