@@ -253,6 +253,26 @@
       display: block;
     }
 
+    .link-btn.disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    .link-btn.disabled:hover {
+      transform: none;
+      background: #141414;
+      border-color: #222;
+    }
+
+    .badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: #2a2a2a;
+      color: #888;
+      margin-left: 4px;
+    }
+
     .link-btn.primary {
       background: #fafafa;
       color: #0a0a0a;
@@ -380,14 +400,14 @@
     <div class="links">
       <div class="section-label">에이전틱 워크플로우</div>
 
-      <a href="#" class="link-btn" target="_blank" rel="noopener">
+      <a href="#" class="link-btn disabled" onclick="return false;">
         <span class="icon"><img src="openclaw-logo.svg" alt="OpenClaw" width="22" height="22"></span>
-        오픈클로 가이드북
+        오픈클로 가이드북 <span class="badge">준비중</span>
       </a>
 
-      <a href="#" class="link-btn" target="_blank" rel="noopener">
+      <a href="#" class="link-btn disabled" onclick="return false;">
         <span class="icon"><img src="openclaw-logo.svg" alt="OpenClaw" width="22" height="22"></span>
-        오픈클로 실전 활용법
+        오픈클로 실전 활용법 <span class="badge">준비중</span>
       </a>
 
       <a href="mailto:bruce@brxce.ai" class="link-btn primary">
