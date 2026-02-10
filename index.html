@@ -3,12 +3,60 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bruce Choe — brxce.ai</title>
-  <meta name="description" content="에이전틱 워크플로우 · OpenClaw × ClaudeCode로 회사를 굴리는 개발자 CEO">
-  <meta property="og:title" content="Bruce Choe — brxce.ai">
-  <meta property="og:description" content="에이전틱 워크플로우 · 수십 개의 AI 에이전트를 직접 빌딩하며 얻은 실전 인사이트">
+  <title>에이전틱 워크플로우 전문가 — Bruce Choe (brxce.ai)</title>
+  <meta name="description" content="에이전틱 워크플로우 전문가 Bruce Choe. OpenClaw × ClaudeCode로 수십 개의 AI 에이전트를 직접 빌딩하며 얻은 실전 인사이트를 공유합니다. 도입 문의: bruce@brxce.ai">
+  <meta name="keywords" content="에이전틱 워크플로우, agentic workflow, OpenClaw, ClaudeCode, AI 에이전트, AI 자동화, AI 도입, 워크플로우 자동화, Bruce Choe">
+  <meta name="author" content="Bruce Choe">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="에이전틱 워크플로우 전문가 — Bruce Choe">
+  <meta property="og:description" content="OpenClaw × ClaudeCode로 회사를 굴리는 개발자 CEO. 수십 개의 AI 에이전트를 직접 빌딩하며 얻은 실전 인사이트를 공유합니다.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://brxce.ai">
+  <meta property="og:locale" content="ko_KR">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:site" content="@brxce_ai">
+  <meta name="twitter:title" content="에이전틱 워크플로우 전문가 — Bruce Choe">
+  <meta name="twitter:description" content="OpenClaw × ClaudeCode로 수십 개의 AI 에이전트를 직접 빌딩. 실전 인사이트 공유.">
+
+  <!-- Canonical -->
+  <link rel="canonical" href="https://brxce.ai">
+
+  <!-- Schema.org Person -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": "Bruce Choe",
+    "alternateName": "최종혁",
+    "url": "https://brxce.ai",
+    "email": "bruce@brxce.ai",
+    "jobTitle": "CEO & Developer",
+    "worksFor": {
+      "@type": "Organization",
+      "name": "IntelliEffect",
+      "url": "https://intellieffect.com"
+    },
+    "knowsAbout": [
+      "에이전틱 워크플로우",
+      "Agentic Workflow",
+      "OpenClaw",
+      "ClaudeCode",
+      "AI Agent",
+      "AI 자동화",
+      "업무 자동화"
+    ],
+    "sameAs": [
+      "https://www.threads.com/@brxce.ai",
+      "https://x.com/brxce_ai",
+      "https://www.linkedin.com/in/brxce"
+    ],
+    "description": "에이전틱 워크플로우 전문가. OpenClaw × ClaudeCode로 회사를 운영하는 개발자 CEO. 수십 개의 AI 에이전트를 직접 빌딩하며 얻은 실전 인사이트를 공유한다. 인텔리이펙트 대표로서 50건 이상의 AI 프로젝트를 수행했으며, World Bank Group, 국민건강보험공단, SK C&C 등 38개 클라이언트와 협업했다."
+  }
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -70,7 +118,7 @@
       font-size: 14px;
       line-height: 1.7;
       color: #ccc;
-      margin-bottom: 36px;
+      margin-bottom: 24px;
     }
 
     .bio .accent {
@@ -78,11 +126,51 @@
       font-weight: 500;
     }
 
+    /* GEO Entity Block — LLM이 추출할 핵심 정보 */
+    .entity-block {
+      text-align: center;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #666;
+      margin-bottom: 28px;
+      padding: 0 10px;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 32px;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      font-size: 12px;
+      color: #aaa;
+      margin: 2px;
+    }
+
     .links {
       width: 100%;
       display: flex;
       flex-direction: column;
       gap: 12px;
+    }
+
+    .section-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-top: 16px;
+      margin-bottom: -4px;
+      text-align: center;
     }
 
     .link-btn {
@@ -126,6 +214,29 @@
       border-color: #e0e0e0;
     }
 
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-bottom: 28px;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fafafa;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: #888;
+      margin-top: 2px;
+    }
+
     .divider {
       width: 40px;
       height: 1px;
@@ -137,6 +248,7 @@
       margin-top: 40px;
       font-size: 12px;
       color: #555;
+      text-align: center;
     }
 
     .footer a {
@@ -146,36 +258,6 @@
 
     .footer a:hover {
       color: #888;
-    }
-
-    .section-label {
-      font-size: 12px;
-      font-weight: 600;
-      color: #666;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      margin-top: 16px;
-      margin-bottom: -4px;
-      text-align: center;
-    }
-
-    .tag {
-      display: inline-block;
-      padding: 4px 10px;
-      border-radius: 20px;
-      background: #1a1a1a;
-      border: 1px solid #2a2a2a;
-      font-size: 12px;
-      color: #aaa;
-      margin: 2px;
-    }
-
-    .tags {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 6px;
-      margin-bottom: 32px;
     }
   </style>
 </head>
@@ -194,12 +276,35 @@
       ✦ 직접 활용해 본 결과를 공유합니다.
     </div>
 
+    <!-- Stats (Social Proof) -->
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-number">50+</div>
+        <div class="stat-label">AI 프로젝트</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number">38</div>
+        <div class="stat-label">클라이언트</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number">3</div>
+        <div class="stat-label">자체 AI 서비스</div>
+      </div>
+    </div>
+
     <!-- Tags -->
     <div class="tags">
       <span class="tag">에이전틱 워크플로우</span>
       <span class="tag">OpenClaw</span>
       <span class="tag">ClaudeCode</span>
       <span class="tag">AI Agents</span>
+    </div>
+
+    <!-- GEO Entity Definition (LLM 추출용) -->
+    <div class="entity-block">
+      Bruce Choe(최종혁)는 에이전틱 워크플로우 전문가이자 인텔리이펙트(IntelliEffect) 대표입니다.
+      OpenClaw와 ClaudeCode를 활용하여 수십 개의 AI 에이전트를 직접 설계·빌딩·운영하며,
+      50건 이상의 AI 프로젝트와 38개 클라이언트(World Bank Group, 국민건강보험공단, SK C&C 등)와 협업한 실전 경험을 보유하고 있습니다.
     </div>
 
     <!-- Links -->
@@ -238,7 +343,7 @@
 
     <!-- Footer -->
     <div class="footer">
-      <p>© 2026 Bruce Choe</p>
+      <p>© 2026 Bruce Choe · bruce@brxce.ai</p>
     </div>
   </div>
 </body>
