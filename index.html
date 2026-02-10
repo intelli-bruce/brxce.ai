@@ -524,7 +524,7 @@
         오픈클로 실전 활용법
       </a>
 
-      <a href="mailto:bruce@brxce.ai" class="link-btn primary">
+      <a href="#" class="link-btn primary" onclick="openInquiry(); return false;">
         <span class="icon">✉️</span>
         에이전틱 워크플로우 도입 문의
       </a>
@@ -551,21 +551,41 @@
   </div>
 
   <!-- Waitlist Modal -->
-  <div class="modal-overlay" id="waitlistModal" onclick="if(event.target===this)closeWaitlist()">
+  <div class="modal-overlay" id="waitlistModal" onclick="if(event.target===this)closeModal('waitlistModal')">
     <div class="modal">
-      <div class="modal-form" id="modalForm">
+      <div class="modal-form" id="waitlistForm">
         <div class="modal-icon">🦞</div>
-        <h2 id="modalTitle">오픈 예정</h2>
-        <p id="modalDesc">곧 공개됩니다.<br>이메일을 등록하시면 오픈 시 가장 먼저 알려드립니다.</p>
+        <h2 id="waitlistTitle">오픈 예정</h2>
+        <p>곧 공개됩니다.<br>이메일을 등록하시면 오픈 시 가장 먼저 알려드립니다.</p>
         <input type="email" class="modal-input" id="waitlistEmail" placeholder="이메일 주소를 입력하세요" required>
         <button class="modal-submit" id="waitlistSubmit" onclick="submitWaitlist()">대기 등록</button>
-        <button class="modal-close" onclick="closeWaitlist()">닫기</button>
+        <button class="modal-close" onclick="closeModal('waitlistModal')">닫기</button>
       </div>
-      <div class="modal-success" id="modalSuccess">
+      <div class="modal-success" id="waitlistSuccess">
         <div class="modal-icon">✅</div>
         <h2>등록 완료!</h2>
         <p>오픈 시 가장 먼저 알려드리겠습니다.<br>감사합니다 🦞</p>
-        <button class="modal-close" onclick="closeWaitlist()">닫기</button>
+        <button class="modal-close" onclick="closeModal('waitlistModal')">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inquiry Modal -->
+  <div class="modal-overlay" id="inquiryModal" onclick="if(event.target===this)closeModal('inquiryModal')">
+    <div class="modal">
+      <div class="modal-form" id="inquiryForm">
+        <div class="modal-icon">✉️</div>
+        <h2>에이전틱 워크플로우 도입 문의</h2>
+        <p>이메일을 남겨주시면<br>24시간 내에 연락드리겠습니다.</p>
+        <input type="email" class="modal-input" id="inquiryEmail" placeholder="이메일 주소를 입력하세요" required>
+        <button class="modal-submit" id="inquirySubmit" onclick="submitInquiry()">문의하기</button>
+        <button class="modal-close" onclick="closeModal('inquiryModal')">닫기</button>
+      </div>
+      <div class="modal-success" id="inquirySuccess">
+        <div class="modal-icon">✅</div>
+        <h2>문의 접수 완료!</h2>
+        <p>24시간 내에 연락드리겠습니다.<br>감사합니다 🦞</p>
+        <button class="modal-close" onclick="closeModal('inquiryModal')">닫기</button>
       </div>
     </div>
   </div>
@@ -573,17 +593,18 @@
   <script>
     let currentProduct = '';
 
-    function openWaitlist(product) {
-      currentProduct = product;
-      document.getElementById('modalTitle').textContent = product + ' — 오픈 예정';
-      document.getElementById('modalForm').classList.remove('hidden');
-      document.getElementById('modalSuccess').classList.remove('active');
-      document.getElementById('waitlistEmail').value = '';
-      document.getElementById('waitlistModal').classList.add('active');
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
     }
 
-    function closeWaitlist() {
-      document.getElementById('waitlistModal').classList.remove('active');
+    // --- Waitlist ---
+    function openWaitlist(product) {
+      currentProduct = product;
+      document.getElementById('waitlistTitle').textContent = product + ' — 오픈 예정';
+      document.getElementById('waitlistForm').classList.remove('hidden');
+      document.getElementById('waitlistSuccess').classList.remove('active');
+      document.getElementById('waitlistEmail').value = '';
+      document.getElementById('waitlistModal').classList.add('active');
     }
 
     async function submitWaitlist() {
@@ -592,7 +613,6 @@
         document.getElementById('waitlistEmail').style.borderColor = '#ff4d4d';
         return;
       }
-
       const btn = document.getElementById('waitlistSubmit');
       btn.disabled = true;
       btn.textContent = '등록 중...';
@@ -604,22 +624,63 @@
           body: JSON.stringify({
             email: email,
             product: currentProduct,
-            _subject: '[brxce.ai] ' + currentProduct + ' 대기 등록 — ' + email
+            _subject: '[brxce.ai] ' + currentProduct + ' 대기 등록 — ' + email,
+            _autoresponse: '안녕하세요! brxce.ai입니다 🦞\n\n' + currentProduct + ' 대기 등록이 완료되었습니다.\n오픈 시 가장 먼저 알려드리겠습니다.\n\n감사합니다.\nBruce Choe\nbrxce.ai',
+            _template: 'box'
           })
         });
-      } catch (e) {
-        // Fallback: still show success (email might still go through)
-      }
+      } catch (e) {}
 
-      document.getElementById('modalForm').classList.add('hidden');
-      document.getElementById('modalSuccess').classList.add('active');
+      document.getElementById('waitlistForm').classList.add('hidden');
+      document.getElementById('waitlistSuccess').classList.add('active');
       btn.disabled = false;
       btn.textContent = '대기 등록';
     }
 
-    // Enter key submit
     document.getElementById('waitlistEmail').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') submitWaitlist();
+    });
+
+    // --- Inquiry ---
+    function openInquiry() {
+      document.getElementById('inquiryForm').classList.remove('hidden');
+      document.getElementById('inquirySuccess').classList.remove('active');
+      document.getElementById('inquiryEmail').value = '';
+      document.getElementById('inquiryModal').classList.add('active');
+    }
+
+    async function submitInquiry() {
+      const email = document.getElementById('inquiryEmail').value;
+      if (!email || !email.includes('@')) {
+        document.getElementById('inquiryEmail').style.borderColor = '#ff4d4d';
+        return;
+      }
+      const btn = document.getElementById('inquirySubmit');
+      btn.disabled = true;
+      btn.textContent = '접수 중...';
+
+      try {
+        await fetch('https://formsubmit.co/ajax/bruce@brxce.ai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({
+            email: email,
+            type: '에이전틱 워크플로우 도입 문의',
+            _subject: '[brxce.ai] 에이전틱 워크플로우 도입 문의 — ' + email,
+            _autoresponse: '안녕하세요! Bruce Choe입니다 🦞\n\n에이전틱 워크플로우 도입 문의를 접수했습니다.\n24시간 내에 연락드리겠습니다.\n\n그 사이, 제가 어떤 일을 하는지 궁금하시다면:\n→ Threads: https://threads.com/@brxce.ai\n\n감사합니다.\nBruce Choe\nbrxce.ai',
+            _template: 'box'
+          })
+        });
+      } catch (e) {}
+
+      document.getElementById('inquiryForm').classList.add('hidden');
+      document.getElementById('inquirySuccess').classList.add('active');
+      btn.disabled = false;
+      btn.textContent = '문의하기';
+    }
+
+    document.getElementById('inquiryEmail').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') submitInquiry();
     });
   </script>
 </body>
