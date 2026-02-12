@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenClaw 시작하기 — brxce.ai</title>
+  <meta name="description" content="OpenClaw × ClaudeCode로 첫 AI 에이전트를 30분 만에 세팅하는 실전 가이드.">
+  <meta name="author" content="Bruce Choe">
+
+  <!-- OG -->
+  <meta property="og:title" content="OpenClaw 시작하기 — brxce.ai">
+  <meta property="og:description" content="OpenClaw × ClaudeCode로 첫 AI 에이전트를 30분 만에 세팅하는 실전 가이드.">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://brxce.ai/guides/openclaw-시작하기">
+  <meta property="og:locale" content="ko_KR">
+
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0a0a0a;
+      color: #e0e0e0;
+      min-height: 100vh;
+      line-height: 1.8;
+    }
+
+    /* Header */
+    .header {
+      border-bottom: 1px solid #1a1a1a;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      background: rgba(10, 10, 10, 0.9);
+      backdrop-filter: blur(12px);
+      z-index: 50;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: #fafafa;
+    }
+
+    .header-left img {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+    }
+
+    .header-name {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .header-right a {
+      font-size: 13px;
+      color: #888;
+      text-decoration: none;
+      padding: 6px 14px;
+      border: 1px solid #333;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .header-right a:hover {
+      color: #fafafa;
+      border-color: #555;
+    }
+
+    /* Article */
+    .article {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+
+    /* Meta */
+    .meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 24px;
+      font-size: 13px;
+      color: #666;
+    }
+
+    .meta-tag {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 20px;
+      padding: 3px 10px;
+      font-size: 12px;
+      color: #888;
+    }
+
+    .meta-dot {
+      color: #333;
+    }
+
+    /* Title */
+    .article h1 {
+      font-size: 32px;
+      font-weight: 700;
+      color: #fafafa;
+      line-height: 1.3;
+      margin-bottom: 12px;
+      letter-spacing: -0.5px;
+    }
+
+    .article .subtitle {
+      font-size: 17px;
+      color: #888;
+      margin-bottom: 40px;
+      line-height: 1.6;
+    }
+
+    /* Body */
+    .article h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fafafa;
+      margin-top: 48px;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #1a1a1a;
+    }
+
+    .article h3 {
+      font-size: 17px;
+      font-weight: 600;
+      color: #ddd;
+      margin-top: 32px;
+      margin-bottom: 12px;
+    }
+
+    .article p {
+      margin-bottom: 20px;
+      font-size: 16px;
+      color: #ccc;
+    }
+
+    .article strong {
+      color: #fafafa;
+      font-weight: 600;
+    }
+
+    .article a {
+      color: #8ab4f8;
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s;
+    }
+
+    .article a:hover {
+      border-bottom-color: #8ab4f8;
+    }
+
+    .article ul, .article ol {
+      margin-bottom: 20px;
+      padding-left: 24px;
+    }
+
+    .article li {
+      margin-bottom: 8px;
+      font-size: 16px;
+      color: #ccc;
+    }
+
+    .article li::marker {
+      color: #555;
+    }
+
+    /* Code */
+    .article code {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      background: #161616;
+      border: 1px solid #2a2a2a;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 14px;
+      color: #e0e0e0;
+    }
+
+    .article pre {
+      background: #111;
+      border: 1px solid #222;
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+    }
+
+    .article pre code {
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: 14px;
+      line-height: 1.7;
+      color: #ccc;
+    }
+
+    /* Callout */
+    .callout {
+      background: #111;
+      border-left: 3px solid #fafafa;
+      border-radius: 0 10px 10px 0;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+    }
+
+    .callout p {
+      margin-bottom: 0;
+      font-size: 15px;
+      color: #bbb;
+    }
+
+    .callout strong {
+      color: #fafafa;
+    }
+
+    .callout.tip {
+      border-left-color: #4ade80;
+    }
+
+    .callout.warning {
+      border-left-color: #facc15;
+    }
+
+    /* Image */
+    .article img {
+      max-width: 100%;
+      border-radius: 10px;
+      border: 1px solid #222;
+      margin: 8px 0 24px;
+    }
+
+    .img-caption {
+      text-align: center;
+      font-size: 13px;
+      color: #666;
+      margin-top: -16px;
+      margin-bottom: 24px;
+    }
+
+    /* Divider */
+    .article hr {
+      border: none;
+      height: 1px;
+      background: #1a1a1a;
+      margin: 40px 0;
+    }
+
+    /* Step */
+    .step {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .step-num {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fafafa;
+      margin-top: 2px;
+    }
+
+    .step-content h3 {
+      margin-top: 0;
+    }
+
+    /* CTA */
+    .cta-box {
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 14px;
+      padding: 32px 28px;
+      text-align: center;
+      margin-top: 48px;
+    }
+
+    .cta-box h3 {
+      font-size: 20px;
+      color: #fafafa;
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+
+    .cta-box p {
+      font-size: 15px;
+      color: #888;
+      margin-bottom: 20px;
+    }
+
+    .cta-btn {
+      display: inline-block;
+      padding: 14px 32px;
+      border-radius: 10px;
+      background: #fafafa;
+      color: #0a0a0a;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+
+    .cta-btn:hover {
+      background: #e0e0e0;
+      border-bottom: none;
+    }
+
+    /* Author */
+    .author-box {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-top: 48px;
+      padding: 20px;
+      background: #111;
+      border: 1px solid #1a1a1a;
+      border-radius: 12px;
+    }
+
+    .author-box img {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 1px solid #333;
+      margin: 0;
+    }
+
+    .author-info {
+      font-size: 14px;
+    }
+
+    .author-name {
+      font-weight: 600;
+      color: #fafafa;
+    }
+
+    .author-desc {
+      color: #888;
+      font-size: 13px;
+      margin-bottom: 0 !important;
+    }
+
+    /* Footer */
+    .footer {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 24px;
+      text-align: center;
+      font-size: 12px;
+      color: #444;
+      border-top: 1px solid #1a1a1a;
+    }
+
+    .footer a {
+      color: #555;
+      text-decoration: none;
+    }
+
+    /* Related */
+    .related {
+      margin-top: 48px;
+    }
+
+    .related h3 {
+      font-size: 16px;
+      color: #888;
+      margin-bottom: 16px;
+    }
+
+    .related-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .related-item {
+      display: block;
+      padding: 14px 18px;
+      background: #111;
+      border: 1px solid #1a1a1a;
+      border-radius: 10px;
+      text-decoration: none;
+      color: #ccc;
+      font-size: 15px;
+      transition: all 0.2s;
+    }
+
+    .related-item:hover {
+      border-color: #333;
+      color: #fafafa;
+      border-bottom: 1px solid #333;
+    }
+
+    .related-item .related-tag {
+      font-size: 12px;
+      color: #666;
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .article { padding: 32px 18px 60px; }
+      .article h1 { font-size: 26px; }
+      .article h2 { font-size: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sticky Header -->
+  <header class="header">
+    <a href="/" class="header-left">
+      <img src="../profile.jpg" alt="Bruce Choe">
+      <span class="header-name">brxce.ai</span>
+    </a>
+    <div class="header-right">
+      <a href="/">← 홈</a>
+    </div>
+  </header>
+
+  <!-- Article -->
+  <article class="article">
+
+    <!-- Meta -->
+    <div class="meta">
+      <span class="meta-tag">가이드</span>
+      <span class="meta-dot">·</span>
+      <span>2026년 2월 13일</span>
+      <span class="meta-dot">·</span>
+      <span>5분 읽기</span>
+    </div>
+
+    <!-- Title -->
+    <h1>OpenClaw 시작하기 — 첫 에이전트를 30분 만에</h1>
+    <p class="subtitle">Mac 하나와 API 키만 있으면 됩니다. 거창한 인프라 필요 없어요.</p>
+
+    <hr>
+
+    <!-- Body Content -->
+
+    <h2>들어가며</h2>
+    <p>"OpenClaw이 뭔데?" — 이 질문을 가장 많이 받습니다. 한 줄로 답하면:</p>
+
+    <div class="callout">
+      <p><strong>ClaudeCode를 오케스트레이션하는 레이어.</strong><br>텔레그램에서 지시하면, 여러 에이전트가 알아서 움직입니다.</p>
+    </div>
+
+    <p>ClaudeCode가 팔이라면, OpenClaw은 뇌입니다. 하나의 작업을 직접 실행하는 게 아니라, <strong>여러 작업을 동시에 조율</strong>하는 거죠.</p>
+
+    <h2>필요한 것</h2>
+    <ul>
+      <li><strong>Mac</strong> (Apple Silicon 권장) 또는 Linux</li>
+      <li><strong>Node.js</strong> 20 이상</li>
+      <li><strong>Anthropic API 키</strong> ($200/월 Pro 권장)</li>
+      <li><strong>Telegram 계정</strong> (에이전트 제어용)</li>
+    </ul>
+
+    <h2>설치 → 첫 실행</h2>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <h3>설치</h3>
+        <pre><code>npm install -g openclaw</code></pre>
+        <p>끝. 이게 전부입니다.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <h3>초기 설정</h3>
+        <pre><code>openclaw init</code></pre>
+        <p>안내에 따라 Anthropic API 키와 Telegram Bot 토큰을 입력하면 <code>openclaw.json</code>이 생성됩니다.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <h3>첫 에이전트 실행</h3>
+        <pre><code>openclaw gateway start</code></pre>
+        <p>Telegram에서 봇에게 아무 메시지나 보내보세요. 응답이 오면 성공입니다. 🦞</p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <p><strong>💡 Tip:</strong> <code>AGENTS.md</code>에 에이전트의 역할을 정의하면, 그 역할에 맞게 행동합니다. "넌 마케팅 담당이야"라고 쓰면 마케팅 에이전트가 됩니다.</p>
+    </div>
+
+    <h2>실전 예시: 14개 에이전트 구조</h2>
+    <p>저는 현재 이런 구조로 운영하고 있습니다:</p>
+
+    <pre><code>Karajan  — 메인 비서, 총괄 지휘
+Brxce    — BRXCE 프로덕트 개발
+Roomfit  — Roomfit 앱 개발
+Creator  — 콘텐츠 제작
+Finanz   — 재무/세무
+Obsidian — 지식 관리
+...14개 에이전트 동시 운영</code></pre>
+
+    <p>이 모든 게 <strong>Mac Studio 한 대</strong>에서 돌아갑니다.</p>
+
+    <div class="callout warning">
+      <p><strong>⚠️ 주의:</strong> 처음부터 14개를 만들지 마세요. 하나부터 시작해서 필요할 때 추가하는 게 맞습니다. 저도 처음엔 1개였습니다.</p>
+    </div>
+
+    <h2>다음 단계</h2>
+    <p>에이전트가 돌아가기 시작하면, 이런 것들을 할 수 있습니다:</p>
+    <ul>
+      <li><strong>업무 분리</strong> — 프로젝트별 에이전트를 나눠서 병렬 작업</li>
+      <li><strong>크론 잡</strong> — 매일 아침 이메일 체크, 일정 알림</li>
+      <li><strong>RAG 연결</strong> — 옵시디언/문서를 에이전트가 검색해서 활용</li>
+      <li><strong>코딩 에이전트</strong> — Claude Code와 연결해서 개발 자동화</li>
+    </ul>
+
+    <hr>
+
+    <!-- CTA -->
+    <div class="cta-box">
+      <h3>🦞 더 깊은 가이드가 필요하신가요?</h3>
+      <p>실전 활용법, 에이전트 설계 패턴, 비용 최적화까지<br>정리해서 보내드립니다.</p>
+      <a href="/" class="cta-btn">brxce.ai에서 등록하기</a>
+    </div>
+
+    <!-- Related -->
+    <div class="related">
+      <h3>다른 가이드</h3>
+      <div class="related-list">
+        <a href="#" class="related-item">
+          RAG로 토큰 10배 절약하기
+          <div class="related-tag">가이드 · 준비 중</div>
+        </a>
+        <a href="#" class="related-item">
+          에이전트 역할 분담 설계법
+          <div class="related-tag">가이드 · 준비 중</div>
+        </a>
+      </div>
+    </div>
+
+    <!-- Author -->
+    <div class="author-box">
+      <img src="../profile.jpg" alt="Bruce Choe">
+      <div class="author-info">
+        <div class="author-name">Bruce Choe</div>
+        <p class="author-desc">OpenClaw × ClaudeCode로 회사를 굴리는 개발자 CEO. 수십 개의 AI 에이전트를 직접 빌딩하며 얻은 실전 인사이트를 공유합니다.</p>
+      </div>
+    </div>
+
+  </article>
+
+  <footer class="footer">
+    <p>© 2026 Bruce Choe · <a href="/">brxce.ai</a></p>
+  </footer>
+
+</body>
+</html>
