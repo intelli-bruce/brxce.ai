@@ -142,7 +142,7 @@ create policy "Admin full access submissions" on submissions for all using (
 create policy "Users can read own profile" on profiles for select using (id = auth.uid());
 
 -- Indexes
-create index contents_fts on contents using gin (to_tsvector('korean', coalesce(title,'') || ' ' || coalesce(body_md,'') || ' ' || coalesce(hook,'')));
+create index contents_fts on contents using gin (to_tsvector('simple', coalesce(title,'') || ' ' || coalesce(body_md,'') || ' ' || coalesce(hook,'')));
 create index contents_status on contents (status);
 create index adaptations_content_id on adaptations (content_id);
 create index publications_content_id on publications (content_id);
