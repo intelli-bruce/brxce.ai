@@ -7,6 +7,7 @@ import Link from "next/link";
 interface Content {
   id: string;
   title: string;
+  slug: string;
   status: string;
   category: string | null;
   created_at: string;
@@ -21,6 +22,8 @@ const STATUS_COLORS: Record<string, string> = {
   archived: "text-[#555]",
 };
 
+const STATUSES = ["idea", "draft", "fact-check", "ready", "published", "archived"];
+
 export default function ContentsPage() {
   const [contents, setContents] = useState<Content[]>([]);
   const [filter, setFilter] = useState("all");
@@ -29,7 +32,7 @@ export default function ContentsPage() {
   useEffect(() => {
     const sb = createSupabaseBrowser();
     async function load() {
-      let q = sb.from("contents").select("id, title, status, category, created_at").order("created_at", { ascending: false });
+      let q = sb.from("contents").select("id, title, slug, status, category, created_at").order("created_at", { ascending: false });
       if (filter !== "all") q = q.eq("status", filter);
       if (search) q = q.ilike("title", `%${search}%`);
       const { data } = await q;
@@ -72,22 +75,45 @@ export default function ContentsPage() {
 
       <div className="flex flex-col gap-2">
         {contents.map((c) => (
-          <Link
+          <div
             key={c.id}
-            href={`/admin/contents/${c.id}`}
-            className="flex items-center justify-between p-4 bg-[#141414] border border-[#222] rounded-xl no-underline hover:border-[#444] transition-colors"
+            className="flex items-center justify-between p-4 bg-[#141414] border border-[#222] rounded-xl hover:border-[#444] transition-colors"
           >
-            <div>
+            <Link href={`/admin/contents/${c.id}`} className="flex-1 no-underline min-w-0">
               <div className="text-[15px] text-[#fafafa] font-medium">{c.title}</div>
               <div className="text-xs text-[#666] mt-1">
                 {c.category && <span>{c.category} · </span>}
                 {new Date(c.created_at).toLocaleDateString("ko-KR")}
               </div>
+            </Link>
+            <div className="flex items-center gap-2 shrink-0 ml-3">
+              <select
+                value={c.status}
+                onClick={(e) => e.stopPropagation()}
+                onChange={async (e) => {
+                  const newStatus = e.target.value;
+                  const sb = createSupabaseBrowser();
+                  await sb.from("contents").update({ status: newStatus }).eq("id", c.id);
+                  setContents((prev) => prev.map((x) => x.id === c.id ? { ...x, status: newStatus } : x));
+                }}
+                className={`text-xs font-medium px-2 py-1 rounded-lg border border-[#333] bg-[#0a0a0a] outline-none cursor-pointer ${STATUS_COLORS[c.status] || "text-[#888]"}`}
+              >
+                {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+              {c.slug && (
+                <a
+                  href={`/guides/${c.slug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="px-2.5 py-1 rounded-lg border border-[#333] text-xs text-[#888] no-underline hover:text-[#fafafa] hover:border-[#555] transition-colors"
+                  title="미리보기"
+                >
+                  👁️
+                </a>
+              )}
             </div>
-            <span className={`text-xs font-medium ${STATUS_COLORS[c.status] || "text-[#888]"}`}>
-              {c.status}
-            </span>
-          </Link>
+          </div>
         ))}
         {contents.length === 0 && <p className="text-[#666] text-sm">콘텐츠가 없습니다.</p>}
       </div>

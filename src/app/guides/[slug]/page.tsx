@@ -3,6 +3,7 @@ import { createSupabaseServer } from "@/lib/supabase-server";
 import GuideHeader from "@/components/GuideHeader";
 import GuideBody from "@/components/GuideBody";
 import TableOfContents from "@/components/TableOfContents";
+import UnpublishedBanner from "@/components/UnpublishedBanner";
 import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
@@ -11,15 +12,43 @@ export const revalidate = 60;
 
 type Props = { params: Promise<{ slug: string }> };
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params;
+/** Fetch guide: published for everyone, draft/review for admin only */
+async function fetchGuide(slug: string) {
   const sb = await createSupabaseServer();
-  const { data: guide } = await sb
+
+  // Try published first (no auth needed)
+  const { data: published } = await sb
     .from("contents")
-    .select("title, summary, hook, media_urls, tags")
+    .select("*")
     .eq("slug", slug)
     .eq("status", "published")
     .single();
+  if (published) return { guide: published, isPreview: false };
+
+  // Not published — check if user is admin
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return { guide: null, isPreview: false };
+
+  const { data: profile } = await sb
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+  if (profile?.role !== "admin") return { guide: null, isPreview: false };
+
+  // Admin: fetch any non-archived status
+  const { data: draft } = await sb
+    .from("contents")
+    .select("*")
+    .eq("slug", slug)
+    .in("status", ["draft", "review", "idea", "fact-check", "ready"])
+    .single();
+  return { guide: draft, isPreview: !!draft };
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  const { guide } = await fetchGuide(slug);
 
   if (!guide) return {};
 
@@ -46,22 +75,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       ...(ogImage && { images: [ogImage] }),
     },
     alternates: { canonical: `https://brxce.ai/guides/${slug}` },
+    // Prevent indexing of unpublished content
+    ...(guide.status !== "published" && { robots: { index: false, follow: false } }),
   };
 }
 
 export default async function GuidePage({ params }: Props) {
   const { slug } = await params;
-  const sb = await createSupabaseServer();
-  const { data: guide } = await sb
-    .from("contents")
-    .select("*")
-    .eq("slug", slug)
-    .eq("status", "published")
-    .single();
+  const { guide, isPreview } = await fetchGuide(slug);
 
   if (!guide) notFound();
 
   // Related guides (same tags)
+  const sb = await createSupabaseServer();
   let relatedGuides: typeof guide[] = [];
   if (guide.tags?.length) {
     const { data } = await sb
@@ -80,6 +106,7 @@ export default async function GuidePage({ params }: Props) {
   return (
     <>
       <GuideHeader />
+      {isPreview && <UnpublishedBanner status={guide.status} />}
       <div className="max-w-[1100px] mx-auto px-6 py-12 flex gap-10">
         {/* TOC sidebar — desktop only */}
         {headings.length > 0 && (

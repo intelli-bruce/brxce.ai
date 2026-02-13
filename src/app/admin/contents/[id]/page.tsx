@@ -162,6 +162,16 @@ export default function ContentDetailPage() {
           ) : content.title}
         </h1>
         <div className="flex gap-2">
+          {content.slug && (
+            <a
+              href={`/guides/${content.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-2 rounded-[10px] border border-[#333] text-sm text-[#888] no-underline hover:text-[#fafafa] hover:border-[#555]"
+            >
+              👁️ 미리보기
+            </a>
+          )}
           {editing ? (
             <>
               <button onClick={save} disabled={saving} className="px-4 py-2 rounded-[10px] bg-[#fafafa] text-[#0a0a0a] text-sm font-semibold hover:bg-[#e0e0e0] disabled:opacity-50">
@@ -183,7 +193,7 @@ export default function ContentDetailPage() {
       {/* Meta fields */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
         {[
-          { key: "status", label: "상태", type: "select", options: STATUSES },
+          { key: "status", label: "상태", type: "select", options: STATUSES, alwaysEditable: true, instantSave: true },
           { key: "slug", label: "Slug" },
           { key: "category", label: "카테고리" },
           { key: "hook", label: "Hook" },
@@ -191,23 +201,38 @@ export default function ContentDetailPage() {
           { key: "funnel_stage", label: "퍼널", type: "select", options: FUNNEL_STAGES, nullable: true },
           { key: "cashflow_line", label: "캐시플로우", type: "select", options: CASHFLOW_LINES, nullable: true },
           { key: "cta", label: "CTA" },
-        ].map((field) => (
-          <div key={field.key}>
-            <label className="text-xs text-[#888] block mb-1">{field.label}</label>
-            {editing ? (
-              field.type === "select" ? (
-                <select value={((content as unknown as Record<string, string>)[field.key]) || ""} onChange={(e) => setContent({ ...content, [field.key]: e.target.value || null })} className={inputClass}>
-                  {field.nullable && <option value="">-</option>}
-                  {field.options!.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
+        ].map((field) => {
+          const isEditable = editing || (field as { alwaysEditable?: boolean }).alwaysEditable;
+          const shouldInstantSave = (field as { instantSave?: boolean }).instantSave;
+          return (
+            <div key={field.key}>
+              <label className="text-xs text-[#888] block mb-1">{field.label}</label>
+              {isEditable ? (
+                field.type === "select" ? (
+                  <select
+                    value={((content as unknown as Record<string, string>)[field.key]) || ""}
+                    onChange={async (e) => {
+                      const val = e.target.value || null;
+                      setContent({ ...content, [field.key]: val });
+                      if (shouldInstantSave) {
+                        const sb = createSupabaseBrowser();
+                        await sb.from("contents").update({ [field.key]: val }).eq("id", id);
+                      }
+                    }}
+                    className={inputClass}
+                  >
+                    {field.nullable && <option value="">-</option>}
+                    {field.options!.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                ) : (
+                  <input value={((content as unknown as Record<string, string>)[field.key]) || ""} onChange={(e) => setContent({ ...content, [field.key]: e.target.value })} className={inputClass} />
+                )
               ) : (
-                <input value={((content as unknown as Record<string, string>)[field.key]) || ""} onChange={(e) => setContent({ ...content, [field.key]: e.target.value })} className={inputClass} />
-              )
-            ) : (
-              <span className="text-sm text-[#ccc]">{((content as unknown as Record<string, string>)[field.key]) || "-"}</span>
-            )}
-          </div>
-        ))}
+                <span className="text-sm text-[#ccc]">{((content as unknown as Record<string, string>)[field.key]) || "-"}</span>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Tags */}
