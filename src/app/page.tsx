@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import SubscribeForm from "@/components/SubscribeForm";
+import Link from "next/link";
 
 /* ── Social SVG Icons ── */
 const InstagramIcon = () => (
@@ -57,6 +58,27 @@ function Modal({
 }
 
 /* ── Main Page ── */
+/* ── Latest Guides Hook ── */
+function useLatestGuides() {
+  const [guides, setGuides] = useState<Array<{id: string; title: string; slug: string; hook?: string; summary?: string; created_at: string}>>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  if (!loaded) {
+    setLoaded(true);
+    const sb = createSupabaseBrowser();
+    sb.from("contents")
+      .select("id, title, slug, hook, summary, created_at")
+      .eq("status", "published")
+      .order("created_at", { ascending: false })
+      .limit(4)
+      .then(({ data }) => {
+        if (data) setGuides(data);
+      });
+  }
+
+  return guides;
+}
+
 export default function Home() {
   const [waitlistOpen, setWaitlistOpen] = useState(false);
   const [waitlistProduct, setWaitlistProduct] = useState("");
@@ -65,6 +87,7 @@ export default function Home() {
   const [inquiryDone, setInquiryDone] = useState(false);
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const latestGuides = useLatestGuides();
 
   const waitlistDescs: Record<string, string> = {
     "오픈클로 가이드북":
@@ -257,6 +280,40 @@ export default function Home() {
             인텔리이펙트
           </a>
         </div>
+
+        {/* Latest Guides */}
+        {latestGuides.length > 0 && (
+          <div className="w-full mt-10">
+            <div className="flex items-center gap-3 mb-4 text-[13px] font-semibold text-[#888] tracking-wide">
+              <span className="flex-1 h-px bg-[#333]" />
+              최신 가이드
+              <span className="flex-1 h-px bg-[#333]" />
+            </div>
+            <div className="flex flex-col gap-3">
+              {latestGuides.map((g) => (
+                <Link
+                  key={g.id}
+                  href={`/guides/${g.slug || g.id}`}
+                  className="block p-4 bg-[#111] border border-[#1a1a1a] rounded-xl no-underline text-[#ccc] hover:border-[#333] hover:text-[#fafafa] transition-all"
+                >
+                  <div className="text-[15px] font-medium">{g.title}</div>
+                  {(g.summary || g.hook) && (
+                    <div className="text-[13px] text-[#888] mt-1 line-clamp-1">{g.summary || g.hook}</div>
+                  )}
+                  <div className="text-[11px] text-[#555] mt-2">
+                    {new Date(g.created_at).toLocaleDateString("ko-KR")}
+                  </div>
+                </Link>
+              ))}
+            </div>
+            <Link
+              href="/guides"
+              className="block mt-3 text-center text-[13px] text-[#888] no-underline hover:text-[#fafafa] transition-colors"
+            >
+              더 보기 →
+            </Link>
+          </div>
+        )}
 
         {/* Newsletter Subscribe */}
         <div className="w-full mt-10">

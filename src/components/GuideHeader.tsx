@@ -8,9 +8,14 @@ export default function GuideHeader() {
         <Image src="/profile.jpg" alt="Bruce Choe" width={28} height={28} className="rounded-full" />
         <span className="text-sm font-semibold">brxce.ai</span>
       </Link>
-      <Link href="/" className="text-[13px] text-[#888] no-underline px-3.5 py-1.5 border border-[#333] rounded-lg hover:text-[#fafafa] hover:border-[#555] transition-all">
-        ← 홈
-      </Link>
+      <div className="flex items-center gap-3">
+        <Link href="/guides" className="text-[13px] text-[#888] no-underline hover:text-[#fafafa] transition-colors">
+          가이드
+        </Link>
+        <Link href="/" className="text-[13px] text-[#888] no-underline px-3.5 py-1.5 border border-[#333] rounded-lg hover:text-[#fafafa] hover:border-[#555] transition-all">
+          ← 홈
+        </Link>
+      </div>
     </header>
   );
 }
