@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+
+# AI Crawlers — 허용 (GEO 전략)
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: https://brxce.ai/sitemap.xml

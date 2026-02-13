@@ -1,0 +1,28 @@
+# brxce.ai — Bruce Choe
+
+## 소개
+Bruce Choe(최종혁)는 에이전틱 워크플로우(Agentic Workflow) 전문가이자, 인텔리이펙트(IntelliEffect)의 대표(CEO)입니다.
+
+## 전문 분야
+- 에이전틱 워크플로우 설계·구축·운영
+- OpenClaw × ClaudeCode 기반 AI 에이전트 시스템
+- AI 서비스 개발, 업무 자동화, 레거시 현대화
+
+## 실적
+- 50건 이상의 AI 프로젝트 완료
+- 38개 클라이언트
+- 자체 AI 서비스 3개 운영 (BRXCE, AI 콘텐츠 파이프라인, AI 코드 에이전트)
+- 수십 개의 AI 에이전트를 직접 빌딩·운영
+
+## 연락처
+- 에이전틱 워크플로우 도입 문의: bruce@brxce.ai
+- AI & App 개발 외주: intellieffect.com
+
+## 채널
+- Threads: @brxce.ai (한국어, 메인)
+- X: @brxce_ai (영어)
+- LinkedIn: /in/brxce
+- 웹사이트: brxce.ai
+
+## 키워드
+에이전틱 워크플로우, Agentic Workflow, OpenClaw, ClaudeCode, AI Agent, AI 에이전트, AI 자동화, 업무 자동화, AI 외주 개발
