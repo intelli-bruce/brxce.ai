@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
+import SubscribeForm from "@/components/SubscribeForm";
 
 /* ── Social SVG Icons ── */
 const InstagramIcon = () => (
@@ -255,6 +256,19 @@ export default function Home() {
             <span>⚡</span>
             인텔리이펙트
           </a>
+        </div>
+
+        {/* Newsletter Subscribe */}
+        <div className="w-full mt-10">
+          <div className="flex items-center gap-3 mb-4 text-[13px] font-semibold text-[#888] tracking-wide">
+            <span className="flex-1 h-px bg-[#333]" />
+            뉴스레터
+            <span className="flex-1 h-px bg-[#333]" />
+          </div>
+          <p className="text-sm text-[#888] text-center mb-3">
+            AI 에이전트 활용 인사이트를 이메일로 받아보세요.
+          </p>
+          <SubscribeForm />
         </div>
 
         {/* Footer */}
