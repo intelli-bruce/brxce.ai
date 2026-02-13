@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { useParams, useRouter } from "next/navigation";
 import Markdown from "react-markdown";
+import MediaLibraryModal from "@/components/MediaLibraryModal";
 
 interface Content {
   id: string;
@@ -56,6 +57,38 @@ export default function ContentDetailPage() {
   const [newComment, setNewComment] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [mediaOpen, setMediaOpen] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  function insertImageMarkdown(url: string) {
+    if (!content) return;
+    const ta = textareaRef.current;
+    const md = `![](${url})`;
+    const body = content.body_md || "";
+    if (ta) {
+      const start = ta.selectionStart;
+      const before = body.slice(0, start);
+      const after = body.slice(ta.selectionEnd);
+      setContent({ ...content, body_md: before + md + "\n" + after });
+    } else {
+      setContent({ ...content, body_md: body + "\n" + md + "\n" });
+    }
+  }
+
+  async function handleEditorDrop(e: React.DragEvent) {
+    e.preventDefault();
+    const files = e.dataTransfer.files;
+    if (!files.length || !content) return;
+    const file = files[0];
+    if (!file.type.startsWith("image/")) return;
+    const sb = createSupabaseBrowser();
+    const name = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+    const { error } = await sb.storage.from("content-media").upload(name, file, { cacheControl: "3600" });
+    if (!error) {
+      const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/content-media/${name}`;
+      insertImageMarkdown(url);
+    }
+  }
 
   const load = useCallback(async () => {
     const sb = createSupabaseBrowser();
@@ -226,9 +259,16 @@ export default function ContentDetailPage() {
         <div className="flex items-center gap-4 mb-2">
           <label className="text-xs text-[#888]">본문 (Markdown)</label>
           {editing && (
-            <button onClick={() => setPreview(!preview)} className="text-xs text-[#666] hover:text-[#fafafa]">
-              {preview ? "편집" : "프리뷰"}
-            </button>
+            <>
+              <button onClick={() => setPreview(!preview)} className="text-xs text-[#666] hover:text-[#fafafa]">
+                {preview ? "편집" : "프리뷰"}
+              </button>
+              {!preview && (
+                <button onClick={() => setMediaOpen(true)} className="text-xs text-[#666] hover:text-[#fafafa]">
+                  🖼️ 이미지 삽입
+                </button>
+              )}
+            </>
           )}
         </div>
         {editing ? (
@@ -237,7 +277,14 @@ export default function ContentDetailPage() {
               <Markdown>{content.body_md || ""}</Markdown>
             </div>
           ) : (
-            <textarea value={content.body_md || ""} onChange={(e) => setContent({ ...content, body_md: e.target.value })} className={`${inputClass} min-h-[400px] font-mono text-[13px] leading-relaxed`} />
+            <textarea
+              ref={textareaRef}
+              value={content.body_md || ""}
+              onChange={(e) => setContent({ ...content, body_md: e.target.value })}
+              onDrop={handleEditorDrop}
+              onDragOver={(e) => e.preventDefault()}
+              className={`${inputClass} min-h-[400px] font-mono text-[13px] leading-relaxed`}
+            />
           )
         ) : (
           <div className="prose-dark p-6 bg-[#111] border border-[#222] rounded-[10px]">
@@ -245,6 +292,12 @@ export default function ContentDetailPage() {
           </div>
         )}
       </div>
+
+      <MediaLibraryModal
+        open={mediaOpen}
+        onClose={() => setMediaOpen(false)}
+        onSelect={(url) => { insertImageMarkdown(url); setMediaOpen(false); }}
+      />
 
       {/* Adaptations */}
       {adaptations.length > 0 && (

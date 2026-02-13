@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { useRouter } from "next/navigation";
 import Markdown from "react-markdown";
+import MediaLibraryModal from "@/components/MediaLibraryModal";
 
 const STATUSES = ["idea", "draft", "fact-check", "ready", "published"];
 const MEDIA_TYPES = ["text", "image", "video", "carousel"];
@@ -24,6 +25,8 @@ export default function NewContentPage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [preview, setPreview] = useState(false);
+  const [mediaOpen, setMediaOpen] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [form, setForm] = useState({
     title: "", slug: "", status: "idea", category: "", hook: "", body_md: "",
     core_message: "", media_type: "", tags: "", funnel_stage: "", cashflow_line: "",
@@ -36,6 +39,34 @@ export default function NewContentPage() {
       if (key === "title" && !f.slug) next.slug = toSlug(value as string);
       return next;
     });
+  }
+
+  function insertImageMarkdown(url: string) {
+    const ta = textareaRef.current;
+    const md = `![](${url})`;
+    if (ta) {
+      const start = ta.selectionStart;
+      const before = form.body_md.slice(0, start);
+      const after = form.body_md.slice(ta.selectionEnd);
+      set("body_md", before + md + "\n" + after);
+    } else {
+      set("body_md", form.body_md + "\n" + md + "\n");
+    }
+  }
+
+  async function handleEditorDrop(e: React.DragEvent) {
+    e.preventDefault();
+    const files = e.dataTransfer.files;
+    if (!files.length) return;
+    const file = files[0];
+    if (!file.type.startsWith("image/")) return;
+    const sb = createSupabaseBrowser();
+    const name = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+    const { error } = await sb.storage.from("content-media").upload(name, file, { cacheControl: "3600" });
+    if (!error) {
+      const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/content-media/${name}`;
+      insertImageMarkdown(url);
+    }
   }
 
   const inputClass = "w-full p-2.5 rounded-[10px] border border-[#333] bg-[#0a0a0a] text-sm text-[#fafafa] outline-none focus:border-[#555]";
@@ -137,14 +168,31 @@ export default function NewContentPage() {
             <button type="button" onClick={() => setPreview(!preview)} className="text-xs text-[#666] hover:text-[#fafafa]">
               {preview ? "편집" : "프리뷰"}
             </button>
+            {!preview && (
+              <button type="button" onClick={() => setMediaOpen(true)} className="text-xs text-[#666] hover:text-[#fafafa]">
+                🖼️ 이미지 삽입
+              </button>
+            )}
           </div>
           {preview ? (
             <div className="p-6 bg-[#111] border border-[#222] rounded-[10px] min-h-[300px] prose-dark">
               <Markdown>{form.body_md || "*내용 없음*"}</Markdown>
             </div>
           ) : (
-            <textarea value={form.body_md} onChange={(e) => set("body_md", e.target.value)} className={`${inputClass} min-h-[300px] font-mono text-[13px]`} />
+            <textarea
+              ref={textareaRef}
+              value={form.body_md}
+              onChange={(e) => set("body_md", e.target.value)}
+              onDrop={handleEditorDrop}
+              onDragOver={(e) => e.preventDefault()}
+              className={`${inputClass} min-h-[300px] font-mono text-[13px]`}
+            />
           )}
+          <MediaLibraryModal
+            open={mediaOpen}
+            onClose={() => setMediaOpen(false)}
+            onSelect={(url) => { insertImageMarkdown(url); setMediaOpen(false); }}
+          />
         </div>
 
         {/* Fact check */}
