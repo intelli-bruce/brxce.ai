@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 
 const Excalidraw = dynamic(
@@ -33,6 +33,24 @@ export default function ExcalidrawViewer({ src }: Props) {
       .finally(() => setLoading(false));
   }, [url]);
 
+  // scrollToContent on mount
+  const handleExcalidrawAPI = useCallback((api: any) => {
+    if (api) {
+      // Wait for render, then scroll to fit all elements
+      setTimeout(() => {
+        try {
+          api.scrollToContent(api.getSceneElements(), {
+            fitToContent: true,
+            animate: false,
+            duration: 0,
+          });
+        } catch {
+          // fallback: do nothing
+        }
+      }, 300);
+    }
+  }, []);
+
   if (error) {
     return (
       <div className="rounded-xl border border-[#222] bg-[#0a0a0a] p-6 text-[#666] text-sm text-center">
@@ -55,14 +73,31 @@ export default function ExcalidrawViewer({ src }: Props) {
               initialData={{
                 elements: data.elements as never[],
                 appState: {
-                  ...(data.appState as Record<string, unknown>),
-                  viewModeEnabled: true,
+                  viewBackgroundColor: "#0a0a0a",
                   theme: "dark",
+                  viewModeEnabled: true,
+                  zenModeEnabled: true,
+                  gridModeEnabled: false,
                 },
                 files: data.files as never,
+                scrollToContent: true,
               }}
+              excalidrawAPI={handleExcalidrawAPI}
               viewModeEnabled={true}
+              zenModeEnabled={true}
               theme="dark"
+              UIOptions={{
+                canvasActions: {
+                  changeViewBackgroundColor: false,
+                  clearCanvas: false,
+                  export: false,
+                  loadScene: false,
+                  saveToActiveFile: false,
+                  toggleTheme: false,
+                  saveAsImage: false,
+                },
+                tools: { image: false },
+              }}
             />
           )
         )}
