@@ -3,7 +3,17 @@
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
+import dynamic from "next/dynamic";
+
+const ExcalidrawViewer = dynamic(() => import("./ExcalidrawViewer"), {
+  ssr: false,
+  loading: () => (
+    <div className="my-6 rounded-xl border border-[#222] bg-[#0a0a0a] h-[450px] flex items-center justify-center text-[#555] text-sm">
+      다이어그램 로딩 중…
+    </div>
+  ),
+});
 
 function CopyButton({ code }: { code: string }) {
   const [copied, setCopied] = useState(false);
@@ -24,10 +34,50 @@ function CopyButton({ code }: { code: string }) {
   );
 }
 
+const EXCALIDRAW_RE = /^::excalidraw\[(.+?)\]$/;
+
 export default function GuideBody({ content }: { content: string }) {
+  const segments = useMemo(() => {
+    const lines = content.split("\n");
+    const result: { type: "md" | "excalidraw"; value: string }[] = [];
+    let mdBuf: string[] = [];
+
+    const flushMd = () => {
+      if (mdBuf.length) {
+        result.push({ type: "md", value: mdBuf.join("\n") });
+        mdBuf = [];
+      }
+    };
+
+    for (const line of lines) {
+      const m = line.trim().match(EXCALIDRAW_RE);
+      if (m) {
+        flushMd();
+        result.push({ type: "excalidraw", value: m[1] });
+      } else {
+        mdBuf.push(line);
+      }
+    }
+    flushMd();
+    return result;
+  }, [content]);
+
   return (
     <div className="prose-dark">
-      <Markdown
+      {segments.map((seg, i) =>
+        seg.type === "excalidraw" ? (
+          <ExcalidrawViewer key={i} src={seg.value} />
+        ) : (
+          <MarkdownBlock key={i} content={seg.value} />
+        )
+      )}
+    </div>
+  );
+}
+
+function MarkdownBlock({ content }: { content: string }) {
+  return (
+    <Markdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeHighlight]}
         components={{
@@ -60,7 +110,6 @@ export default function GuideBody({ content }: { content: string }) {
       >
         {content}
       </Markdown>
-    </div>
   );
 }
 
