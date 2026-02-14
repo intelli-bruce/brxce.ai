@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createSupabaseServer } from "@/lib/supabase-server";
+import { createServiceClient } from "@/lib/supabase";
 import GuideHeader from "@/components/GuideHeader";
 import GuideBody from "@/components/GuideBody";
 import TableOfContents from "@/components/TableOfContents";
@@ -10,45 +11,49 @@ import type { Metadata } from "next";
 
 export const revalidate = 60;
 
-type Props = { params: Promise<{ slug: string }> };
+type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ preview?: string }> };
 
-/** Fetch guide: published for everyone, draft/review for admin only */
-async function fetchGuide(slug: string) {
+const PREVIEW_SECRET = process.env.PREVIEW_SECRET || "brxce-preview-2026";
+
+/** Fetch guide: published for everyone, draft/review with preview token */
+async function fetchGuide(rawSlug: string, isPreviewMode: boolean) {
+  const slug = decodeURIComponent(rawSlug);
+  if (isPreviewMode) {
+    const adminSb = createServiceClient();
+    const { data, error } = await adminSb
+      .from("contents")
+      .select("*")
+      .eq("slug", slug)
+      .not("status", "eq", "archived")
+      .single();
+    if (error) console.error("[preview] fetchGuide error:", error.message, "slug:", slug);
+    return { guide: data, isPreview: data?.status !== "published" };
+  }
+
   const sb = await createSupabaseServer();
-
-  // Try published first (no auth needed)
   const { data: published } = await sb
     .from("contents")
     .select("*")
     .eq("slug", slug)
     .eq("status", "published")
     .single();
-  if (published) return { guide: published, isPreview: false };
-
-  // Not published — check if user is admin
-  const { data: { user } } = await sb.auth.getUser();
-  if (!user) return { guide: null, isPreview: false };
-
-  const { data: profile } = await sb
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-  if (profile?.role !== "admin") return { guide: null, isPreview: false };
-
-  // Admin: fetch any non-archived status
-  const { data: draft } = await sb
-    .from("contents")
-    .select("*")
-    .eq("slug", slug)
-    .in("status", ["draft", "review", "idea", "fact-check", "ready"])
-    .single();
-  return { guide: draft, isPreview: !!draft };
+  return { guide: published, isPreview: false };
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const { guide } = await fetchGuide(slug);
+  const { preview } = await searchParams;
+  let isAdmin = false;
+  try {
+    const sb2 = await createSupabaseServer();
+    const { data: { user } } = await sb2.auth.getUser();
+    if (user) {
+      const { data: profile } = await sb2.from("profiles").select("role").eq("id", user.id).single();
+      isAdmin = profile?.role === "admin";
+    }
+  } catch {}
+  const isPreviewMode = isAdmin || preview === PREVIEW_SECRET;
+  const { guide } = await fetchGuide(slug, isPreviewMode);
 
   if (!guide) return {};
 
@@ -80,9 +85,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function GuidePage({ params }: Props) {
+export default async function GuidePage({ params, searchParams }: Props) {
   const { slug } = await params;
-  const { guide, isPreview } = await fetchGuide(slug);
+  const { preview } = await searchParams;
+  let isAdminPage = false;
+  try {
+    const sb2 = await createSupabaseServer();
+    const { data: { user } } = await sb2.auth.getUser();
+    if (user) {
+      const { data: profile } = await sb2.from("profiles").select("role").eq("id", user.id).single();
+      isAdminPage = profile?.role === "admin";
+    }
+  } catch {}
+  const isPreviewMode = isAdminPage || preview === PREVIEW_SECRET;
+  const { guide, isPreview } = await fetchGuide(slug, isPreviewMode);
 
   if (!guide) notFound();
 
@@ -105,6 +121,49 @@ export default async function GuidePage({ params }: Props) {
 
   return (
     <>
+      {/* Article JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Article",
+            headline: guide.title,
+            description: guide.summary || guide.hook || "",
+            author: {
+              "@type": "Person",
+              name: "Bruce Choe",
+              url: "https://brxce.ai",
+            },
+            publisher: {
+              "@type": "Person",
+              name: "Bruce Choe",
+              url: "https://brxce.ai",
+            },
+            datePublished: guide.created_at,
+            dateModified: guide.updated_at || guide.created_at,
+            url: `https://brxce.ai/guides/${decodeURIComponent((await params).slug)}`,
+            mainEntityOfPage: `https://brxce.ai/guides/${decodeURIComponent((await params).slug)}`,
+            ...(guide.media_urls?.[0] && { image: guide.media_urls[0] }),
+            keywords: guide.tags || [],
+          }),
+        }}
+      />
+      {/* BreadcrumbList JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "홈", item: "https://brxce.ai" },
+              { "@type": "ListItem", position: 2, name: "가이드", item: "https://brxce.ai/guides" },
+              { "@type": "ListItem", position: 3, name: guide.title },
+            ],
+          }),
+        }}
+      />
       <GuideHeader />
       {isPreview && <UnpublishedBanner status={guide.status} />}
       <div className="max-w-[1100px] mx-auto px-6 py-12 flex gap-10">

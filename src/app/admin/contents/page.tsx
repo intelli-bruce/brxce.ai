@@ -102,7 +102,7 @@ export default function ContentsPage() {
               </select>
               {c.slug && (
                 <a
-                  href={`/guides/${c.slug}`}
+                  href={`/guides/${c.slug}?preview=brxce-preview-2026`}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}

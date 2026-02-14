@@ -1,10 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Image from "next/image";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import SubscribeForm from "@/components/SubscribeForm";
 import Link from "next/link";
+
+/** Handle OAuth code on main page redirect */
+function useHandleOAuthCode() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const code = searchParams.get("code");
+    if (code) {
+      // Exchange code via callback route, then clean URL
+      fetch(`/auth/callback?code=${code}`).finally(() => {
+        router.replace("/");
+      });
+    }
+  }, [searchParams, router]);
+}
+
+function useIsAdmin() {
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    const sb = createSupabaseBrowser();
+    sb.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      sb.from("profiles").select("role").eq("id", user.id).single().then(({ data }) => {
+        if (data?.role === "admin") setIsAdmin(true);
+      });
+    });
+  }, []);
+  return isAdmin;
+}
 
 /* ── Social SVG Icons ── */
 const InstagramIcon = () => (
@@ -79,6 +109,11 @@ function useLatestGuides() {
   return guides;
 }
 
+function OAuthHandler() {
+  useHandleOAuthCode();
+  return null;
+}
+
 export default function Home() {
   const [waitlistOpen, setWaitlistOpen] = useState(false);
   const [waitlistProduct, setWaitlistProduct] = useState("");
@@ -88,6 +123,8 @@ export default function Home() {
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const latestGuides = useLatestGuides();
+  const isAdmin = useIsAdmin();
+  const router = useRouter();
 
   const waitlistDescs: Record<string, string> = {
     "오픈클로 가이드북":
@@ -115,6 +152,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex justify-center px-5 py-15">
+      <Suspense fallback={null}><OAuthHandler /></Suspense>
       <div className="max-w-[420px] w-full flex flex-col items-center">
         {/* Profile */}
         <div className="w-24 h-24 rounded-full border-2 border-[#333] mb-4 overflow-hidden bg-gradient-to-br from-[#1a1a2e] to-[#16213e]">
@@ -210,6 +248,7 @@ export default function Home() {
 
           <button
             onClick={() => {
+              if (isAdmin) { router.push("/guides?preview=brxce-preview-2026"); return; }
               setWaitlistProduct("오픈클로 가이드북");
               setWaitlistDone(false);
               setEmail("");
@@ -223,6 +262,7 @@ export default function Home() {
 
           <button
             onClick={() => {
+              if (isAdmin) { router.push("/practical"); return; }
               setWaitlistProduct("오픈클로 실전 활용법");
               setWaitlistDone(false);
               setEmail("");
