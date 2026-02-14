@@ -51,6 +51,7 @@ export default function RootLayout({
       <head>
         {/* 네이버 서치어드바이저 — Bruce님이 인증 코드 발급 후 content 교체 */}
         <meta name="naver-site-verification" content="NAVER_VERIFICATION_CODE_HERE" />
+        <meta name="google-site-verification" content="NL32UhbwSY0xmi4IQgTFpmE3i51p4uCoC9YyDs8pop8" />
         <Script id="ms-clarity" strategy="afterInteractive">
           {`(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window, document, "clarity", "script", "vfjysxq95d");`}
         </Script>
