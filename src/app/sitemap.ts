@@ -1,10 +1,11 @@
-import { createServiceClient } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 import type { MetadataRoute } from "next";
 
 export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const sb = createServiceClient();
+  const sb = supabase;
   const { data: guides } = await sb
     .from("contents")
     .select("slug, updated_at, created_at")
