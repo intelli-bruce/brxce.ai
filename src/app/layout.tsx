@@ -9,9 +9,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "에이전틱 워크플로우 전문가 — Bruce Choe (brxce.ai)",
+  title: "에이전틱 워크플로우 — Bruce Choe (brxce.ai)",
   description:
-    "에이전틱 워크플로우 전문가 Bruce Choe. OpenClaw × ClaudeCode로 수십 개의 AI 에이전트를 직접 빌딩하며 얻은 실전 인사이트를 공유합니다.",
+    "에이전틱 워크플로우 — Bruce Choe. OpenClaw × ClaudeCode로 수십 개의 AI 에이전트를 직접 빌딩하며 얻은 실전 인사이트를 공유합니다.",
   keywords: [
     "에이전틱 워크플로우",
     "agentic workflow",
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "Bruce Choe" }],
   openGraph: {
-    title: "에이전틱 워크플로우 전문가 — Bruce Choe",
+    title: "에이전틱 워크플로우 — Bruce Choe",
     description:
       "OpenClaw × ClaudeCode로 회사를 굴리는 개발자 CEO. 수십 개의 AI 에이전트를 직접 빌딩하며 얻은 실전 인사이트를 공유합니다.",
     type: "website",
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary",
     site: "@brxce_ai",
-    title: "에이전틱 워크플로우 전문가 — Bruce Choe",
+    title: "에이전틱 워크플로우 — Bruce Choe",
     description:
       "OpenClaw × ClaudeCode로 수십 개의 AI 에이전트를 직접 빌딩. 실전 인사이트 공유.",
   },
