@@ -85,6 +85,7 @@ export default function RootLayout({
                 "https://www.threads.com/@brxce.ai",
                 "https://x.com/brxce_ai",
                 "https://www.linkedin.com/in/brxce",
+                "https://discord.gg/fptPWQpdwD",
               ],
             }),
           }}
