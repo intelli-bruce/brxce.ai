@@ -52,6 +52,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: "/admin/publications", label: "발행" },
     { href: "/admin/media", label: "미디어" },
     { href: "/admin/newsletter", label: "뉴스레터" },
+    { href: "/admin/showcase", label: "🎨 쇼케이스" },
   ];
 
   return (
