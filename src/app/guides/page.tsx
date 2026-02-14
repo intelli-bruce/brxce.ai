@@ -87,12 +87,6 @@ export default async function GuidesPage({
 
         {/* 📘 가이드북 */}
         <div className="mb-12">
-          <div className="flex items-center gap-3 mb-4">
-            <span className="text-[20px]">📘</span>
-            <h2 className="text-[22px] font-bold">가이드북</h2>
-            <span className="text-[13px] text-[#555]">단계별 사용 강의</span>
-          </div>
-
           {GUIDEBOOK_LEVELS.map((level, i) => {
             const items = byLevel(guidebook, level.tagMatch);
             return (

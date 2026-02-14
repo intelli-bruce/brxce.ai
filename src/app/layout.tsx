@@ -37,6 +37,9 @@ export const metadata: Metadata = {
     description:
       "OpenClaw × ClaudeCode로 수십 개의 AI 에이전트를 직접 빌딩. 실전 인사이트 공유.",
   },
+  verification: {
+    google: "NL32UhbwSY0xmi4IQgTFpmE3i51p4uCoC9YyDs8pop8",
+  },
   alternates: { canonical: "https://brxce.ai" },
   icons: { icon: "/favicon.svg" },
 };
