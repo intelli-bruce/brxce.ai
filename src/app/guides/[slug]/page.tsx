@@ -211,14 +211,14 @@ export default async function GuidePage({ params, searchParams }: Props) {
           {/* Body */}
           <GuideBody content={guide.body_md || ""} />
 
-          {/* CTA */}
-          {guide.cta && (
-            <div className="bg-[#111] border border-[#333] rounded-[14px] p-8 text-center mt-12">
-              <h3 className="text-xl font-bold mb-2">🦞 더 깊은 가이드가 필요하신가요?</h3>
-              <p className="text-[15px] text-[#888] mb-5">{guide.cta}</p>
-              <a href="/" className="inline-block px-8 py-3.5 rounded-[10px] bg-[#fafafa] text-[#0a0a0a] text-[15px] font-semibold no-underline hover:bg-[#e0e0e0] transition-colors">
-                brxce.ai에서 등록하기
-              </a>
+          {/* Next Guide CTA */}
+          {relatedGuides.length > 0 && (
+            <div className="bg-[#111] border border-[#222] rounded-[14px] p-8 text-center mt-12">
+              <h3 className="text-xl font-bold mb-2">🦞 다음 가이드</h3>
+              <p className="text-[15px] text-[#888] mb-5">{relatedGuides[0].title}</p>
+              <Link href={`/guides/${relatedGuides[0].slug || relatedGuides[0].id}`} className="inline-block px-8 py-3.5 rounded-[10px] bg-[#fafafa] text-[#0a0a0a] text-[15px] font-semibold no-underline hover:bg-[#e0e0e0] transition-colors">
+                계속 읽기
+              </Link>
             </div>
           )}
 
