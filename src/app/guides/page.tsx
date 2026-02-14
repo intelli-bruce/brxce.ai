@@ -64,8 +64,8 @@ export default async function GuidesPage({
   const { data: allGuides } = await query;
   const guides = allGuides || [];
 
-  // Only guidebook on this page
-  const guidebook = guides.filter((g: any) => g.category === "가이드북");
+  // Show both "가이드북" and "가이드" category
+  const guidebook = guides.filter((g: any) => g.category === "가이드북" || g.category === "가이드");
 
   // Split guidebook by level tags
   function byLevel(items: any[], tagMatch: string) {
