@@ -173,7 +173,6 @@ export default function Home() {
             { href: "https://www.threads.com/@brxce.ai", icon: <ThreadsIcon />, label: "Threads" },
             { href: "https://x.com/brxce_ai", icon: <XIcon />, label: "X" },
             { href: "https://www.linkedin.com/in/brxce", icon: <LinkedInIcon />, label: "LinkedIn" },
-            { href: "https://discord.gg/fptPWQpdwD", icon: <DiscordIcon />, label: "Discord" },
           ].map((s) => (
             <a
               key={s.label}
@@ -216,6 +215,17 @@ export default function Home() {
           ✦ 수십 개의 AI 에이전트를 직접 빌딩하며 얻은 실전 인사이트
           <br />✦ 직접 활용해 본 결과를 공유합니다.
         </div>
+
+        {/* Discord CTA */}
+        <a
+          href="https://discord.gg/fptPWQpdwD"
+          target="_blank"
+          rel="noopener"
+          className="flex items-center justify-center gap-2.5 w-full py-3.5 px-5 rounded-xl bg-[#5865F2] text-white text-[15px] font-semibold hover:bg-[#4752C4] hover:-translate-y-0.5 transition-all mb-6"
+        >
+          <DiscordIcon />
+          디스코드 커뮤니티 참여하기
+        </a>
 
         {/* Stats */}
         <div className="flex justify-center gap-6 mb-7">
