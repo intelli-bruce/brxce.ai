@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import Link from "next/link";
+import IdBadge from "@/components/IdBadge";
 
 interface Campaign {
   id: string;
@@ -218,7 +219,10 @@ function CampaignCard({ campaign: c }: { campaign: Campaign }) {
       href={`/campaigns/${c.id}`}
       className="block p-4 bg-[#141414] border border-[#222] rounded-xl no-underline hover:border-[#444] transition-colors"
     >
-      <div className="text-[15px] text-[#fafafa] font-medium mb-2">{c.title}</div>
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-[15px] text-[#fafafa] font-medium">{c.title}</span>
+        <IdBadge id={c.id} />
+      </div>
       <div className="flex items-center gap-2 mb-2 flex-wrap">
         <span className={`px-2 py-0.5 rounded text-xs border ${FUNNEL_COLORS[c.funnel_stage]}`}>
           {c.funnel_stage.toUpperCase()}

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import Link from "next/link";
+import IdBadge from "@/components/IdBadge";
 
 interface Content {
   id: string;
@@ -80,7 +81,10 @@ export default function ContentsPage() {
             className="flex items-center justify-between p-4 bg-[#141414] border border-[#222] rounded-xl hover:border-[#444] transition-colors"
           >
             <Link href={`/contents/${c.id}`} className="flex-1 no-underline min-w-0">
-              <div className="text-[15px] text-[#fafafa] font-medium">{c.title}</div>
+              <div className="flex items-center gap-2">
+                <span className="text-[15px] text-[#fafafa] font-medium">{c.title}</span>
+                <IdBadge id={c.id} />
+              </div>
               <div className="text-xs text-[#666] mt-1">
                 {c.category && <span>{c.category} · </span>}
                 {new Date(c.created_at).toLocaleDateString("ko-KR")}

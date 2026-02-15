@@ -6,6 +6,7 @@ import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import FactCheckPanel from "@/components/campaign/FactCheckPanel";
 import ChannelPreview from "@/components/campaign/ChannelPreview";
 import type { Campaign, CampaignAtom, CampaignVariant, GenerationConfig, FactCheckFlag } from "@/lib/campaign/types";
+import IdBadge from "@/components/IdBadge";
 
 const CHANNEL_ICONS: Record<string, string> = {
   threads: "🧵", x: "𝕏", linkedin: "💼", instagram: "📸",
@@ -383,6 +384,7 @@ function VariantPanel({
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-2">
           <span className="text-xs px-1.5 py-0.5 rounded bg-[#222] text-[#888]">G{v.generation}</span>
+          <IdBadge id={v.id} />
           {v.model && <span className="text-[10px] text-[#555]">{v.model}</span>}
           {v.is_selected && <span className="text-xs text-[#FF6B35] font-medium">✓ 선택됨</span>}
         </div>

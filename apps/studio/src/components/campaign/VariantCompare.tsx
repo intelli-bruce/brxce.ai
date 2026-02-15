@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { CampaignVariant } from "@/lib/campaign/types";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
+import IdBadge from "@/components/IdBadge";
 
 interface Props {
   variants: CampaignVariant[];
@@ -157,6 +158,7 @@ function VariantCard({
           <span className="text-xs px-1.5 py-0.5 rounded bg-[#222] text-[#888]">
             G{v.generation}
           </span>
+          <IdBadge id={v.id} />
           {v.model && <span className="text-[10px] text-[#555]">{v.model}</span>}
           {v.is_selected && <span className="text-xs text-[#FF6B35] font-medium">✓ 선택됨</span>}
         </div>

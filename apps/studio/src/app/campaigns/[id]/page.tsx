@@ -8,6 +8,7 @@ import VariantCompare from "@/components/campaign/VariantCompare";
 import FactCheckPanel from "@/components/campaign/FactCheckPanel";
 import ScheduleModal from "@/components/campaign/ScheduleModal";
 import type { Campaign, CampaignAtom, CampaignVariant, GenerationConfig, FactCheckFlag } from "@/lib/campaign/types";
+import IdBadge from "@/components/IdBadge";
 
 const FUNNEL_COLORS: Record<string, string> = {
   tofu: "bg-green-500/20 text-green-400 border-green-500/30",
@@ -229,9 +230,12 @@ export default function CampaignCockpitPage() {
               <button onClick={() => { setEditTitle(false); setTitleDraft(campaign.title); }} className="text-xs text-[#888] bg-transparent border-none cursor-pointer">✗</button>
             </div>
           ) : (
-            <h1 className="text-2xl font-bold cursor-pointer hover:text-[#FF6B35] transition-colors" onClick={() => setEditTitle(true)}>
-              {campaign.title}
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold cursor-pointer hover:text-[#FF6B35] transition-colors" onClick={() => setEditTitle(true)}>
+                {campaign.title}
+              </h1>
+              <IdBadge id={campaign.id} />
+            </div>
           )}
         </div>
         <div className="flex items-center gap-3 flex-wrap">
@@ -327,7 +331,10 @@ export default function CampaignCockpitPage() {
               </button>
             </div>
           </div>
-          <div className="text-sm font-medium text-[#fafafa] mb-1">{sourceContent.title}</div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-sm font-medium text-[#fafafa]">{sourceContent.title}</span>
+            <IdBadge id={sourceContent.id} />
+          </div>
           <div className="text-xs text-[#666]">{sourceContent.body_md.length.toLocaleString()}자 · {sourceContent.slug}</div>
           {showContentPreview && (
             <div className="mt-3 p-3 bg-[#0a0a0a] border border-[#222] rounded-lg max-h-64 overflow-y-auto">
@@ -355,6 +362,7 @@ export default function CampaignCockpitPage() {
                   <div className="flex items-center gap-3">
                     <span className="text-lg">{CHANNEL_ICONS[atom.channel] || "📄"}</span>
                     <span className="text-sm font-medium text-[#fafafa]">{atom.channel}</span>
+                    <IdBadge id={atom.id} />
                     <span className="text-xs px-1.5 py-0.5 rounded bg-[#222] text-[#888]">{FORMAT_LABELS[atom.format]}</span>
                     <span className={`text-xs px-2 py-0.5 rounded ${ATOM_STATUS_COLORS[atom.status]}`}>
                       {atom.status}
