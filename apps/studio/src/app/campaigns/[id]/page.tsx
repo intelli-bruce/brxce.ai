@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import GenerateModal from "@/components/campaign/GenerateModal";
 import VariantCompare from "@/components/campaign/VariantCompare";
@@ -49,6 +49,7 @@ const FORMATS = ["long_text", "medium_text", "short_text", "carousel", "image", 
 
 export default function CampaignCockpitPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [atoms, setAtoms] = useState<CampaignAtom[]>([]);
   const [variants, setVariants] = useState<Record<string, CampaignVariant[]>>({});
@@ -286,7 +287,12 @@ export default function CampaignCockpitPage() {
                     </span>
                     {atom.status === 'generating' && <span className="text-xs text-yellow-400 animate-pulse">⏳ 생성 중...</span>}
                     {atomVariants.length > 0 && (
-                      <span className="text-xs text-[#555]">{atomVariants.length}개 variant</span>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); router.push(`/campaigns/${id}/compare/${atom.id}`); }}
+                        className="text-xs text-[#4ECDC4] bg-transparent border-none cursor-pointer hover:underline"
+                      >
+                        {atomVariants.length}개 variant →
+                      </button>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
