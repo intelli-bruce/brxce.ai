@@ -1,0 +1,26 @@
+{
+  "name": "brxce-studio-engine",
+  "private": true,
+  "scripts": {
+    "studio": "remotion studio",
+    "render": "tsx scripts/render-video.ts",
+    "render:carousel": "tsx scripts/render-carousel.ts",
+    "render:image": "tsx scripts/render-image.ts"
+  },
+  "dependencies": {
+    "remotion": "4.0.403",
+    "@remotion/cli": "4.0.403",
+    "@remotion/renderer": "4.0.403",
+    "@remotion/captions": "4.0.407",
+    "@remotion/transitions": "4.0.403",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "typescript": "^5.7.0",
+    "tsx": "^4.0.0"
+  }
+}

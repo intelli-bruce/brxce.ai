@@ -1,34 +1,15 @@
 {
-  "name": "brxce-temp",
-  "version": "0.1.0",
+  "name": "brxce.ai",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3100",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
-  },
-  "dependencies": {
-    "@excalidraw/excalidraw": "^0.18.0",
-    "@supabase/ssr": "^0.8.0",
-    "@supabase/supabase-js": "^2.95.3",
-    "next": "16.1.6",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "react-markdown": "^10.1.0",
-    "rehype-highlight": "^7.0.2",
-    "remark-gfm": "^4.0.1"
+    "dev": "turbo dev",
+    "dev:web": "turbo dev --filter=@brxce/web",
+    "dev:studio": "turbo dev --filter=@brxce/studio",
+    "build": "turbo build",
+    "lint": "turbo lint"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.1.6",
-    "jsdom": "^28.0.0",
-    "puppeteer": "^24.37.3",
-    "tailwindcss": "^4",
-    "typescript": "^5"
-  }
+    "turbo": "^2.5.0"
+  },
+  "packageManager": "pnpm@9.15.0"
 }
