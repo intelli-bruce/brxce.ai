@@ -232,7 +232,7 @@ function CampaignCard({ campaign: c }: { campaign: Campaign }) {
         </span>
       </div>
       <div className="flex items-center justify-between text-xs text-[#666]">
-        <span>📦 {c.published_count}/{c.atom_count} atoms</span>
+        <span>📦 {c.published_count}/{c.atom_count} 콘텐츠</span>
         {c.total_cost_usd > 0 && <span>${c.total_cost_usd.toFixed(2)}</span>}
       </div>
       {c.series_title && (

@@ -185,7 +185,7 @@ export default function AnalyticsPage() {
             <h3 className="text-lg font-bold mb-4">성과 수동 입력</h3>
             <div className="flex flex-col gap-3">
               <div>
-                <label className="block text-xs text-[#888] mb-1">Atom ID</label>
+                <label className="block text-xs text-[#888] mb-1">콘텐츠 ID</label>
                 <input value={addForm.atom_id} onChange={e => setAddForm(p => ({ ...p, atom_id: e.target.value }))} placeholder="atom UUID" className="w-full px-3 py-2 rounded-lg border border-[#333] bg-[#0a0a0a] text-sm text-[#fafafa] outline-none" />
               </div>
               <div>

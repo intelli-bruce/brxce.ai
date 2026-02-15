@@ -62,7 +62,7 @@ export default function CostDashboard() {
             <thead>
               <tr className="border-b border-[#222] text-[#888]">
                 <th className="px-4 py-2 text-left">캠페인</th>
-                <th className="px-4 py-2 text-right">Atoms</th>
+                <th className="px-4 py-2 text-right">콘텐츠</th>
                 <th className="px-4 py-2 text-right">토큰</th>
                 <th className="px-4 py-2 text-right">비용</th>
                 <th className="px-4 py-2 text-right">상태</th>

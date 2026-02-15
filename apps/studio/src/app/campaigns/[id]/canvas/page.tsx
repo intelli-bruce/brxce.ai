@@ -166,8 +166,8 @@ export default function CanvasPage() {
 
           {atoms.length === 0 && (
             <div className="text-center py-20 text-[#555]">
-              <p className="text-lg">atom이 없습니다</p>
-              <p className="text-xs mt-2">콕핏에서 atom을 추가하세요</p>
+              <p className="text-lg">콘텐츠가 없습니다</p>
+              <p className="text-xs mt-2">콕핏에서 콘텐츠를 추가하세요</p>
             </div>
           )}
         </div>

@@ -371,7 +371,7 @@ export default function CampaignCockpitPage() {
               </div>
             );
           })}
-          {atoms.length === 0 && <div className="flex-1 bg-[#222] flex items-center justify-center text-xs text-[#555]">atom 없음</div>}
+          {atoms.length === 0 && <div className="flex-1 bg-[#222] flex items-center justify-center text-xs text-[#555]">콘텐츠 없음</div>}
         </div>
       </div>
 
@@ -461,7 +461,7 @@ export default function CampaignCockpitPage() {
           {/* Other atoms (legacy, no pillar link) */}
           {otherAtoms.length > 0 && (
             <div className="mb-6">
-              <div className="text-xs font-semibold uppercase tracking-wider text-[#888] mb-2">기타 Atoms</div>
+              <div className="text-xs font-semibold uppercase tracking-wider text-[#888] mb-2">기타 콘텐츠</div>
               <div className="flex flex-col gap-3">
                 {otherAtoms.map(atom => renderAtomCard(atom))}
               </div>
@@ -469,128 +469,6 @@ export default function CampaignCockpitPage() {
           )}
         </>);
       })()}
-
-      {/* Legacy atom grid - hidden, replaced above */}
-      <div className="hidden flex flex-col gap-4 mb-6">
-        {atoms.map(atom => {
-          const atomVariants = variants[atom.id] || [];
-          const isExpanded = expandedAtom === atom.id;
-          const selectedVariant = atomVariants.find(v => v.is_selected);
-
-          return (
-            <div key={atom.id} className="bg-[#141414] border border-[#222] rounded-xl overflow-hidden">
-              {/* Atom header */}
-              <div
-                className="p-4 cursor-pointer hover:bg-[#1a1a1a] transition-colors"
-                onClick={() => setExpandedAtom(isExpanded ? null : atom.id)}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="text-lg">{CHANNEL_ICONS[atom.channel] || "📄"}</span>
-                    <span className="text-sm font-medium text-[#fafafa]">{atom.channel}</span>
-                    <IdBadge id={atom.id} />
-                    <span className="text-xs px-1.5 py-0.5 rounded bg-[#222] text-[#888]">{FORMAT_LABELS[atom.format]}</span>
-                    <span className={`text-xs px-2 py-0.5 rounded ${ATOM_STATUS_COLORS[atom.status]}`}>
-                      {atom.status}
-                    </span>
-                    {atom.status === 'generating' && <span className="text-xs text-yellow-400 animate-pulse">⏳ 생성 중...</span>}
-                    {atomVariants.length > 0 && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); router.push(`/campaigns/${id}/compare/${atom.id}`); }}
-                        className="text-xs text-[#4ECDC4] bg-transparent border-none cursor-pointer hover:underline"
-                      >
-                        {atomVariants.length}개 variant →
-                      </button>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {selectedVariant && (
-                      <span className="text-xs text-[#888] max-w-[200px] truncate">
-                        {selectedVariant.output?.body?.substring(0, 50)}...
-                      </span>
-                    )}
-                    <span className="text-xs text-[#555]">{atom.publish_method === "auto" ? "🤖" : "📋"}</span>
-                    <span className="text-[#555] text-sm">{isExpanded ? '▼' : '▶'}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Expanded content */}
-              {isExpanded && (
-                <div className="border-t border-[#222] p-4">
-                  {/* Action buttons */}
-                  <div className="flex gap-2 mb-4">
-                    {(atom.status === 'pending' || atom.status === 'selected') && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setGenerateAtom(atom); }}
-                        className="px-3 py-1.5 rounded-lg bg-[#FF6B35] text-white text-xs cursor-pointer border-none hover:bg-[#e55a2b]"
-                      >
-                        🚀 생성하기
-                      </button>
-                    )}
-                    {atom.status === 'selected' && (
-                      <button
-                        onClick={() => updateAtomStatus(atom.id, "fact_check")}
-                        className="px-3 py-1.5 rounded-lg border border-orange-500/30 text-orange-400 text-xs cursor-pointer bg-transparent hover:bg-orange-500/10"
-                      >
-                        📋 팩트체크
-                      </button>
-                    )}
-                    {atom.status === 'fact_check' && (
-                      <button
-                        onClick={() => updateAtomStatus(atom.id, "approved")}
-                        className="px-3 py-1.5 rounded-lg border border-emerald-500/30 text-emerald-400 text-xs cursor-pointer bg-transparent hover:bg-emerald-500/10"
-                      >
-                        ✅ 승인
-                      </button>
-                    )}
-                    {atom.status === 'approved' && (
-                      <button
-                        onClick={() => setScheduleAtom(atom)}
-                        className="px-3 py-1.5 rounded-lg border border-indigo-500/30 text-indigo-400 text-xs cursor-pointer bg-transparent hover:bg-indigo-500/10"
-                      >
-                        📅 스케줄
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Variant compare */}
-                  {atomVariants.length > 0 && (
-                    <div className="mb-4">
-                      <VariantCompare
-                        variants={atomVariants}
-                        atomId={atom.id}
-                        onSelect={(vid) => handleVariantSelect(atom.id, vid)}
-                        onBranch={(vid, feedback) => handleBranch(atom.id, vid, feedback)}
-                      />
-                    </div>
-                  )}
-
-                  {/* Fact check panel */}
-                  {atom.fact_check_flags && atom.fact_check_flags.length > 0 && (
-                    <FactCheckPanel
-                      atomId={atom.id}
-                      flags={atom.fact_check_flags}
-                      onUpdate={(flags) => {
-                        setAtoms(prev => prev.map(a =>
-                          a.id === atom.id ? { ...a, fact_check_flags: flags } : a
-                        ));
-                      }}
-                    />
-                  )}
-
-                  {/* Error log */}
-                  {atom.error_log && (
-                    <div className="mt-3 p-3 bg-red-500/5 border border-red-500/20 rounded-lg text-xs text-red-400">
-                      {atom.error_log}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
 
       {/* Bottom action bar */}
       <div className="flex items-center gap-3 p-4 bg-[#141414] border border-[#222] rounded-xl sticky bottom-4">
