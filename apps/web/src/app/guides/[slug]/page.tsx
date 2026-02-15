@@ -103,15 +103,16 @@ export default async function GuidePage({ params, searchParams }: Props) {
   if (!guide) {
     // Check if the guide exists but is unpublished — redirect to login
     if (!isPreviewMode) {
+      const decodedSlug = decodeURIComponent(slug);
       const adminSb = createServiceClient();
       const { data: unpublished } = await adminSb
         .from("contents")
         .select("id, status")
-        .eq("slug", decodeURIComponent((await params).slug))
+        .eq("slug", decodedSlug)
         .not("status", "eq", "archived")
         .single();
       if (unpublished) {
-        redirect(`/auth/login?redirect=${encodeURIComponent(`/guides/${(await params).slug}`)}`);
+        redirect(`/auth/login?redirect=${encodeURIComponent(`/guides/${slug}`)}`);
       }
     }
     notFound();
