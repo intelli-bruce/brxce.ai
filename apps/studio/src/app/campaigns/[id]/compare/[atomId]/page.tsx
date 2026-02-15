@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import FactCheckPanel from "@/components/campaign/FactCheckPanel";
+import ChannelPreview from "@/components/campaign/ChannelPreview";
 import type { Campaign, CampaignAtom, CampaignVariant, GenerationConfig, FactCheckFlag } from "@/lib/campaign/types";
 
 const CHANNEL_ICONS: Record<string, string> = {
@@ -11,7 +12,7 @@ const CHANNEL_ICONS: Record<string, string> = {
   youtube: "▶️", newsletter: "📧", brxce_guide: "🦞",
 };
 
-type ViewMode = "side" | "full" | "diff";
+type ViewMode = "side" | "full" | "diff" | "preview";
 
 export default function ComparePageWrapper() {
   const { id, atomId } = useParams<{ id: string; atomId: string }>();
@@ -143,7 +144,7 @@ export default function ComparePageWrapper() {
           </div>
           <div className="flex items-center gap-3">
             <div className="flex rounded-lg border border-[#333] overflow-hidden">
-              {(["side", "full", "diff"] as const).map(m => (
+              {(["side", "full", "diff", "preview"] as const).map(m => (
                 <button
                   key={m}
                   onClick={() => setViewMode(m)}
@@ -151,7 +152,7 @@ export default function ComparePageWrapper() {
                     viewMode === m ? "bg-[#FF6B35] text-white" : "bg-[#0a0a0a] text-[#888]"
                   }`}
                 >
-                  {m === "side" ? "나란히" : m === "full" ? "전문" : "비교"}
+                  {m === "side" ? "나란히" : m === "full" ? "전문" : m === "diff" ? "비교" : "📱 프리뷰"}
                 </button>
               ))}
             </div>
@@ -159,7 +160,26 @@ export default function ComparePageWrapper() {
         </div>
 
         {/* Variants display */}
-        {viewMode === "side" ? (
+        {viewMode === "preview" ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {displayVariants.map(v => (
+              <div key={v.id}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-[#888]">
+                    G{v.generation} {v.params?.tone && `· ${v.params.tone}`} {v.params?.hook_type && `· ${v.params.hook_type}`}
+                  </span>
+                  <div className="flex gap-2">
+                    {!v.is_selected && (
+                      <button onClick={() => handleSelect(v.id)} className="text-xs text-[#FF6B35] bg-transparent border-none cursor-pointer hover:underline">선택</button>
+                    )}
+                    {v.is_selected && <span className="text-xs text-[#FF6B35]">✓ 선택됨</span>}
+                  </div>
+                </div>
+                <ChannelPreview variant={v} channel={atom!.channel} />
+              </div>
+            ))}
+          </div>
+        ) : viewMode === "side" ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {displayVariants.map(v => (
               <VariantPanel
