@@ -21,6 +21,13 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       return;
     }
 
+    // DEV BYPASS — remove before production deploy
+    if (process.env.NODE_ENV === "development") {
+      setIsAdmin(true);
+      setReady(true);
+      return;
+    }
+
     const sb = createSupabaseBrowser();
     sb.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) {

@@ -144,23 +144,32 @@ function VariantCard({
   wide?: boolean;
 }) {
   const body = v.output?.body || v.output?.text || (typeof v.output === 'string' ? v.output : '');
+  const label = v.output?.label || '';
+  const notes = v.output?.notes || '';
   const wordCount = v.output?.word_count || body.length;
   const params = v.params || {};
 
   return (
     <div className={`p-4 bg-[#141414] border rounded-xl ${v.is_selected ? 'border-[#FF6B35]' : 'border-[#222]'}`}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-2">
           <span className="text-xs px-1.5 py-0.5 rounded bg-[#222] text-[#888]">
             G{v.generation}
           </span>
-          {params.tone && <span className="text-xs text-[#555]">{params.tone}</span>}
-          {params.hook_type && <span className="text-xs text-[#4ECDC4]">{params.hook_type}</span>}
+          {v.model && <span className="text-[10px] text-[#555]">{v.model}</span>}
           {v.is_selected && <span className="text-xs text-[#FF6B35] font-medium">✓ 선택됨</span>}
         </div>
         <span className="text-xs text-[#555]">{wordCount}자</span>
       </div>
+
+      {/* Label & notes */}
+      {label && (
+        <div className="mb-2">
+          <span className="text-xs font-medium text-[#fafafa]">{label}</span>
+          {notes && <span className="text-[10px] text-[#666] ml-2">{notes}</span>}
+        </div>
+      )}
 
       {/* Body preview */}
       <div className={`text-sm text-[#ccc] whitespace-pre-wrap mb-3 ${wide ? '' : 'max-h-[200px] overflow-y-auto'}`}>
