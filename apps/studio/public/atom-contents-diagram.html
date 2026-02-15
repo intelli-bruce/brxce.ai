@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<title>Atom ↔ Contents 관계도</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0a0a; color: #fafafa; font-family: 'Pretendard', -apple-system, sans-serif; padding: 40px; }
+  h1 { text-align: center; font-size: 24px; margin-bottom: 8px; }
+  .subtitle { text-align: center; color: #888; font-size: 14px; margin-bottom: 40px; }
+  .canvas { position: relative; width: 1100px; height: 620px; margin: 0 auto; }
+
+  .box { position: absolute; border-radius: 12px; padding: 16px 20px; min-width: 180px; }
+  .box h3 { font-size: 15px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .box .field { font-size: 12px; color: #999; line-height: 1.8; font-family: 'SF Mono', monospace; }
+  .box .field .pk { color: #FF6B35; }
+  .box .field .fk { color: #4ECDC4; }
+
+  .contents { left: 0; top: 80px; background: #1a1a1a; border: 2px solid #FF6B35; }
+  .campaigns { left: 340; top: 20px; background: #1a1a1a; border: 2px solid #7C3AED; }
+  .atoms { left: 680; top: 80px; background: #1a1a1a; border: 2px solid #3B82F6; }
+  .variants { left: 680; top: 360px; background: #1a1a1a; border: 2px solid #10B981; }
+  .series { left: 340; top: 360px; background: #1a1a1a; border: 2px solid #F59E0B; }
+  .ideas { left: 0; top: 360px; background: #1a1a1a; border: 2px solid #888; }
+
+  svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+  .arrow { stroke-width: 2; fill: none; }
+  .label { font-size: 11px; fill: #888; font-family: 'SF Mono', monospace; }
+  .card-label { font-size: 11px; fill: #666; font-family: sans-serif; }
+
+  .legend { display: flex; gap: 24px; justify-content: center; margin-top: 30px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #888; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+
+  .note { text-align: center; color: #555; font-size: 12px; margin-top: 16px; max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.8; }
+  .cardinality { font-size: 13px; font-weight: 700; font-family: 'SF Mono', monospace; }
+</style>
+</head><body>
+<h1>🦞 Campaign System — Entity Relationship</h1>
+<div class="subtitle">Atom과 Contents의 관계 + 전체 캠페인 데이터 모델</div>
+
+<div class="canvas">
+  <svg viewBox="0 0 1100 620">
+    <!-- contents → campaigns (source_content_id) -->
+    <path d="M 200 130 Q 270 80 340 80" class="arrow" stroke="#FF6B35" marker-end="url(#arrow-orange)"/>
+    <text x="230" y="72" class="label" fill="#FF6B35">source_content_id</text>
+
+    <!-- campaigns → atoms -->
+    <path d="M 540 120 L 680 140" class="arrow" stroke="#3B82F6" marker-end="url(#arrow-blue)"/>
+    <text x="570" y="112" class="label" fill="#3B82F6">campaign_id</text>
+    <text x="555" y="148" class="cardinality" fill="#3B82F6">1 : N</text>
+
+    <!-- atoms → variants -->
+    <path d="M 770 280 L 770 360" class="arrow" stroke="#10B981" marker-end="url(#arrow-green)"/>
+    <text x="780" y="320" class="label" fill="#10B981">atom_id</text>
+    <text x="780" y="338" class="cardinality" fill="#10B981">1 : N</text>
+
+    <!-- atoms → contents (content_id, optional) -->
+    <path d="M 680 200 Q 400 240 200 200" class="arrow" stroke="#FF6B35" stroke-dasharray="6,4" marker-end="url(#arrow-orange)"/>
+    <text x="380" y="248" class="label" fill="#FF6B35">content_id (optional)</text>
+
+    <!-- campaigns → series -->
+    <path d="M 440 200 L 440 360" class="arrow" stroke="#F59E0B" marker-end="url(#arrow-yellow)"/>
+    <text x="448" y="280" class="label" fill="#F59E0B">series_id</text>
+    <text x="448" y="298" class="cardinality" fill="#F59E0B">N : 1</text>
+
+    <!-- ideas → contents -->
+    <path d="M 120 360 L 120 280" class="arrow" stroke="#888" stroke-dasharray="6,4" marker-end="url(#arrow-gray)"/>
+    <text x="128" y="330" class="card-label">source_idea</text>
+
+    <!-- Arrow markers -->
+    <defs>
+      <marker id="arrow-orange" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M 0 0 L 8 4 L 0 8 Z" fill="#FF6B35"/></marker>
+      <marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M 0 0 L 8 4 L 0 8 Z" fill="#3B82F6"/></marker>
+      <marker id="arrow-green" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M 0 0 L 8 4 L 0 8 Z" fill="#10B981"/></marker>
+      <marker id="arrow-yellow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M 0 0 L 8 4 L 0 8 Z" fill="#F59E0B"/></marker>
+      <marker id="arrow-gray" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M 0 0 L 8 4 L 0 8 Z" fill="#888"/></marker>
+    </defs>
+  </svg>
+
+  <!-- Contents -->
+  <div class="box contents">
+    <h3>📝 contents</h3>
+    <div class="field">
+      <span class="pk">id</span> uuid PK<br>
+      title, slug<br>
+      body_md (본문)<br>
+      status (draft→published)<br>
+      category (가이드북/실전/크리에이터)<br>
+      hook, core_message, cta<br>
+      funnel_stage, tags[]
+    </div>
+  </div>
+
+  <!-- Campaigns -->
+  <div class="box campaigns">
+    <h3>🎯 campaigns</h3>
+    <div class="field">
+      <span class="pk">id</span> uuid PK<br>
+      title, funnel_stage<br>
+      status (ideation→published)<br>
+      <span class="fk">source_content_id</span> → contents<br>
+      <span class="fk">series_id</span> → series<br>
+      seo_keywords, total_cost_usd
+    </div>
+  </div>
+
+  <!-- Atoms -->
+  <div class="box atoms">
+    <h3>⚛️ campaign_atoms</h3>
+    <div class="field">
+      <span class="pk">id</span> uuid PK<br>
+      <span class="fk">campaign_id</span> → campaigns<br>
+      <span class="fk">content_id</span> → contents (opt.)<br>
+      channel (threads/x/brxce_guide)<br>
+      format (short_text/long_text/carousel)<br>
+      status (pending→published)<br>
+      generation_config jsonb<br>
+      scheduled_at, published_at
+    </div>
+  </div>
+
+  <!-- Variants -->
+  <div class="box variants">
+    <h3>🧬 campaign_variants</h3>
+    <div class="field">
+      <span class="pk">id</span> uuid PK<br>
+      <span class="fk">atom_id</span> → atoms<br>
+      parent_id (트리 분기)<br>
+      generation (세대 번호)<br>
+      output jsonb {text/body}<br>
+      feedback, is_selected<br>
+      score, model, cost_usd
+    </div>
+  </div>
+
+  <!-- Series -->
+  <div class="box series">
+    <h3>📚 campaign_series</h3>
+    <div class="field">
+      <span class="pk">id</span> uuid PK<br>
+      title, description<br>
+      ordering (순서)
+    </div>
+  </div>
+
+  <!-- Ideas -->
+  <div class="box ideas">
+    <h3>💡 ideas</h3>
+    <div class="field">
+      <span class="pk">id</span> uuid PK<br>
+      title, description<br>
+      status, tags[]
+    </div>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#FF6B35"></div>Contents (CMS 원본)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#7C3AED"></div>Campaign (주제 단위)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3B82F6"></div>Atom (채널×포맷)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#10B981"></div>Variant (AI 생성본)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#F59E0B"></div>Series (묶음)</div>
+</div>
+
+<div class="note">
+  <strong>핵심 흐름:</strong> Contents(원본) → Campaign(주제) → Atom(채널×포맷 조합) → Variants(AI 변형본 비교/선택)<br>
+  <strong>Atom ↔ Contents:</strong> Atom의 <code>content_id</code>는 선택적 — brxce_guide 채널 atom만 contents와 직접 연결됨.<br>
+  Campaign의 <code>source_content_id</code>가 원본 콘텐츠를 가리키고, 소속 atom들은 이를 기반으로 채널별 변형을 생성함.<br>
+  점선 = optional FK / 간접 참조
+</div>
+
+</body></html>

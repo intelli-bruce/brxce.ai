@@ -50,6 +50,9 @@ export interface CampaignAtom {
   error_log: string | null;
   retry_count: number;
   created_at: string;
+  // Pillar → Derivatives
+  is_pillar: boolean;
+  pillar_atom_id: string | null;
 }
 
 export type AtomFormat = 'long_text' | 'medium_text' | 'short_text' | 'carousel' | 'image' | 'video';
