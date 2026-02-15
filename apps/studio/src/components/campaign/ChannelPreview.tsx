@@ -8,7 +8,7 @@ interface Props {
 }
 
 export default function ChannelPreview({ variant, channel }: Props) {
-  const body = variant.output?.body || "";
+  const body = variant.output?.body || variant.output?.text || (typeof variant.output === 'string' ? variant.output : "");
 
   switch (channel) {
     case "threads": return <ThreadsPreview body={body} />;

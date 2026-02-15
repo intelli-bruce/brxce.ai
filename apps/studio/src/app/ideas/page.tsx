@@ -61,7 +61,7 @@ export default function IdeasPage() {
         {ideas.map((idea) => (
           <div key={idea.id} className="flex items-center justify-between p-4 bg-[#141414] border border-[#222] rounded-xl">
             <div>
-              <p className="text-sm text-[#fafafa]">{idea.raw_text}</p>
+              <p className="text-sm text-[#fafafa] line-clamp-3">{idea.raw_text}</p>
               <span className="text-xs text-[#666]">{idea.source} · {new Date(idea.created_at).toLocaleDateString("ko-KR")}</span>
             </div>
             {idea.promoted_to ? (

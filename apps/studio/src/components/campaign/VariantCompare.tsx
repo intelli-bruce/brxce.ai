@@ -143,7 +143,7 @@ function VariantCard({
   onBranchFeedback: (f: string) => void;
   wide?: boolean;
 }) {
-  const body = v.output?.body || '';
+  const body = v.output?.body || v.output?.text || (typeof v.output === 'string' ? v.output : '');
   const wordCount = v.output?.word_count || body.length;
   const params = v.params || {};
 
