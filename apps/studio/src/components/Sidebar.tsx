@@ -13,6 +13,11 @@ const navItems = [
   { href: "/studio", label: "스튜디오", icon: "🎬" },
   { href: "/media", label: "미디어", icon: "🖼️" },
   { href: "/newsletter", label: "뉴스레터", icon: "📩" },
+  { href: "---", label: "", icon: "" },
+  { href: "/campaigns", label: "캠페인", icon: "🚀" },
+  { href: "/campaigns/calendar", label: "캘린더", icon: "📅" },
+  { href: "/analytics", label: "성과", icon: "📈" },
+  { href: "/style-profiles", label: "스타일 프로필", icon: "🎨" },
 ];
 
 export default function Sidebar() {
@@ -33,20 +38,24 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 py-3 px-3 flex flex-col gap-0.5">
-        {navItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm no-underline transition-colors ${
-              isActive(item.href)
-                ? "bg-[#1a1a1a] text-[#fafafa] font-medium"
-                : "text-[#888] hover:text-[#fafafa] hover:bg-[#111]"
-            }`}
-          >
-            <span className="text-base">{item.icon}</span>
-            {item.label}
-          </Link>
-        ))}
+        {navItems.map((item, i) =>
+          item.href === "---" ? (
+            <div key={`sep-${i}`} className="border-t border-[#222] my-2" />
+          ) : (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm no-underline transition-colors ${
+                isActive(item.href)
+                  ? "bg-[#1a1a1a] text-[#fafafa] font-medium"
+                  : "text-[#888] hover:text-[#fafafa] hover:bg-[#111]"
+              }`}
+            >
+              <span className="text-base">{item.icon}</span>
+              {item.label}
+            </Link>
+          )
+        )}
       </nav>
 
       <div className="px-3 py-4 border-t border-[#222]">
