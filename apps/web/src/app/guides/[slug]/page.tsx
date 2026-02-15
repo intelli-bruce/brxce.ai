@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { createServiceClient } from "@/lib/supabase";
 import GuideHeader from "@/components/GuideHeader";
@@ -100,7 +100,22 @@ export default async function GuidePage({ params, searchParams }: Props) {
   const isPreviewMode = isAdminPage || preview === PREVIEW_SECRET;
   const { guide, isPreview } = await fetchGuide(slug, isPreviewMode);
 
-  if (!guide) notFound();
+  if (!guide) {
+    // Check if the guide exists but is unpublished — redirect to login
+    if (!isPreviewMode) {
+      const adminSb = createServiceClient();
+      const { data: unpublished } = await adminSb
+        .from("contents")
+        .select("id, status")
+        .eq("slug", decodeURIComponent((await params).slug))
+        .not("status", "eq", "archived")
+        .single();
+      if (unpublished) {
+        redirect(`/auth/login?redirect=${encodeURIComponent(`/guides/${(await params).slug}`)}`);
+      }
+    }
+    notFound();
+  }
 
   // Related guides (same tags)
   const sb = await createSupabaseServer();
