@@ -1,12 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
+
+interface SeriesOption { id: string; title: string; }
 
 export default function NewCampaignPage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+  const [seriesList, setSeriesList] = useState<SeriesOption[]>([]);
+  const sb = createSupabaseBrowser();
+
+  useEffect(() => {
+    sb.from("campaign_series").select("id, title").order("created_at", { ascending: false })
+      .then(({ data }) => { if (data) setSeriesList(data); });
+  }, []);
   const [form, setForm] = useState({
     title: "",
     topic: "",
@@ -136,6 +145,21 @@ export default function NewCampaignPage() {
             ))}
           </div>
         </Field>
+
+        {seriesList.length > 0 && (
+          <Field label="시리즈 (선택)">
+            <select
+              value={form.series_id}
+              onChange={e => set("series_id", e.target.value)}
+              className="w-full px-3 py-2 rounded-lg border border-[#333] bg-[#0a0a0a] text-sm text-[#fafafa] outline-none"
+            >
+              <option value="">없음 (단독 캠페인)</option>
+              {seriesList.map(s => (
+                <option key={s.id} value={s.id}>📚 {s.title}</option>
+              ))}
+            </select>
+          </Field>
+        )}
 
         <div className="flex gap-3 mt-4">
           <button

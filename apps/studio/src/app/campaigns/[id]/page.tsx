@@ -6,6 +6,7 @@ import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import GenerateModal from "@/components/campaign/GenerateModal";
 import VariantCompare from "@/components/campaign/VariantCompare";
 import FactCheckPanel from "@/components/campaign/FactCheckPanel";
+import ScheduleModal from "@/components/campaign/ScheduleModal";
 import type { Campaign, CampaignAtom, CampaignVariant, GenerationConfig, FactCheckFlag } from "@/lib/campaign/types";
 
 const FUNNEL_COLORS: Record<string, string> = {
@@ -59,6 +60,7 @@ export default function CampaignCockpitPage() {
   const [addChannel, setAddChannel] = useState("threads");
   const [addFormat, setAddFormat] = useState("short_text");
   const [generateAtom, setGenerateAtom] = useState<CampaignAtom | null>(null);
+  const [scheduleAtom, setScheduleAtom] = useState<CampaignAtom | null>(null);
   const [expandedAtom, setExpandedAtom] = useState<string | null>(null);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -223,7 +225,19 @@ export default function CampaignCockpitPage() {
           <span className={`px-2 py-0.5 rounded text-xs border ${FUNNEL_COLORS[campaign.funnel_stage]}`}>
             {campaign.funnel_stage.toUpperCase()}
           </span>
-          <span className={`text-xs font-medium ${STATUS_COLORS[campaign.status]}`}>{campaign.status}</span>
+          <select
+            value={campaign.status}
+            onChange={async (e) => {
+              const newStatus = e.target.value;
+              await sb.from("campaigns").update({ status: newStatus }).eq("id", campaign.id);
+              setCampaign({ ...campaign, status: newStatus as any });
+            }}
+            className={`text-xs font-medium bg-transparent border border-[#333] rounded px-1.5 py-0.5 outline-none cursor-pointer ${STATUS_COLORS[campaign.status]}`}
+          >
+            {["ideation","seo_research","producing","fact_check","approval","ready","scheduled","published","analyzing"].map(s => (
+              <option key={s} value={s} className="bg-[#1a1a1a] text-[#fafafa]">{s}</option>
+            ))}
+          </select>
           {campaign.cta_type && <span className="text-xs text-[#666]">CTA: {campaign.cta_type}</span>}
           {campaign.cta_target && (
             <a href={campaign.cta_target} target="_blank" rel="noopener noreferrer" className="text-xs text-[#4ECDC4] no-underline hover:underline">
@@ -236,6 +250,16 @@ export default function CampaignCockpitPage() {
         </div>
         {campaign.topic && (
           <div className="text-sm text-[#888] mt-2">주제: {campaign.topic}</div>
+        )}
+        {campaign.brief && (
+          <div className="text-xs text-[#666] mt-1 max-w-2xl">📋 {campaign.brief}</div>
+        )}
+        {campaign.seo_keywords && campaign.seo_keywords.length > 0 && (
+          <div className="flex gap-1.5 mt-2 flex-wrap">
+            {campaign.seo_keywords.map((kw, i) => (
+              <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-[#222] text-[#888]">🔍 {kw}</span>
+            ))}
+          </div>
         )}
       </div>
 
@@ -338,7 +362,7 @@ export default function CampaignCockpitPage() {
                     )}
                     {atom.status === 'approved' && (
                       <button
-                        onClick={() => updateAtomStatus(atom.id, "scheduled")}
+                        onClick={() => setScheduleAtom(atom)}
                         className="px-3 py-1.5 rounded-lg border border-indigo-500/30 text-indigo-400 text-xs cursor-pointer bg-transparent hover:bg-indigo-500/10"
                       >
                         📅 스케줄
@@ -417,6 +441,20 @@ export default function CampaignCockpitPage() {
           format={generateAtom.format}
           onGenerate={handleGenerate}
           onClose={() => setGenerateAtom(null)}
+        />
+      )}
+
+      {/* Schedule modal */}
+      {scheduleAtom && (
+        <ScheduleModal
+          atomId={scheduleAtom.id}
+          channel={scheduleAtom.channel}
+          onSchedule={async (scheduledAt) => {
+            await sb.from("campaign_atoms").update({ status: "scheduled", scheduled_at: scheduledAt }).eq("id", scheduleAtom.id);
+            setScheduleAtom(null);
+            loadData();
+          }}
+          onClose={() => setScheduleAtom(null)}
         />
       )}
 
