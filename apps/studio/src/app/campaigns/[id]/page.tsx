@@ -62,6 +62,8 @@ export default function CampaignCockpitPage() {
   const [generateAtom, setGenerateAtom] = useState<CampaignAtom | null>(null);
   const [scheduleAtom, setScheduleAtom] = useState<CampaignAtom | null>(null);
   const [expandedAtom, setExpandedAtom] = useState<string | null>(null);
+  const [sourceContent, setSourceContent] = useState<{ id: string; title: string; slug: string; status: string; category: string; body_md: string } | null>(null);
+  const [showContentPreview, setShowContentPreview] = useState(false);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
   const sb = createSupabaseBrowser();
@@ -80,6 +82,17 @@ export default function CampaignCockpitPage() {
 
     const atomsList = (atomsData || []) as CampaignAtom[];
     setAtoms(atomsList);
+
+    // Load source content
+    const contentId = camp.source_content_id || atomsList.find(a => a.content_id)?.content_id;
+    if (contentId) {
+      const { data: content } = await sb
+        .from("contents")
+        .select("id, title, slug, status, category, body_md")
+        .eq("id", contentId)
+        .single();
+      if (content) setSourceContent(content);
+    }
 
     // Load variants for all atoms
     const atomIds = atomsList.map(a => a.id);
@@ -287,6 +300,42 @@ export default function CampaignCockpitPage() {
           {atoms.length === 0 && <div className="flex-1 bg-[#222] flex items-center justify-center text-xs text-[#555]">atom 없음</div>}
         </div>
       </div>
+
+      {/* Source content */}
+      {sourceContent && (
+        <div className="mb-6 p-4 bg-[#141414] border border-[#222] rounded-xl">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-[#555]">원본 콘텐츠</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded ${sourceContent.status === 'published' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                {sourceContent.status}
+              </span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#222] text-[#888]">{sourceContent.category}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowContentPreview(!showContentPreview)}
+                className="text-xs text-[#4ECDC4] bg-transparent border-none cursor-pointer hover:underline"
+              >
+                {showContentPreview ? '접기' : '미리보기'}
+              </button>
+              <button
+                onClick={() => router.push(`/contents/${sourceContent.id}`)}
+                className="text-xs text-[#888] bg-transparent border-none cursor-pointer hover:text-[#fafafa]"
+              >
+                편집 →
+              </button>
+            </div>
+          </div>
+          <div className="text-sm font-medium text-[#fafafa] mb-1">{sourceContent.title}</div>
+          <div className="text-xs text-[#666]">{sourceContent.body_md.length.toLocaleString()}자 · {sourceContent.slug}</div>
+          {showContentPreview && (
+            <div className="mt-3 p-3 bg-[#0a0a0a] border border-[#222] rounded-lg max-h-64 overflow-y-auto">
+              <pre className="text-xs text-[#999] whitespace-pre-wrap font-sans leading-relaxed">{sourceContent.body_md.substring(0, 2000)}{sourceContent.body_md.length > 2000 ? '\n\n... (더보기는 편집에서)' : ''}</pre>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Atom grid */}
       <div className="flex flex-col gap-4 mb-6">
