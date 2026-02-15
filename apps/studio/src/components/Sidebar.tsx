@@ -4,22 +4,33 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 
-const navItems = [
-  { href: "/", label: "대시보드", icon: "📊" },
-  { href: "/contents", label: "콘텐츠", icon: "📝" },
-  { href: "/ideas", label: "아이디어", icon: "💡" },
-  { href: "/publications", label: "발행", icon: "📢" },
-  { href: "/showcase", label: "쇼케이스", icon: "🎨" },
-  { href: "/studio", label: "스튜디오", icon: "🎬" },
-  { href: "/media", label: "미디어", icon: "🖼️" },
-  { href: "/newsletter", label: "뉴스레터", icon: "📩" },
-  { href: "---", label: "", icon: "" },
-  { href: "/campaigns", label: "캠페인", icon: "🚀" },
-  { href: "/campaigns/calendar", label: "캘린더", icon: "📅" },
-  { href: "/campaigns/series", label: "시리즈", icon: "📚" },
-  { href: "/assets", label: "에셋", icon: "🗄️" },
-  { href: "/analytics", label: "성과", icon: "📈" },
-  { href: "/style-profiles", label: "스타일 프로필", icon: "🎨" },
+type NavItem =
+  | { type: "link"; href: string; label: string; icon: string; indent?: boolean }
+  | { type: "section"; label: string }
+  | { type: "divider" };
+
+const navItems: NavItem[] = [
+  // ── CMS ──
+  { type: "section", label: "CMS" },
+  { type: "link", href: "/", label: "대시보드", icon: "📊" },
+  { type: "link", href: "/contents", label: "콘텐츠", icon: "📝" },
+  { type: "link", href: "/ideas", label: "아이디어", icon: "💡" },
+  { type: "link", href: "/publications", label: "발행", icon: "📢" },
+  { type: "link", href: "/showcase", label: "쇼케이스", icon: "🎨" },
+  { type: "link", href: "/newsletter", label: "뉴스레터", icon: "📩" },
+
+  // ── 제작 ──
+  { type: "section", label: "제작" },
+  { type: "link", href: "/studio", label: "스튜디오", icon: "🎬" },
+  { type: "link", href: "/media", label: "미디어", icon: "🖼️" },
+
+  // ── 캠페인 ──
+  { type: "section", label: "캠페인" },
+  { type: "link", href: "/campaigns", label: "캠페인", icon: "🚀" },
+  { type: "link", href: "/campaigns/calendar", label: "캘린더", icon: "📅", indent: true },
+  { type: "link", href: "/campaigns/series", label: "시리즈", icon: "📚", indent: true },
+  { type: "link", href: "/analytics", label: "성과", icon: "📈" },
+  { type: "link", href: "/style-profiles", label: "스타일 프로필", icon: "🎭" },
 ];
 
 export default function Sidebar() {
@@ -39,15 +50,28 @@ export default function Sidebar() {
         </Link>
       </div>
 
-      <nav className="flex-1 py-3 px-3 flex flex-col gap-0.5">
-        {navItems.map((item, i) =>
-          item.href === "---" ? (
-            <div key={`sep-${i}`} className="border-t border-[#222] my-2" />
-          ) : (
+      <nav className="flex-1 py-3 px-3 flex flex-col gap-0.5 overflow-y-auto">
+        {navItems.map((item, i) => {
+          if (item.type === "section") {
+            return (
+              <div
+                key={`sec-${i}`}
+                className={`px-3 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-widest text-[#555] ${i === 0 ? "pt-1" : ""}`}
+              >
+                {item.label}
+              </div>
+            );
+          }
+          if (item.type === "divider") {
+            return <div key={`div-${i}`} className="border-t border-[#222] my-2" />;
+          }
+          return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm no-underline transition-colors ${
+              className={`flex items-center gap-2.5 py-2 rounded-lg text-sm no-underline transition-colors ${
+                item.indent ? "pl-7 pr-3" : "px-3"
+              } ${
                 isActive(item.href)
                   ? "bg-[#1a1a1a] text-[#fafafa] font-medium"
                   : "text-[#888] hover:text-[#fafafa] hover:bg-[#111]"
@@ -56,8 +80,8 @@ export default function Sidebar() {
               <span className="text-base">{item.icon}</span>
               {item.label}
             </Link>
-          )
-        )}
+          );
+        })}
       </nav>
 
       <div className="px-3 py-4 border-t border-[#222]">

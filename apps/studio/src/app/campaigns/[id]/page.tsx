@@ -232,10 +232,11 @@ export default function CampaignCockpitPage() {
               await sb.from("campaigns").update({ status: newStatus }).eq("id", campaign.id);
               setCampaign({ ...campaign, status: newStatus as any });
             }}
-            className={`text-xs font-medium bg-transparent border border-[#333] rounded px-1.5 py-0.5 outline-none cursor-pointer ${STATUS_COLORS[campaign.status]}`}
+            style={{ WebkitAppearance: "menulist" }}
+            className={`text-sm font-medium bg-[#1a1a1a] border border-[#444] rounded-lg px-3 py-1.5 outline-none cursor-pointer hover:border-[#666] transition-colors ${STATUS_COLORS[campaign.status]}`}
           >
             {["ideation","seo_research","producing","fact_check","approval","ready","scheduled","published","analyzing"].map(s => (
-              <option key={s} value={s} className="bg-[#1a1a1a] text-[#fafafa]">{s}</option>
+              <option key={s} value={s} style={{ backgroundColor: "#1a1a1a", color: "#ccc", padding: "8px" }}>{s}</option>
             ))}
           </select>
           {campaign.cta_type && <span className="text-xs text-[#666]">CTA: {campaign.cta_type}</span>}
