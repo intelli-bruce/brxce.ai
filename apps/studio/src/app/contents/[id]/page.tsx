@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import Markdown from "react-markdown";
 import { ProseBody } from "@brxce/ui";
 import MediaLibraryModal from "@/components/MediaLibraryModal";
+import IdBadge from "@/components/IdBadge";
 
 interface Content {
   id: string;
@@ -157,11 +158,14 @@ export default function ContentDetailPage() {
   return (
     <div className="max-w-4xl">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">
-          {editing ? (
-            <input value={content.title} onChange={(e) => setContent({ ...content, title: e.target.value })} className={`${inputClass} text-2xl font-bold`} />
-          ) : content.title}
-        </h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold">
+            {editing ? (
+              <input value={content.title} onChange={(e) => setContent({ ...content, title: e.target.value })} className={`${inputClass} text-2xl font-bold`} />
+            ) : content.title}
+          </h1>
+          <IdBadge id={content.id} />
+        </div>
         <div className="flex gap-2">
           {content.slug && (
             <a
