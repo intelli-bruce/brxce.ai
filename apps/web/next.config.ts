@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  transpilePackages: ["@brxce/ui"],
   serverExternalPackages: ["@excalidraw/excalidraw"],
   images: {
     remotePatterns: [

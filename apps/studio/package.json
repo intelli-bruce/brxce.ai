@@ -9,17 +9,19 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@brxce/brand": "workspace:*",
+    "@brxce/supabase": "workspace:*",
+    "@brxce/ui": "workspace:^",
     "@excalidraw/excalidraw": "^0.18.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.95.3",
+    "@tailwindcss/typography": "^0.5.19",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-markdown": "^10.1.0",
     "rehype-highlight": "^7.0.2",
-    "remark-gfm": "^4.0.1",
-    "@brxce/supabase": "workspace:*",
-    "@brxce/brand": "workspace:*"
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

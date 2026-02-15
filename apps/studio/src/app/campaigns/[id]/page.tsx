@@ -1,36 +1,12 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
-
-interface Campaign {
-  id: string;
-  title: string;
-  topic: string;
-  brief: string | null;
-  funnel_stage: string;
-  status: string;
-  cta_type: string;
-  cta_target: string | null;
-  origin_direction: string;
-  total_cost_tokens: number;
-  total_cost_usd: number;
-  series_id: string | null;
-}
-
-interface Atom {
-  id: string;
-  campaign_id: string;
-  format: string;
-  channel: string;
-  status: string;
-  publish_method: string;
-  optimal_publish_time: string | null;
-  scheduled_at: string | null;
-  selected_variant_id: string | null;
-  variant_preview?: string;
-}
+import GenerateModal from "@/components/campaign/GenerateModal";
+import VariantCompare from "@/components/campaign/VariantCompare";
+import FactCheckPanel from "@/components/campaign/FactCheckPanel";
+import type { Campaign, CampaignAtom, CampaignVariant, GenerationConfig, FactCheckFlag } from "@/lib/campaign/types";
 
 const FUNNEL_COLORS: Record<string, string> = {
   tofu: "bg-green-500/20 text-green-400 border-green-500/30",
@@ -74,18 +50,23 @@ const FORMATS = ["long_text", "medium_text", "short_text", "carousel", "image", 
 export default function CampaignCockpitPage() {
   const { id } = useParams<{ id: string }>();
   const [campaign, setCampaign] = useState<Campaign | null>(null);
-  const [atoms, setAtoms] = useState<Atom[]>([]);
+  const [atoms, setAtoms] = useState<CampaignAtom[]>([]);
+  const [variants, setVariants] = useState<Record<string, CampaignVariant[]>>({});
   const [editTitle, setEditTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [addChannel, setAddChannel] = useState("threads");
   const [addFormat, setAddFormat] = useState("short_text");
+  const [generateAtom, setGenerateAtom] = useState<CampaignAtom | null>(null);
+  const [expandedAtom, setExpandedAtom] = useState<string | null>(null);
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+
+  const sb = createSupabaseBrowser();
 
   const loadData = useCallback(async () => {
-    const sb = createSupabaseBrowser();
     const { data: camp } = await sb.from("campaigns").select("*").eq("id", id).single();
     if (!camp) return;
-    setCampaign(camp);
+    setCampaign(camp as Campaign);
     setTitleDraft(camp.title);
 
     const { data: atomsData } = await sb
@@ -94,45 +75,92 @@ export default function CampaignCockpitPage() {
       .eq("campaign_id", id)
       .order("created_at", { ascending: true });
 
-    // Get selected variant previews
-    const atomsList = atomsData || [];
-    const variantIds = atomsList.filter(a => a.selected_variant_id).map(a => a.selected_variant_id);
-    let variantMap: Record<string, string> = {};
-    if (variantIds.length > 0) {
-      const { data: variants } = await sb
-        .from("campaign_variants")
-        .select("id, output")
-        .in("id", variantIds);
-      (variants || []).forEach(v => {
-        const output = v.output as any;
-        variantMap[v.id] = output?.text?.substring(0, 100) || output?.title || "—";
-      });
-    }
+    const atomsList = (atomsData || []) as CampaignAtom[];
+    setAtoms(atomsList);
 
-    setAtoms(atomsList.map(a => ({
-      ...a,
-      variant_preview: a.selected_variant_id ? variantMap[a.selected_variant_id] : undefined,
-    })));
+    // Load variants for all atoms
+    const atomIds = atomsList.map(a => a.id);
+    if (atomIds.length > 0) {
+      const { data: variantsData } = await sb
+        .from("campaign_variants")
+        .select("*")
+        .in("atom_id", atomIds)
+        .order("generation", { ascending: true });
+
+      const grouped: Record<string, CampaignVariant[]> = {};
+      (variantsData || []).forEach((v: CampaignVariant) => {
+        if (!grouped[v.atom_id]) grouped[v.atom_id] = [];
+        grouped[v.atom_id].push(v);
+      });
+      setVariants(grouped);
+    }
   }, [id]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  // Poll for generating atoms
+  useEffect(() => {
+    const hasGenerating = atoms.some(a => a.status === 'generating');
+    if (hasGenerating) {
+      pollingRef.current = setInterval(() => { loadData(); }, 5000);
+    }
+    return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
+  }, [atoms, loadData]);
+
   async function saveTitle() {
     if (!campaign || !titleDraft.trim()) return;
-    const sb = createSupabaseBrowser();
     await sb.from("campaigns").update({ title: titleDraft }).eq("id", campaign.id);
     setCampaign({ ...campaign, title: titleDraft });
     setEditTitle(false);
   }
 
   async function updateAtomStatus(atomId: string, newStatus: string) {
-    const sb = createSupabaseBrowser();
     await sb.from("campaign_atoms").update({ status: newStatus }).eq("id", atomId);
-    setAtoms(prev => prev.map(a => a.id === atomId ? { ...a, status: newStatus } : a));
+    setAtoms(prev => prev.map(a => a.id === atomId ? { ...a, status: newStatus as any } : a));
+  }
+
+  async function handleGenerate(config: GenerationConfig) {
+    if (!generateAtom) return;
+    // 1. generation_config 저장 + status → generating
+    await sb.from("campaign_atoms").update({
+      status: "generating",
+      generation_config: config,
+    }).eq("id", generateAtom.id);
+
+    setAtoms(prev => prev.map(a =>
+      a.id === generateAtom.id ? { ...a, status: 'generating' as any, generation_config: config } : a
+    ));
+    setGenerateAtom(null);
+    // 서브에이전트가 atom.status=generating을 감지하고 생성 시작
+    // 또는 텔레그램에서 Creator 에이전트에게 직접 지시
+  }
+
+  function handleVariantSelect(atomId: string, variantId: string) {
+    setAtoms(prev => prev.map(a =>
+      a.id === atomId ? { ...a, status: 'selected' as any, selected_variant_id: variantId } : a
+    ));
+    loadData();
+  }
+
+  async function handleBranch(atomId: string, parentVariantId: string, feedback: string) {
+    // generation_config에 base_variant_id + feedback 설정 → generating
+    const config: GenerationConfig = {
+      variant_count: 2,
+      diversity: 'narrow',
+      base_variant_id: parentVariantId,
+      feedback,
+    };
+    await sb.from("campaign_atoms").update({
+      status: "generating",
+      generation_config: config,
+    }).eq("id", atomId);
+
+    setAtoms(prev => prev.map(a =>
+      a.id === atomId ? { ...a, status: 'generating' as any, generation_config: config } : a
+    ));
   }
 
   async function addAtom() {
-    const sb = createSupabaseBrowser();
     await sb.from("campaign_atoms").insert({
       campaign_id: id,
       channel: addChannel,
@@ -144,7 +172,6 @@ export default function CampaignCockpitPage() {
   }
 
   async function bulkAction(action: "generate" | "approve" | "schedule") {
-    const sb = createSupabaseBrowser();
     if (action === "generate") {
       const pendingIds = atoms.filter(a => a.status === "pending").map(a => a.id);
       if (pendingIds.length === 0) return;
@@ -203,9 +230,12 @@ export default function CampaignCockpitPage() {
             </a>
           )}
           {campaign.total_cost_usd > 0 && (
-            <span className="text-xs text-[#888]">💰 {campaign.total_cost_tokens.toLocaleString()} tokens (${campaign.total_cost_usd.toFixed(2)})</span>
+            <span className="text-xs text-[#888]">💰 {campaign.total_cost_tokens.toLocaleString()} tok · ${campaign.total_cost_usd.toFixed(2)}</span>
           )}
         </div>
+        {campaign.topic && (
+          <div className="text-sm text-[#888] mt-2">주제: {campaign.topic}</div>
+        )}
       </div>
 
       {/* Pipeline bar */}
@@ -233,46 +263,119 @@ export default function CampaignCockpitPage() {
       </div>
 
       {/* Atom grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
-        {atoms.map(atom => (
-          <div key={atom.id} className="p-4 bg-[#141414] border border-[#222] rounded-xl">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <span className="text-lg">{CHANNEL_ICONS[atom.channel] || "📄"}</span>
-                <span className="text-xs px-1.5 py-0.5 rounded bg-[#222] text-[#888]">{FORMAT_LABELS[atom.format] || atom.format}</span>
+      <div className="flex flex-col gap-4 mb-6">
+        {atoms.map(atom => {
+          const atomVariants = variants[atom.id] || [];
+          const isExpanded = expandedAtom === atom.id;
+          const selectedVariant = atomVariants.find(v => v.is_selected);
+
+          return (
+            <div key={atom.id} className="bg-[#141414] border border-[#222] rounded-xl overflow-hidden">
+              {/* Atom header */}
+              <div
+                className="p-4 cursor-pointer hover:bg-[#1a1a1a] transition-colors"
+                onClick={() => setExpandedAtom(isExpanded ? null : atom.id)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">{CHANNEL_ICONS[atom.channel] || "📄"}</span>
+                    <span className="text-sm font-medium text-[#fafafa]">{atom.channel}</span>
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-[#222] text-[#888]">{FORMAT_LABELS[atom.format]}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded ${ATOM_STATUS_COLORS[atom.status]}`}>
+                      {atom.status}
+                    </span>
+                    {atom.status === 'generating' && <span className="text-xs text-yellow-400 animate-pulse">⏳ 생성 중...</span>}
+                    {atomVariants.length > 0 && (
+                      <span className="text-xs text-[#555]">{atomVariants.length}개 variant</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {selectedVariant && (
+                      <span className="text-xs text-[#888] max-w-[200px] truncate">
+                        {selectedVariant.output?.body?.substring(0, 50)}...
+                      </span>
+                    )}
+                    <span className="text-xs text-[#555]">{atom.publish_method === "auto" ? "🤖" : "📋"}</span>
+                    <span className="text-[#555] text-sm">{isExpanded ? '▼' : '▶'}</span>
+                  </div>
+                </div>
               </div>
-              <span className={`text-xs px-2 py-0.5 rounded ${ATOM_STATUS_COLORS[atom.status]}`}>
-                {atom.status}
-              </span>
-            </div>
 
-            {atom.variant_preview && (
-              <div className="text-xs text-[#888] mb-2 line-clamp-2">{atom.variant_preview}</div>
-            )}
+              {/* Expanded content */}
+              {isExpanded && (
+                <div className="border-t border-[#222] p-4">
+                  {/* Action buttons */}
+                  <div className="flex gap-2 mb-4">
+                    {(atom.status === 'pending' || atom.status === 'selected') && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setGenerateAtom(atom); }}
+                        className="px-3 py-1.5 rounded-lg bg-[#FF6B35] text-white text-xs cursor-pointer border-none hover:bg-[#e55a2b]"
+                      >
+                        🚀 생성하기
+                      </button>
+                    )}
+                    {atom.status === 'selected' && (
+                      <button
+                        onClick={() => updateAtomStatus(atom.id, "fact_check")}
+                        className="px-3 py-1.5 rounded-lg border border-orange-500/30 text-orange-400 text-xs cursor-pointer bg-transparent hover:bg-orange-500/10"
+                      >
+                        📋 팩트체크
+                      </button>
+                    )}
+                    {atom.status === 'fact_check' && (
+                      <button
+                        onClick={() => updateAtomStatus(atom.id, "approved")}
+                        className="px-3 py-1.5 rounded-lg border border-emerald-500/30 text-emerald-400 text-xs cursor-pointer bg-transparent hover:bg-emerald-500/10"
+                      >
+                        ✅ 승인
+                      </button>
+                    )}
+                    {atom.status === 'approved' && (
+                      <button
+                        onClick={() => updateAtomStatus(atom.id, "scheduled")}
+                        className="px-3 py-1.5 rounded-lg border border-indigo-500/30 text-indigo-400 text-xs cursor-pointer bg-transparent hover:bg-indigo-500/10"
+                      >
+                        📅 스케줄
+                      </button>
+                    )}
+                  </div>
 
-            <div className="flex items-center justify-between text-xs text-[#555] mb-3">
-              {atom.optimal_publish_time && (
-                <span>🕐 {new Date(atom.optimal_publish_time).toLocaleString("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
-              )}
-              <span>{atom.publish_method === "auto" ? "🤖 자동" : "📋 수동"}</span>
-            </div>
+                  {/* Variant compare */}
+                  {atomVariants.length > 0 && (
+                    <div className="mb-4">
+                      <VariantCompare
+                        variants={atomVariants}
+                        atomId={atom.id}
+                        onSelect={(vid) => handleVariantSelect(atom.id, vid)}
+                        onBranch={(vid, feedback) => handleBranch(atom.id, vid, feedback)}
+                      />
+                    </div>
+                  )}
 
-            <div className="flex gap-2">
-              {atom.status === "pending" && (
-                <ActionBtn label="생성하기" onClick={() => updateAtomStatus(atom.id, "generating")} />
-              )}
-              {atom.status === "selected" && (
-                <ActionBtn label="팩트체크" onClick={() => updateAtomStatus(atom.id, "fact_check")} />
-              )}
-              {atom.status === "fact_check" && (
-                <ActionBtn label="승인" color="emerald" onClick={() => updateAtomStatus(atom.id, "approved")} />
-              )}
-              {atom.status === "approved" && (
-                <ActionBtn label="스케줄" color="indigo" onClick={() => updateAtomStatus(atom.id, "scheduled")} />
+                  {/* Fact check panel */}
+                  {atom.fact_check_flags && atom.fact_check_flags.length > 0 && (
+                    <FactCheckPanel
+                      atomId={atom.id}
+                      flags={atom.fact_check_flags}
+                      onUpdate={(flags) => {
+                        setAtoms(prev => prev.map(a =>
+                          a.id === atom.id ? { ...a, fact_check_flags: flags } : a
+                        ));
+                      }}
+                    />
+                  )}
+
+                  {/* Error log */}
+                  {atom.error_log && (
+                    <div className="mt-3 p-3 bg-red-500/5 border border-red-500/20 rounded-lg text-xs text-red-400">
+                      {atom.error_log}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Bottom action bar */}
@@ -293,6 +396,17 @@ export default function CampaignCockpitPage() {
           스케줄 발행
         </button>
       </div>
+
+      {/* Generate modal */}
+      {generateAtom && (
+        <GenerateModal
+          atomId={generateAtom.id}
+          channel={generateAtom.channel}
+          format={generateAtom.format}
+          onGenerate={handleGenerate}
+          onClose={() => setGenerateAtom(null)}
+        />
+      )}
 
       {/* Add atom modal */}
       {showAddModal && (
@@ -321,18 +435,5 @@ export default function CampaignCockpitPage() {
         </div>
       )}
     </div>
-  );
-}
-
-function ActionBtn({ label, color, onClick }: { label: string; color?: string; onClick: () => void }) {
-  const colorClasses = color === "emerald"
-    ? "border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
-    : color === "indigo"
-    ? "border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10"
-    : "border-[#444] text-[#aaa] hover:bg-[#222]";
-  return (
-    <button onClick={onClick} className={`px-3 py-1 rounded-lg border text-xs cursor-pointer bg-transparent transition-colors ${colorClasses}`}>
-      {label}
-    </button>
   );
 }

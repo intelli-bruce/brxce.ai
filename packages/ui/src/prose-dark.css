@@ -1,0 +1,153 @@
+/* prose-dark — single source of truth for markdown article styles */
+.prose-dark h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #fafafa;
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.prose-dark h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fafafa;
+  margin-top: 48px;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.prose-dark h3 {
+  font-size: 17px;
+  font-weight: 600;
+  color: #ddd;
+  margin-top: 32px;
+  margin-bottom: 12px;
+}
+
+.prose-dark p {
+  margin-bottom: 20px;
+  font-size: 16px;
+  color: #ccc;
+  line-height: 1.8;
+}
+
+.prose-dark strong {
+  color: #fafafa;
+  font-weight: 600;
+}
+
+.prose-dark a {
+  color: #8ab4f8;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s;
+}
+
+.prose-dark a:hover {
+  border-bottom-color: #8ab4f8;
+}
+
+.prose-dark ul, .prose-dark ol {
+  margin-bottom: 20px;
+  padding-left: 24px;
+}
+
+.prose-dark li {
+  margin-bottom: 8px;
+  font-size: 16px;
+  color: #ccc;
+}
+
+.prose-dark code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  background: #161616;
+  border: 1px solid #2a2a2a;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 14px;
+  color: #e0e0e0;
+}
+
+.prose-dark pre {
+  background: #111;
+  border: 1px solid #222;
+  border-radius: 10px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  overflow-x: auto;
+}
+
+.prose-dark pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.prose-dark blockquote {
+  background: #111;
+  border-left: 3px solid #fafafa;
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+}
+
+.prose-dark blockquote p {
+  margin-bottom: 0;
+  font-size: 15px;
+  color: #bbb;
+}
+
+.prose-dark img {
+  max-width: 100%;
+  border-radius: 10px;
+  border: 1px solid #222;
+  margin: 8px 0 24px;
+}
+
+.prose-dark hr {
+  border: none;
+  height: 1px;
+  background: #1a1a1a;
+  margin: 40px 0;
+}
+
+.prose-dark table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 24px;
+  font-size: 15px;
+}
+
+.prose-dark thead {
+  border-bottom: 2px solid #333;
+}
+
+.prose-dark th {
+  color: #fafafa;
+  font-weight: 600;
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.prose-dark td {
+  color: #ccc;
+  padding: 10px 12px;
+  border-bottom: 1px solid #1a1a1a;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.prose-dark tbody tr:hover {
+  background: #111;
+}
+
+.prose-dark thead th:first-child,
+.prose-dark tbody td:first-child {
+  color: #888;
+  font-weight: 500;
+}

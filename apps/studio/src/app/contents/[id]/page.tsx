@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { useParams, useRouter } from "next/navigation";
 import Markdown from "react-markdown";
+import { ProseBody } from "@brxce/ui";
 import MediaLibraryModal from "@/components/MediaLibraryModal";
 
 interface Content {
@@ -298,9 +299,7 @@ export default function ContentDetailPage() {
         </div>
         {editing ? (
           preview ? (
-            <div className="prose-dark p-6 bg-[#111] border border-[#222] rounded-[10px] min-h-[300px]">
-              <Markdown>{content.body_md || ""}</Markdown>
-            </div>
+            <ProseBody content={content.body_md || ""} className="max-w-none p-6 bg-[#111] border border-[#222] rounded-[10px] min-h-[300px]" />
           ) : (
             <textarea
               ref={textareaRef}
@@ -312,9 +311,7 @@ export default function ContentDetailPage() {
             />
           )
         ) : (
-          <div className="prose-dark p-6 bg-[#111] border border-[#222] rounded-[10px]">
-            <Markdown>{content.body_md || "*본문 없음*"}</Markdown>
-          </div>
+          <ProseBody content={content.body_md || "*본문 없음*"} className="max-w-none p-6 bg-[#111] border border-[#222] rounded-[10px]" />
         )}
       </div>
 
