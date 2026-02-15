@@ -16,6 +16,8 @@ const navItems = [
   { href: "---", label: "", icon: "" },
   { href: "/campaigns", label: "캠페인", icon: "🚀" },
   { href: "/campaigns/calendar", label: "캘린더", icon: "📅" },
+  { href: "/campaigns/series", label: "시리즈", icon: "📚" },
+  { href: "/assets", label: "에셋", icon: "🗄️" },
   { href: "/analytics", label: "성과", icon: "📈" },
   { href: "/style-profiles", label: "스타일 프로필", icon: "🎨" },
 ];

@@ -392,6 +392,12 @@ export default function CampaignCockpitPage() {
         >
           + Atom 추가
         </button>
+        <button
+          onClick={() => router.push(`/campaigns/${id}/canvas`)}
+          className="px-4 py-2 rounded-lg border border-[#333] bg-transparent text-[#888] text-sm cursor-pointer hover:text-[#fafafa] hover:border-[#555]"
+        >
+          🎨 캔버스
+        </button>
         <button onClick={() => bulkAction("generate")} className="px-4 py-2 rounded-lg border border-[#333] bg-transparent text-[#888] text-sm cursor-pointer hover:text-[#fafafa] hover:border-[#555]">
           전체 생성
         </button>

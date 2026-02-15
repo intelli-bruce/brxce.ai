@@ -16,6 +16,7 @@ export default function NewCampaignPage() {
     cta_target: "",
     origin_direction: "top_down",
     series_id: "",
+    seo_keywords: "",
   });
 
   const set = (key: string, value: string) => setForm(prev => ({ ...prev, [key]: value }));
@@ -33,6 +34,7 @@ export default function NewCampaignPage() {
       cta_target: form.cta_target || null,
       origin_direction: form.origin_direction,
       series_id: form.series_id || null,
+      seo_keywords: form.seo_keywords ? form.seo_keywords.split(",").map(s => s.trim()).filter(Boolean) : null,
     };
     const { data, error } = await sb.from("campaigns").insert(payload).select("id").single();
     if (data) {
@@ -102,6 +104,16 @@ export default function NewCampaignPage() {
             placeholder="https://"
             className="w-full px-3 py-2 rounded-lg border border-[#333] bg-[#0a0a0a] text-sm text-[#fafafa] outline-none focus:border-[#555]"
           />
+        </Field>
+
+        <Field label="SEO 키워드 (쉼표 구분)">
+          <input
+            value={form.seo_keywords}
+            onChange={e => set("seo_keywords", e.target.value)}
+            placeholder="에이전틱 워크플로우, AI 에이전트, 업무 자동화"
+            className="w-full px-3 py-2 rounded-lg border border-[#333] bg-[#0a0a0a] text-sm text-[#fafafa] outline-none focus:border-[#555]"
+          />
+          <p className="text-[10px] text-[#555] mt-1">서브에이전트가 추가 키워드 리서치를 수행합니다</p>
         </Field>
 
         <Field label="오리진 방향">
