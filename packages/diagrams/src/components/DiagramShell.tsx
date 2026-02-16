@@ -1,5 +1,5 @@
 /** Wraps any diagram with bg, sizing, watermark, background texture */
-import { theme, RATIO_PRESETS, type RatioPreset } from "../theme";
+import { color, font, space, RATIO_PRESETS, type RatioPreset } from "../tokens";
 import { Watermark } from "./Watermark";
 
 interface DiagramShellProps {
@@ -29,13 +29,13 @@ export function DiagramShell({
       style={{
         width: w,
         height: h,
-        backgroundColor: theme.colors.bg,
+        backgroundColor: color.bg,
         position: "relative",
         overflow: "hidden",
-        fontFamily: theme.fonts.sans,
-        color: theme.colors.text,
+        fontFamily: font.family.sans,
+        color: color.text,
         WebkitFontSmoothing: "antialiased",
-        MozOsxFontSmoothing: "grayscale",
+        MozOsxFontSmoothing: "grayscale" as unknown as string,
       }}
     >
       {/* Subtle grid background */}
@@ -60,7 +60,7 @@ export function DiagramShell({
           left: "10%",
           right: "10%",
           height: 2,
-          background: `linear-gradient(90deg, transparent, ${theme.colors.primary}44, transparent)`,
+          background: `linear-gradient(90deg, transparent, ${color.primaryDim}, transparent)`,
         }}
       />
 
@@ -69,7 +69,7 @@ export function DiagramShell({
         <div
           style={{
             position: "absolute",
-            top: 28,
+            top: space.xxl,
             left: 0,
             right: 0,
             textAlign: "center",
@@ -77,11 +77,10 @@ export function DiagramShell({
         >
           <span
             style={{
-              fontSize: 26,
-              fontWeight: 800,
-              color: theme.colors.text,
-              letterSpacing: "-0.03em",
-              background: `linear-gradient(135deg, ${theme.colors.text}, ${theme.colors.primary})`,
+              fontSize: font.size.title,
+              fontWeight: font.weight.black,
+              letterSpacing: font.letterSpacing.tight,
+              background: `linear-gradient(135deg, ${color.text}, ${color.primary})`,
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
             }}
@@ -96,8 +95,8 @@ export function DiagramShell({
         style={{
           position: "absolute",
           top: title ? 76 : 24,
-          left: 28,
-          right: 28,
+          left: space.xxl,
+          right: space.xxl,
           bottom: 64,
         }}
       >

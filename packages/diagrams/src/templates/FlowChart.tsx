@@ -1,4 +1,4 @@
-/** React Flow based flow chart */
+/** React Flow based flow chart — built with design system tokens */
 "use client";
 
 import {
@@ -9,20 +9,20 @@ import {
   Position,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { theme } from "../theme";
+import { color, font, radius, connector } from "../tokens";
 import { DiagramShell } from "../components/DiagramShell";
-import type { RatioPreset } from "../theme";
+import type { RatioPreset } from "../tokens";
 
-/** Custom node styles */
-const nodeStyle = (color?: string, highlight?: boolean) => ({
-  background: theme.colors.bg,
-  color: color ?? theme.colors.text,
-  border: `${highlight ? 2 : 1.5}px solid ${color ?? theme.colors.stroke}`,
-  borderRadius: theme.radii.md,
+/** Custom node styles using design tokens */
+const nodeStyle = (nodeColor?: string, highlight?: boolean) => ({
+  background: color.bg,
+  color: nodeColor ?? color.text,
+  border: `${highlight ? 2 : connector.strokeWidth}px solid ${nodeColor ?? color.textSecondary}`,
+  borderRadius: radius.md,
   padding: "10px 16px",
-  fontSize: 13,
-  fontFamily: theme.fonts.sans,
-  fontWeight: highlight ? 700 : 500,
+  fontSize: font.size.subheading - 1,
+  fontFamily: font.family.sans,
+  fontWeight: highlight ? font.weight.bold : font.weight.medium,
   textAlign: "center" as const,
   minWidth: 100,
 });
@@ -70,8 +70,8 @@ export function FlowChart({ title, nodes, edges, ratio = "guide-3:2", avatarUrl 
     target: e.target,
     label: e.label,
     animated: e.animated,
-    style: { stroke: e.color ?? theme.colors.textDim, strokeWidth: 1.5 },
-    labelStyle: { fill: theme.colors.textMuted, fontSize: 11 },
+    style: { stroke: e.color ?? color.textDim, strokeWidth: connector.strokeWidth },
+    labelStyle: { fill: color.textMuted, fontSize: font.size.caption - 1 },
   }));
 
   return (
@@ -89,7 +89,7 @@ export function FlowChart({ title, nodes, edges, ratio = "guide-3:2", avatarUrl 
         zoomOnScroll={false}
         zoomOnDoubleClick={false}
       >
-        <Background color={theme.colors.border} gap={40} size={1} />
+        <Background color={color.borderStrong} gap={40} size={1} />
       </ReactFlow>
     </DiagramShell>
   );

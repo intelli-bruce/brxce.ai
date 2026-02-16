@@ -1,5 +1,5 @@
 /** Avatar + brxce.ai watermark — bottom-right of every diagram */
-import { theme } from "../theme";
+import { color, font, space } from "../tokens";
 
 interface WatermarkProps {
   avatarUrl?: string;
@@ -10,11 +10,11 @@ export function Watermark({ avatarUrl = "/profile.jpg" }: WatermarkProps) {
     <div
       style={{
         position: "absolute",
-        bottom: 16,
-        right: 24,
+        bottom: space.lg,
+        right: space.xl + space.xs,
         display: "flex",
         alignItems: "center",
-        gap: 10,
+        gap: space.sm + 2,
       }}
     >
       <div
@@ -22,29 +22,25 @@ export function Watermark({ avatarUrl = "/profile.jpg" }: WatermarkProps) {
           width: 32,
           height: 32,
           borderRadius: "50%",
-          border: `1.5px solid ${theme.colors.primary}88`,
+          border: `1.5px solid ${color.primary}88`,
           overflow: "hidden",
-          boxShadow: `0 0 12px ${theme.colors.primary}22`,
+          boxShadow: `0 0 12px ${color.primaryFaint}`,
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={avatarUrl}
           alt=""
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-          }}
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
         />
       </div>
       <span
         style={{
-          fontFamily: theme.fonts.sans,
-          fontSize: 15,
-          fontWeight: 600,
-          color: theme.colors.primary,
-          letterSpacing: "-0.02em",
+          fontFamily: font.family.sans,
+          fontSize: font.size.body,
+          fontWeight: font.weight.semibold,
+          color: color.primary,
+          letterSpacing: font.letterSpacing.normal,
           opacity: 0.7,
         }}
       >

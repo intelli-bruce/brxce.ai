@@ -1,6 +1,14 @@
-export { theme, RATIO_PRESETS, type RatioPreset } from "./theme";
+// Design tokens
+export * from "./tokens";
+
+// Primitives
+export * from "./primitives";
+
+// Components
 export { DiagramShell } from "./components/DiagramShell";
 export { Watermark } from "./components/Watermark";
+
+// Templates
 export { Comparison, type ComparisonProps } from "./templates/Comparison";
 export { OrgChart, type OrgChartProps } from "./templates/OrgChart";
 export { BeforeAfter, type BeforeAfterProps } from "./templates/BeforeAfter";
