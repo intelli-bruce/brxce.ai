@@ -10,10 +10,24 @@ const PUBLIC_PATHS = ["/auth/login", "/auth/signup", "/auth/callback"];
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("sidebar-collapsed") === "true";
+    }
+    return false;
+  });
   const router = useRouter();
   const pathname = usePathname();
 
   const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
+
+  const toggleSidebar = useCallback(() => {
+    setSidebarCollapsed(prev => {
+      const next = !prev;
+      localStorage.setItem("sidebar-collapsed", String(next));
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     if (isPublic) {
@@ -57,21 +71,6 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   if (isPublic) {
     return <>{children}</>;
   }
-
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("sidebar-collapsed") === "true";
-    }
-    return false;
-  });
-
-  const toggleSidebar = useCallback(() => {
-    setSidebarCollapsed(prev => {
-      const next = !prev;
-      localStorage.setItem("sidebar-collapsed", String(next));
-      return next;
-    });
-  }, []);
 
   if (!isAdmin) {
     return (
