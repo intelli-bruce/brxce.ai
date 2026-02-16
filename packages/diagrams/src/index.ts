@@ -1,8 +1,11 @@
+// Export
+export { exportDiagram, type ExportOptions } from "./lib/export";
+
 // Design tokens
 export * from "./tokens";
 
 // Scale context
-export { useScale } from "./components/DiagramShell";
+export { useScale, useSketch } from "./components/DiagramShell";
 
 // Primitives
 export * from "./primitives";
@@ -16,3 +19,4 @@ export { Comparison, type ComparisonProps } from "./templates/Comparison";
 export { OrgChart, type OrgChartProps } from "./templates/OrgChart";
 export { BeforeAfter, type BeforeAfterProps } from "./templates/BeforeAfter";
 export { FlowChart, type FlowChartProps } from "./templates/FlowChart";
+// SketchComparison removed — use Comparison with sketch={true} instead

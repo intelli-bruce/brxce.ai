@@ -3,3 +3,5 @@ export { ListItem, List } from "./ListItem";
 export { ArrowBadge, LargeArrow, VerticalLine, ConnectorLabel } from "./Connector";
 export { Badge } from "./Badge";
 export { Footnote } from "./Footnote";
+export { SketchRect } from "./SketchRect";
+export { SketchLine } from "./SketchLine";

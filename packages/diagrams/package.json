@@ -6,7 +6,9 @@
   "types": "./src/index.ts",
   "dependencies": {
     "@xyflow/react": "^12.6.0",
+    "html-to-image": "^1.11.13",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "roughjs": "^4.6.6"
   }
 }

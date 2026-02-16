@@ -22,6 +22,7 @@ export interface OrgChartProps {
   connectorLabel?: string;
   ratio?: RatioPreset;
   avatarUrl?: string;
+  sketch?: boolean;
 }
 
 function NodeCard({ node, variant }: { node: OrgNode; variant: "top" | "hub" | "group" }) {
@@ -117,9 +118,9 @@ function OrgChartInner({ top, hub, groups, footnote, connectorLabel }: Omit<OrgC
   );
 }
 
-export function OrgChart({ title, ratio = "guide-3:2", avatarUrl, ...rest }: OrgChartProps) {
+export function OrgChart({ title, ratio = "guide-3:2", avatarUrl, sketch, ...rest }: OrgChartProps) {
   return (
-    <DiagramShell title={title} ratio={ratio} avatarUrl={avatarUrl}>
+    <DiagramShell title={title} ratio={ratio} avatarUrl={avatarUrl} sketch={sketch}>
       <OrgChartInner {...rest} />
     </DiagramShell>
   );
