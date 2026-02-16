@@ -7,6 +7,7 @@ import Markdown from "react-markdown";
 import { ProseBody } from "@brxce/ui";
 import MediaLibraryModal from "@/components/MediaLibraryModal";
 import IdBadge from "@/components/IdBadge";
+import BlockEditor from "@/components/BlockEditor";
 
 interface Content {
   id: string;
@@ -60,6 +61,7 @@ export default function ContentDetailPage() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [mediaOpen, setMediaOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"classic" | "blocks">("blocks");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   function insertImageMarkdown(url: string) {
@@ -284,8 +286,43 @@ export default function ContentDetailPage() {
         )}
       </div>
 
-      {/* Body */}
-      <div className="mb-8">
+      {/* View mode toggle */}
+      <div className="flex items-center gap-1 mb-4 p-1 bg-[#111] rounded-[10px] w-fit">
+        <button
+          onClick={() => setViewMode("blocks")}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+            viewMode === "blocks"
+              ? "bg-[#FF6B35] text-white"
+              : "text-[#888] hover:text-[#fafafa]"
+          }`}
+        >
+          🧱 블록 에디터
+        </button>
+        <button
+          onClick={() => setViewMode("classic")}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+            viewMode === "classic"
+              ? "bg-[#FF6B35] text-white"
+              : "text-[#888] hover:text-[#fafafa]"
+          }`}
+        >
+          📝 클래식
+        </button>
+      </div>
+
+      {/* Block Editor */}
+      {viewMode === "blocks" && (
+        <div className="mb-8">
+          <BlockEditor
+            contentId={id}
+            bodyMd={content.body_md || ""}
+            onBodySync={(md) => setContent({ ...content, body_md: md })}
+          />
+        </div>
+      )}
+
+      {/* Classic Body */}
+      {viewMode === "classic" && <div className="mb-8">
         <div className="flex items-center gap-4 mb-2">
           <label className="text-xs text-[#888]">본문 (Markdown)</label>
           {editing && (
@@ -317,7 +354,7 @@ export default function ContentDetailPage() {
         ) : (
           <ProseBody content={content.body_md || "*본문 없음*"} className="max-w-none p-6 bg-[#111] border border-[#222] rounded-[10px]" />
         )}
-      </div>
+      </div>}
 
       <MediaLibraryModal
         open={mediaOpen}
