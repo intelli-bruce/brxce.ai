@@ -6,12 +6,31 @@ import {
   Comparison,
   OrgChart,
   BeforeAfter,
-  DiagramShell,
+  OgImage,
+  Thumbnail,
+  Quote,
+  SocialPost,
+  Infographic,
+  CardNewsCarousel,
+  StepByStepCarousel,
+  ListCarousel,
+  BeforeAfterCarousel,
+  QuoteCarousel,
 } from "@brxce/diagrams";
 import type {
   ComparisonProps,
   OrgChartProps,
   BeforeAfterProps,
+  OgImageProps,
+  ThumbnailProps,
+  QuoteProps,
+  SocialPostProps,
+  InfographicProps,
+  CardNewsCarouselProps,
+  StepByStepCarouselProps,
+  ListCarouselProps,
+  BeforeAfterCarouselProps,
+  QuoteCarouselProps,
 } from "@brxce/diagrams";
 
 /* ── Types ── */
@@ -25,7 +44,7 @@ interface TemplateInfo {
   propsSchema: Record<string, string>;
   sampleData: Record<string, unknown>;
   /** If set, render live React component preview */
-  livePreview?: "comparison" | "orgchart" | "beforeafter" | "flowchart";
+  livePreview?: "comparison" | "orgchart" | "beforeafter" | "flowchart" | "ogimage" | "thumbnail" | "quote" | "socialpost" | "infographic" | "cardnews" | "stepbystep" | "listcarousel" | "beforeaftercarousel" | "quotecarousel";
   /** Fallback ASCII preview */
   asciiPreview?: { blocks: string[]; accent?: string };
 }
@@ -38,7 +57,7 @@ const COMPARISON_SAMPLE: ComparisonProps = {
     { title: "자동화", subtitle: "스크립트/RPA", items: ["반복 제거", "속도 향상", "규칙 기반", "유지보수 필요"] },
     { title: "에이전틱", subtitle: "AI 에이전트", items: ["자율 판단", "실시간 적응", "지속 학습", "무한 확장"], highlight: true },
   ],
-  ratio: "guide",
+  ratio: "guide-3:2",
 };
 
 const ORGCHART_SAMPLE: OrgChartProps = {
@@ -51,7 +70,7 @@ const ORGCHART_SAMPLE: OrgChartProps = {
     { label: "개발", sub: "Brxce" },
     { label: "재무", sub: "Finanz" },
   ],
-  ratio: "guide",
+  ratio: "guide-3:2",
 };
 
 const BEFOREAFTER_SAMPLE: BeforeAfterProps = {
@@ -59,7 +78,59 @@ const BEFOREAFTER_SAMPLE: BeforeAfterProps = {
   before: { label: "Before", items: ["매일 2시간 소요", "실수 빈번", "확장 불가", "컨텍스트 유실"] },
   after: { label: "After", items: ["10분으로 단축", "일관된 품질", "무한 확장", "메모리 지속"] },
   arrow: "전환",
-  ratio: "guide",
+  ratio: "guide-3:2",
+};
+
+/* ── Image template sample data ── */
+const OGIMAGE_SAMPLE: OgImageProps = { title: "에이전틱 워크플로우란?", subtitle: "brxce.ai", ratio: "blog-16:9" };
+const THUMBNAIL_SAMPLE: ThumbnailProps = { title: "AI 에이전트 실전 가이드", badge: "NEW", ratio: "blog-16:9" };
+const QUOTE_SAMPLE: QuoteProps = { quote: "에이전틱 워크플로우는 자동화의 다음 단계다", author: "Bruce Choe", ratio: "square-1:1" };
+const SOCIALPOST_SAMPLE: SocialPostProps = { text: "AI 에이전트 12개가 회사를 운영한다", cta: "brxce.ai", ratio: "square-1:1" };
+const INFOGRAPHIC_SAMPLE: InfographicProps = {
+  title: "2026 AI 트렌드",
+  sections: [
+    { heading: "에이전틱 워크플로우", items: ["자율 판단", "실시간 적응", "지속 학습"] },
+    { heading: "멀티모달 AI", items: ["텍스트+이미지", "음성+영상", "코드 생성"] },
+  ],
+  ratio: "insta-4:5",
+};
+
+/* ── Carousel template sample data ── */
+const CARDNEWS_SAMPLE: CardNewsCarouselProps = {
+  cover: { title: "에이전틱 워크플로우 5단계", hook: "AI가 일하게 만드는 법" },
+  slides: [{ point: "자율 판단", detail: "AI가 스스로 결정" }, { point: "실시간 적응" }, { point: "지속 학습" }],
+  cta: "brxce.ai에서 더 알아보기",
+  ratio: "insta-4:5",
+};
+const STEPBYSTEP_SAMPLE: StepByStepCarouselProps = {
+  title: "OpenClaw 시작하기",
+  steps: [
+    { number: 1, title: "설치", desc: "npm install openclaw" },
+    { number: 2, title: "설정", desc: "config 파일 생성" },
+    { number: 3, title: "실행", desc: "openclaw start" },
+  ],
+  ratio: "insta-4:5",
+};
+const LISTCAROUSEL_SAMPLE: ListCarouselProps = {
+  title: "AI 에이전트 필수 도구 5선",
+  items: [
+    { label: "OpenClaw", desc: "에이전트 오케스트레이션" },
+    { label: "Claude Code", desc: "코딩 에이전트" },
+    { label: "Cursor", desc: "AI IDE" },
+  ],
+  ratio: "insta-4:5",
+};
+const BEFOREAFTER_CAROUSEL_SAMPLE: BeforeAfterCarouselProps = {
+  before: { label: "Before", items: ["매일 2시간 소요", "실수 빈번", "확장 불가"] },
+  after: { label: "After", items: ["10분으로 단축", "일관된 품질", "무한 확장"] },
+  ratio: "insta-4:5",
+};
+const QUOTECAROUSEL_SAMPLE: QuoteCarouselProps = {
+  quotes: [
+    { text: "에이전틱 워크플로우는 자동화의 다음 단계다", author: "Bruce Choe" },
+    { text: "AI는 도구가 아니라 동료다", author: "Bruce Choe" },
+  ],
+  ratio: "insta-4:5",
 };
 
 /* ── Template Registry ── */
@@ -101,52 +172,52 @@ const IMAGE_TEMPLATES: TemplateInfo[] = [
   {
     name: "OgImage", sub: "커버", desc: "Open Graph 소셜 미리보기 이미지 (1200×630)",
     layout: "제목 + 부제 + 브랜드 로고 오버레이", ratios: ["1200×630"],
-    propsSchema: { title: "string", subtitle: "string", bgColor: "string" },
-    sampleData: { title: "에이전틱 워크플로우란?", subtitle: "brxce.ai" },
-    asciiPreview: { blocks: ["┌──────────────────────┐", "│                      │", "│   에이전틱 워크플로우  │", "│   ─────────────────   │", "│          brxce.ai     │", "└──────────────────────┘"], accent: "#FF6B35" },
+    propsSchema: { title: "string", subtitle: "string", tag: "string" },
+    sampleData: OGIMAGE_SAMPLE as unknown as Record<string, unknown>,
+    livePreview: "ogimage",
   },
   {
     name: "Thumbnail", sub: "커버", desc: "YouTube/블로그 썸네일 (1280×720)",
     layout: "배경 이미지 + 타이틀 텍스트 + 뱃지", ratios: ["1280×720"],
-    propsSchema: { title: "string", badge: "string", bgImage: "string" },
-    sampleData: { title: "AI 에이전트 실전 가이드", badge: "NEW" },
-    asciiPreview: { blocks: ["┌──────────────────────┐", "│ [NEW]                │", "│                      │", "│  AI 에이전트 실전 가이드│", "└──────────────────────┘"], accent: "#FF922B" },
+    propsSchema: { title: "string", badge: "string" },
+    sampleData: THUMBNAIL_SAMPLE as unknown as Record<string, unknown>,
+    livePreview: "thumbnail",
   },
   // Social
   {
     name: "Quote", sub: "소셜", desc: "인용구 카드 (1080×1080)",
     layout: "큰 따옴표 + 인용문 + 저자 + 브랜딩", ratios: ["1080×1080"],
     propsSchema: { quote: "string", author: "string" },
-    sampleData: { quote: "에이전틱 워크플로우는 자동화의 다음 단계다", author: "Bruce Choe" },
-    asciiPreview: { blocks: ["┌────────────────┐", "│  ❝             │", "│  인용문 텍스트   │", "│         — 저자  │", "└────────────────┘"], accent: "#F783AC" },
+    sampleData: QUOTE_SAMPLE as unknown as Record<string, unknown>,
+    livePreview: "quote",
   },
   {
     name: "SocialPost", sub: "소셜", desc: "소셜 미디어 정사각형 (1080×1080)",
     layout: "배경 + 메인 텍스트 + CTA", ratios: ["1080×1080"],
     propsSchema: { text: "string", cta: "string" },
-    sampleData: { text: "AI 에이전트 12개가 회사를 운영한다", cta: "brxce.ai" },
-    asciiPreview: { blocks: ["┌────────────────┐", "│  메인 텍스트    │", "│    [ CTA ]     │", "└────────────────┘"], accent: "#66D9E8" },
+    sampleData: SOCIALPOST_SAMPLE as unknown as Record<string, unknown>,
+    livePreview: "socialpost",
   },
   {
     name: "Infographic", sub: "인포그래픽", desc: "데이터 시각화 세로 인포그래픽",
     layout: "섹션별 데이터 블록 세로 배치", ratios: ["1080×1920"],
     propsSchema: { title: "string", sections: "Section[]" },
-    sampleData: { title: "2026 AI 트렌드", sections: ["에이전틱 워크플로우", "멀티모달 AI"] },
-    asciiPreview: { blocks: ["┌──────────┐", "│  TITLE   │", "├──────────┤", "│ Section1 │", "├──────────┤", "│ Section2 │", "└──────────┘"], accent: "#B197FC" },
+    sampleData: INFOGRAPHIC_SAMPLE as unknown as Record<string, unknown>,
+    livePreview: "infographic",
   },
 ];
 
 const CAROUSEL_TEMPLATES: TemplateInfo[] = [
-  { name: "CardNews", sub: "카드뉴스", desc: "커버→본문→CTA 구조 캐러셀", layout: "슬라이드: 커버(제목+훅) → 본문(1포인트/장) → CTA", ratios: ["1080×1350 (4:5)"], propsSchema: { cover: "{ title, hook }", slides: "Slide[]", cta: "string" }, sampleData: {},
-    asciiPreview: { blocks: ["[Cover]  [Slide1]  [Slide2]  [CTA]", "┌─────┐  ┌─────┐  ┌─────┐  ┌─────┐", "│TITLE│  │  1  │  │  2  │  │ CTA │", "│ hook│  │point│  │point│  │  →  │", "└─────┘  └─────┘  └─────┘  └─────┘"], accent: "#69DB7C" } },
-  { name: "StepByStep", sub: "가이드", desc: "단계별 가이드 캐러셀", layout: "슬라이드: 번호 + 제목 + 설명", ratios: ["1080×1350"], propsSchema: { steps: "Step[] — { number, title, desc }" }, sampleData: {},
-    asciiPreview: { blocks: ["[Step1]  [Step2]  [Step3]", "┌─────┐  ┌─────┐  ┌─────┐", "│ ①   │  │ ②   │  │ ③   │", "│title│  │title│  │title│", "└─────┘  └─────┘  └─────┘"], accent: "#4C9AFF" } },
-  { name: "ListCarousel", sub: "리스트", desc: "리스트형 아이템 슬라이드", layout: "슬라이드: 리스트 항목 카드", ratios: ["1080×1350"], propsSchema: { items: "ListItem[]" }, sampleData: {},
-    asciiPreview: { blocks: ["┌──────────┐", "│ · Item 1 │", "│ · Item 2 │", "│ · Item 3 │", "└──────────┘"], accent: "#FFD43B" } },
-  { name: "BeforeAfter", sub: "비교", desc: "전후 비교 슬라이드 페어", layout: "Before 슬라이드 → After 슬라이드", ratios: ["1080×1350"], propsSchema: { before: "Slide", after: "Slide" }, sampleData: {},
-    asciiPreview: { blocks: ["[Before]     [After]", "┌───────┐   ┌───────┐", "│  old  │ → │  new  │", "└───────┘   └───────┘"], accent: "#FF922B" } },
-  { name: "QuoteCarousel", sub: "인용", desc: "명언/인용 캐러셀", layout: "각 슬라이드에 인용문+출처", ratios: ["1080×1350"], propsSchema: { quotes: "Quote[]" }, sampleData: {},
-    asciiPreview: { blocks: ["[Quote1]     [Quote2]", "┌───────┐   ┌───────┐", "│ ❝ ... │   │ ❝ ... │", "│  —저자│   │  —저자│", "└───────┘   └───────┘"], accent: "#F783AC" } },
+  { name: "CardNews", sub: "카드뉴스", desc: "커버→본문→CTA 구조 캐러셀", layout: "슬라이드: 커버(제목+훅) → 본문(1포인트/장) → CTA", ratios: ["1080×1350 (4:5)"], propsSchema: { cover: "{ title, hook }", slides: "Slide[]", cta: "string" },
+    sampleData: CARDNEWS_SAMPLE as unknown as Record<string, unknown>, livePreview: "cardnews" },
+  { name: "StepByStep", sub: "가이드", desc: "단계별 가이드 캐러셀", layout: "슬라이드: 번호 + 제목 + 설명", ratios: ["1080×1350"], propsSchema: { steps: "Step[] — { number, title, desc }" },
+    sampleData: STEPBYSTEP_SAMPLE as unknown as Record<string, unknown>, livePreview: "stepbystep" },
+  { name: "ListCarousel", sub: "리스트", desc: "리스트형 아이템 슬라이드", layout: "슬라이드: 리스트 항목 카드", ratios: ["1080×1350"], propsSchema: { items: "ListItem[]" },
+    sampleData: LISTCAROUSEL_SAMPLE as unknown as Record<string, unknown>, livePreview: "listcarousel" },
+  { name: "BeforeAfterCarousel", sub: "비교", desc: "전후 비교 슬라이드 페어", layout: "Before 슬라이드 → After 슬라이드", ratios: ["1080×1350"], propsSchema: { before: "Slide", after: "Slide" },
+    sampleData: BEFOREAFTER_CAROUSEL_SAMPLE as unknown as Record<string, unknown>, livePreview: "beforeaftercarousel" },
+  { name: "QuoteCarousel", sub: "인용", desc: "명언/인용 캐러셀", layout: "각 슬라이드에 인용문+출처", ratios: ["1080×1350"], propsSchema: { quotes: "Quote[]" },
+    sampleData: QUOTECAROUSEL_SAMPLE as unknown as Record<string, unknown>, livePreview: "quotecarousel" },
 ];
 
 const VIDEO_TEMPLATES: TemplateInfo[] = [
@@ -204,6 +275,26 @@ function LivePreview({ type, sketch }: { type: string; sketch: boolean }) {
           <BeforeAfter {...BEFOREAFTER_SAMPLE} sketch={sketch} />
         </div>
       );
+    case "ogimage":
+      return <div style={wrapStyle}><OgImage {...OGIMAGE_SAMPLE} sketch={sketch} /></div>;
+    case "thumbnail":
+      return <div style={wrapStyle}><Thumbnail {...THUMBNAIL_SAMPLE} sketch={sketch} /></div>;
+    case "quote":
+      return <div style={wrapStyle}><Quote {...QUOTE_SAMPLE} sketch={sketch} /></div>;
+    case "socialpost":
+      return <div style={wrapStyle}><SocialPost {...SOCIALPOST_SAMPLE} sketch={sketch} /></div>;
+    case "infographic":
+      return <div style={wrapStyle}><Infographic {...INFOGRAPHIC_SAMPLE} sketch={sketch} /></div>;
+    case "cardnews":
+      return <div style={wrapStyle}><CardNewsCarousel {...CARDNEWS_SAMPLE} sketch={sketch} /></div>;
+    case "stepbystep":
+      return <div style={wrapStyle}><StepByStepCarousel {...STEPBYSTEP_SAMPLE} sketch={sketch} /></div>;
+    case "listcarousel":
+      return <div style={wrapStyle}><ListCarousel {...LISTCAROUSEL_SAMPLE} sketch={sketch} /></div>;
+    case "beforeaftercarousel":
+      return <div style={wrapStyle}><BeforeAfterCarousel {...BEFOREAFTER_CAROUSEL_SAMPLE} sketch={sketch} /></div>;
+    case "quotecarousel":
+      return <div style={wrapStyle}><QuoteCarousel {...QUOTECAROUSEL_SAMPLE} sketch={sketch} /></div>;
     default:
       return null;
   }
