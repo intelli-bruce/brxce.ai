@@ -7,6 +7,8 @@ import GenerateModal from "@/components/campaign/GenerateModal";
 import VariantCompare from "@/components/campaign/VariantCompare";
 import FactCheckPanel from "@/components/campaign/FactCheckPanel";
 import ScheduleModal from "@/components/campaign/ScheduleModal";
+import BlockEditor from "@/components/BlockEditor";
+import { ProseBody } from "@brxce/ui";
 import type { Campaign, CampaignAtom, CampaignVariant, GenerationConfig, FactCheckFlag } from "@/lib/campaign/types";
 import IdBadge from "@/components/IdBadge";
 
@@ -64,7 +66,10 @@ export default function CampaignCockpitPage() {
   const [scheduleAtom, setScheduleAtom] = useState<CampaignAtom | null>(null);
   const [expandedAtom, setExpandedAtom] = useState<string | null>(null);
   const [sourceContent, setSourceContent] = useState<{ id: string; title: string; slug: string; status: string; category: string; body_md: string } | null>(null);
-  const [showContentPreview, setShowContentPreview] = useState(false);
+  const [showContentPreview, setShowContentPreview] = useState(true);
+  const [pillarEditMode, setPillarEditMode] = useState(false);
+  const [snapshots, setSnapshots] = useState<{ id: string; created_at: string; label: string }[]>([]);
+  const [showSnapshots, setShowSnapshots] = useState(false);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
   const sb = createSupabaseBrowser();
@@ -93,6 +98,17 @@ export default function CampaignCockpitPage() {
         .eq("id", contentId)
         .single();
       if (content) setSourceContent(content);
+    }
+
+    // Load snapshots for source content
+    if (contentId) {
+      const { data: snaps } = await sb
+        .from("document_snapshots")
+        .select("id, created_at, label")
+        .eq("content_id", contentId)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (snaps) setSnapshots(snaps);
     }
 
     // Load variants for all atoms
@@ -209,6 +225,34 @@ export default function CampaignCockpitPage() {
       await sb.from("campaign_atoms").update({ status: "scheduled", scheduled_at: new Date().toISOString() }).in("id", approvedIds);
     }
     loadData();
+  }
+
+  async function saveSnapshot(reason?: string) {
+    if (!sourceContent) return;
+    await sb.from("document_snapshots").insert({
+      content_id: sourceContent.id,
+      body_md: sourceContent.body_md,
+      label: reason || "manual snapshot",
+    });
+    loadData();
+  }
+
+  async function restoreSnapshot(snapshotId: string) {
+    if (!sourceContent) return;
+    const { data: snap } = await sb
+      .from("document_snapshots")
+      .select("body_md")
+      .eq("id", snapshotId)
+      .single();
+    if (!snap?.body_md) return;
+    // Save current as snapshot first
+    await saveSnapshot("auto: before restore");
+    // Restore
+    await sb.from("contents").update({
+      body_md: snap.body_md,
+    }).eq("id", sourceContent.id);
+    loadData();
+    setPillarEditMode(false);
   }
 
   function renderAtomCard(atom: CampaignAtom) {
@@ -378,40 +422,94 @@ export default function CampaignCockpitPage() {
         </div>
       </div>
 
-      {/* Source content */}
+      {/* Pillar Content — inline full view */}
       {sourceContent && (
-        <div className="mb-6 p-4 bg-[#141414] border border-[#222] rounded-xl">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-[#555]">원본 콘텐츠</span>
-              <span className={`text-[10px] px-1.5 py-0.5 rounded ${sourceContent.status === 'published' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-                {sourceContent.status}
-              </span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#222] text-[#888]">{sourceContent.category}</span>
+        <div className="mb-6 bg-[#141414] border border-[#222] rounded-xl overflow-hidden">
+          {/* Header */}
+          <div className="p-4 border-b border-[#222]">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-[#3B82F6]">📝 Pillar 콘텐츠</span>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded ${sourceContent.status === 'published' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                  {sourceContent.status}
+                </span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#222] text-[#888]">{sourceContent.category}</span>
+                <span className="text-[10px] text-[#555]">{sourceContent.body_md.length.toLocaleString()}자</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowSnapshots(!showSnapshots)}
+                  className="text-xs text-[#888] bg-transparent border-none cursor-pointer hover:text-[#fafafa]"
+                >
+                  📋 히스토리 ({snapshots.length})
+                </button>
+                <button
+                  onClick={() => saveSnapshot("manual")}
+                  className="text-xs text-[#888] bg-transparent border-none cursor-pointer hover:text-[#fafafa]"
+                >
+                  💾 스냅샷
+                </button>
+                <button
+                  onClick={() => {
+                    if (!pillarEditMode) saveSnapshot("auto: before edit");
+                    setPillarEditMode(!pillarEditMode);
+                  }}
+                  className={`text-xs px-2.5 py-1 rounded-lg border cursor-pointer ${pillarEditMode ? 'border-[#FF6B35] text-[#FF6B35] bg-[#FF6B35]/10' : 'border-[#333] text-[#4ECDC4] bg-transparent hover:border-[#4ECDC4]/30'}`}
+                >
+                  {pillarEditMode ? '✏️ 편집 중' : '✏️ 편집'}
+                </button>
+                <button
+                  onClick={() => setShowContentPreview(!showContentPreview)}
+                  className="text-xs text-[#555] bg-transparent border-none cursor-pointer hover:text-[#888]"
+                >
+                  {showContentPreview ? '▼' : '▶'}
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowContentPreview(!showContentPreview)}
-                className="text-xs text-[#4ECDC4] bg-transparent border-none cursor-pointer hover:underline"
-              >
-                {showContentPreview ? '접기' : '미리보기'}
-              </button>
-              <button
-                onClick={() => router.push(`/contents/${sourceContent.id}`)}
-                className="text-xs text-[#888] bg-transparent border-none cursor-pointer hover:text-[#fafafa]"
-              >
-                편집 →
-              </button>
+            <h2 className="text-lg font-bold text-[#fafafa]">{sourceContent.title}</h2>
+          </div>
+
+          {/* Snapshot history panel */}
+          {showSnapshots && (
+            <div className="border-b border-[#222] p-4 bg-[#0f0f0f]">
+              <div className="text-xs font-medium text-[#888] mb-2">스냅샷 히스토리</div>
+              {snapshots.length === 0 ? (
+                <div className="text-xs text-[#555]">스냅샷 없음</div>
+              ) : (
+                <div className="flex flex-col gap-1.5 max-h-40 overflow-y-auto">
+                  {snapshots.map(s => (
+                    <div key={s.id} className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[#666]">{new Date(s.created_at).toLocaleString("ko-KR")}</span>
+                        <span className="text-[#555]">{s.label || ""}</span>
+                      </div>
+                      <button
+                        onClick={() => { if (confirm("이 스냅샷으로 복원할까요?")) restoreSnapshot(s.id); }}
+                        className="text-[#4ECDC4] bg-transparent border-none cursor-pointer hover:underline"
+                      >
+                        복원
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-sm font-medium text-[#fafafa]">{sourceContent.title}</span>
-            <IdBadge id={sourceContent.id} />
-          </div>
-          <div className="text-xs text-[#666]">{sourceContent.body_md.length.toLocaleString()}자 · {sourceContent.slug}</div>
+          )}
+
+          {/* Content body */}
           {showContentPreview && (
-            <div className="mt-3 p-3 bg-[#0a0a0a] border border-[#222] rounded-lg max-h-64 overflow-y-auto">
-              <pre className="text-xs text-[#999] whitespace-pre-wrap font-sans leading-relaxed">{sourceContent.body_md.substring(0, 2000)}{sourceContent.body_md.length > 2000 ? '\n\n... (더보기는 편집에서)' : ''}</pre>
+            <div className="p-6">
+              {pillarEditMode ? (
+                <BlockEditor
+                  contentId={sourceContent.id}
+                  bodyMd={sourceContent.body_md}
+                  onBodySync={(md) => {
+                    setSourceContent({ ...sourceContent, body_md: md });
+                  }}
+                />
+              ) : (
+                <ProseBody content={sourceContent.body_md} />
+              )}
             </div>
           )}
         </div>
@@ -424,16 +522,24 @@ export default function CampaignCockpitPage() {
         const otherAtoms = atoms.filter(a => !a.is_pillar && !a.pillar_atom_id);
         const pillarReady = pillarAtom && ['selected','fact_check','approved','scheduled','published'].includes(pillarAtom.status);
         return (<>
-          {/* Pillar section */}
+          {/* Pillar atom status — compact, no variants */}
           {pillarAtom && (
             <div className="mb-6">
-              <div className="text-xs font-semibold uppercase tracking-wider text-[#3B82F6] mb-2 flex items-center gap-2">
+              <div className="flex items-center gap-3 p-3 bg-[#141414] border border-[#222] rounded-xl">
                 <span className="w-2 h-2 rounded-full bg-[#3B82F6]" />
-                Pillar Content
-                <span className="text-[#555] normal-case font-normal">— 기준 콘텐츠 (먼저 확정)</span>
-              </div>
-              <div className="border-l-2 border-[#3B82F6]/30 pl-4">
-                {renderAtomCard(pillarAtom)}
+                <span className="text-xs font-medium text-[#3B82F6]">PILLAR</span>
+                <span className="text-xs text-[#888]">{CHANNEL_ICONS[pillarAtom.channel]} {pillarAtom.channel} · {FORMAT_LABELS[pillarAtom.format]}</span>
+                <span className={`text-xs px-2 py-0.5 rounded ${ATOM_STATUS_COLORS[pillarAtom.status]}`}>{pillarAtom.status}</span>
+                <div className="flex-1" />
+                {pillarAtom.status === 'selected' && (
+                  <button onClick={() => updateAtomStatus(pillarAtom.id, "fact_check")} className="px-2.5 py-1 rounded-lg border border-orange-500/30 text-orange-400 text-[11px] cursor-pointer bg-transparent hover:bg-orange-500/10">📋 팩트체크</button>
+                )}
+                {pillarAtom.status === 'fact_check' && (
+                  <button onClick={() => updateAtomStatus(pillarAtom.id, "approved")} className="px-2.5 py-1 rounded-lg border border-emerald-500/30 text-emerald-400 text-[11px] cursor-pointer bg-transparent hover:bg-emerald-500/10">✅ 승인</button>
+                )}
+                {pillarAtom.status === 'approved' && (
+                  <button onClick={() => setScheduleAtom(pillarAtom)} className="px-2.5 py-1 rounded-lg border border-indigo-500/30 text-indigo-400 text-[11px] cursor-pointer bg-transparent hover:bg-indigo-500/10">📅 스케줄</button>
+                )}
               </div>
             </div>
           )}
