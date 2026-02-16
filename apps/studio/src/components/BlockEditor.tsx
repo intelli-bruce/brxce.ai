@@ -86,7 +86,26 @@ export default function BlockEditor({ contentId, bodyMd, onBodySync }: Props) {
       if (cancelled) return;
 
       if (count && count > 0) {
-        await loadBlocks();
+        // Load existing blocks, then check if body_md has diverged
+        const { data: existingBlocks } = await sb
+          .from("content_blocks")
+          .select("*")
+          .eq("content_id", contentId)
+          .order("position");
+        if (cancelled) return;
+        if (existingBlocks?.length) {
+          const blocksMarkdown = blocksToMarkdown(existingBlocks.map(b => ({
+            block_type: b.block_type, body: b.body, meta: b.meta,
+          })));
+          // If body_md changed externally, re-parse
+          if (bodyMd?.trim() && blocksMarkdown.trim() !== bodyMd.trim()) {
+            await sb.from("content_blocks").delete().eq("content_id", contentId);
+            await initializeBlocks(bodyMd);
+          } else {
+            setBlocks(existingBlocks);
+            setLoading(false);
+          }
+        }
       } else if (bodyMd?.trim()) {
         // First time: parse markdown into blocks
         await initializeBlocks(bodyMd);
