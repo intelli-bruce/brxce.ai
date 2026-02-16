@@ -165,17 +165,21 @@ export default function DiagramsPage() {
         </div>
       )}
 
-      {/* Preview — diagram fills available width, aspect-ratio handles height */}
-      <div className="flex-1 min-h-0">
-        {template === "comparison" && (
-          <Comparison ratio={ratio} {...(parsed as any)} />
-        )}
-        {template === "orgchart" && (
-          <OrgChart ratio={ratio} {...(parsed as any)} />
-        )}
-        {template === "beforeafter" && (
-          <BeforeAfter ratio={ratio} {...(parsed as any)} />
-        )}
+      {/* Preview — constrained to viewport height, centered */}
+      <div className="flex-1 min-h-0 flex items-start justify-center overflow-auto">
+        <div style={{ width: "100%", maxHeight: "calc(100vh - 120px)" }}>
+          <div style={{ maxWidth: `calc((100vh - 120px) * ${RATIO_PRESETS[ratio].ratio})`, width: "100%" }}>
+            {template === "comparison" && (
+              <Comparison ratio={ratio} {...(parsed as any)} />
+            )}
+            {template === "orgchart" && (
+              <OrgChart ratio={ratio} {...(parsed as any)} />
+            )}
+            {template === "beforeafter" && (
+              <BeforeAfter ratio={ratio} {...(parsed as any)} />
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

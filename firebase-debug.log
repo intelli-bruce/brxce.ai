@@ -1,0 +1,14 @@
+[debug] [2026-02-16T01:28:04.813Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-16T01:28:04.814Z] > authorizing via signed-in user (bruce@wespion.com)
+[debug] [2026-02-16T01:28:04.814Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-16T01:28:04.814Z] > authorizing via signed-in user (bruce@wespion.com)
+[debug] [2026-02-16T01:28:04.826Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-16T01:28:04.826Z] > authorizing via signed-in user (bruce@wespion.com)
+[debug] [2026-02-16T01:28:04.852Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-16T01:28:04.852Z] > authorizing via signed-in user (bruce@wespion.com)
+[debug] [2026-02-16T01:28:04.852Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-16T01:28:04.852Z] > authorizing via signed-in user (bruce@wespion.com)
+[debug] [2026-02-16T01:28:04.853Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-16T01:28:04.853Z] > authorizing via signed-in user (bruce@wespion.com)
+[debug] [2026-02-16T01:28:04.853Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-16T01:28:04.853Z] > authorizing via signed-in user (bruce@wespion.com)
