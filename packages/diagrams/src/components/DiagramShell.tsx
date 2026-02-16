@@ -34,6 +34,8 @@ export function DiagramShell({
         overflow: "hidden",
         fontFamily: theme.fonts.sans,
         color: theme.colors.text,
+        WebkitFontSmoothing: "antialiased",
+        MozOsxFontSmoothing: "grayscale",
       }}
     >
       {/* Subtle grid background */}

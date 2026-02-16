@@ -89,7 +89,7 @@ export function Comparison({ title, columns, ratio = "guide-3:2", avatarUrl }: C
                 >
                   <div
                     style={{
-                      fontSize: 17,
+                      fontSize: 18,
                       fontWeight: 700,
                       color: isHighlight ? theme.colors.primary : theme.colors.text,
                       letterSpacing: "-0.02em",
@@ -116,22 +116,23 @@ export function Comparison({ title, columns, ratio = "guide-3:2", avatarUrl }: C
                       <div
                         key={j}
                         style={{
-                          fontSize: 14,
+                          fontSize: 15,
+                          fontWeight: 500,
                           color: isCheck
                             ? "#69db7c"
                             : isCross
                               ? "#666"
                               : isHighlight
-                                ? "#ccc"
-                                : theme.colors.textMuted,
+                                ? "#e0e0e0"
+                                : "#d0d0d0",
                           lineHeight: 1.65,
                           display: "flex",
                           gap: 8,
                           alignItems: "flex-start",
                         }}
                       >
-                        {isHighlight && !isCheck && !isCross && (
-                          <span style={{ color: theme.colors.primary, fontSize: 10, marginTop: 5, flexShrink: 0 }}>●</span>
+                        {!isCheck && !isCross && (
+                          <span style={{ color: isHighlight ? theme.colors.primary : "#555", fontSize: 10, marginTop: 6, flexShrink: 0 }}>●</span>
                         )}
                         <span>{item}</span>
                       </div>

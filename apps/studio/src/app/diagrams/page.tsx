@@ -97,6 +97,7 @@ export default function DiagramsPage() {
   const [template, setTemplate] = useState<TemplateKey>("comparison");
   const [ratio, setRatio] = useState<RatioPreset>("guide-3:2");
   const [jsonData, setJsonData] = useState(JSON.stringify(SAMPLES[template], null, 2));
+  const [showEditor, setShowEditor] = useState(true);
 
   function handleTemplateChange(t: TemplateKey) {
     setTemplate(t);
@@ -151,11 +152,18 @@ export default function DiagramsPage() {
         <span className="text-xs text-[#555]">
           {preset.width}×{preset.height}
         </span>
+
+        <button
+          onClick={() => setShowEditor((v) => !v)}
+          className="px-3 py-1 rounded-md text-xs font-medium text-[#888] hover:text-[#fafafa] bg-[#111] transition-colors"
+        >
+          {showEditor ? "에디터 접기 ◀" : "에디터 펼치기 ▶"}
+        </button>
       </div>
 
       <div className="flex gap-4 flex-1 min-h-0">
         {/* JSON editor */}
-        <div className="w-[400px] flex-shrink-0 flex flex-col">
+        {showEditor && <div className="w-[360px] flex-shrink-0 flex flex-col">
           <label className="text-xs text-[#888] mb-1">데이터 (JSON)</label>
           <textarea
             value={jsonData}
@@ -163,14 +171,13 @@ export default function DiagramsPage() {
             className="flex-1 p-3 rounded-lg border border-[#333] bg-[#0a0a0a] text-xs text-[#ccc] font-mono outline-none resize-none focus:border-[#FF6B35]"
             spellCheck={false}
           />
-        </div>
+        </div>}
 
         {/* Preview */}
-        <div className="flex-1 overflow-auto bg-[#111] rounded-lg p-4 flex items-start justify-center">
+        <div className="flex-1 overflow-auto bg-[#111] rounded-lg p-4 flex items-start justify-center" id="preview-container">
           <div
             style={{
-              transform: `scale(${Math.min(1, 800 / preset.width)})`,
-              transformOrigin: "top center",
+              zoom: Math.min(1, (showEditor ? 0.55 : 0.78)),
             }}
           >
             {template === "comparison" && (
