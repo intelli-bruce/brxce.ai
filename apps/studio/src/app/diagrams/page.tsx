@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   Comparison,
   OrgChart,
@@ -10,343 +10,203 @@ import {
   type RatioPreset,
   exportDiagram,
 } from "@brxce/diagrams";
+import { supabase } from "@/lib/supabase";
 
-/* ─── Sample data ─── */
-const SAMPLES = {
+/* ─── Types ─── */
+interface Diagram {
+  id: string;
+  title: string;
+  template: string;
+  ratio: string;
+  data: Record<string, unknown>;
+  sketch: boolean;
+  created_at: string;
+}
+
+/* ─── Template registry ─── */
+const TEMPLATES: Record<string, { label: string; icon: string }> = {
+  comparison: { label: "3단 비교", icon: "⊞" },
+  orgchart: { label: "조직도", icon: "◎" },
+  beforeafter: { label: "전후 비교", icon: "⇄" },
+};
+
+const EMPTY_DATA: Record<string, Record<string, unknown>> = {
   comparison: {
-    title: "자동화 vs AI 챗봇 vs 에이전틱 워크플로우",
+    title: "제목을 입력하세요",
     columns: [
-      {
-        title: "기존 자동화 (RPA)",
-        items: ["IF → THEN 규칙 실행", "", "예외 상황 = 멈춤", "사람이 모든 규칙 설정", "", "학습 X", "유연성 X"],
-      },
-      {
-        title: "AI 챗봇 (GPT 등)",
-        items: ["질문 → 답변 (1회성)", "", "맥락 유지 X", "도구 사용 X", "", "능동적 행동 X"],
-      },
-      {
-        title: "에이전틱 워크플로우",
-        items: [
-          "목표 → 계획 → 실행 → 보고",
-          "",
-          "스스로 판단하고 행동",
-          "도구 연결 (MCP)",
-          "막히면 우회 경로 탐색",
-          "맥락 유지 + 학습",
-          "",
-          "사람은 방향 설정만",
-        ],
-        highlight: true,
-      },
+      { title: "항목 A", items: ["내용 1", "내용 2"] },
+      { title: "항목 B", items: ["내용 1", "내용 2"] },
+      { title: "항목 C", items: ["내용 1", "내용 2"], highlight: true },
     ],
   },
   orgchart: {
-    title: "에이전트 조직도 (실제 운영 중)",
-    top: { label: "CEO", sub: "사람 1명" },
-    hub: { label: "총괄 에이전트", sub: "업무 배분 · 스케줄" },
-    groups: [
-      { label: "제품 개발 ×5", sub: "각각 다른 프로젝트", color: "#4c9aff" },
-      { label: "마케팅 ×3", sub: "브랜딩 · 콘텐츠 · 퍼널", color: "#69db7c" },
-      { label: "비즈니스 ×2", sub: "수주 · 재무", color: "#ffd43b" },
-      { label: "지원 ×2", sub: "지식관리 · R&D", color: "#868e96" },
-      { label: "기타 ×2", sub: "신규 사업", color: "#868e96" },
-    ],
-    footnote: "각 에이전트는 독립적으로 판단하고 실행한다. 사람(CEO)은 방향 설정과 최종 검수만 담당.",
+    title: "조직도",
+    top: { label: "대표", sub: "" },
+    hub: { label: "총괄", sub: "" },
+    groups: [{ label: "팀 A", sub: "", color: "#4c9aff" }],
+    footnote: "",
   },
   beforeafter: {
-    title: "역할의 전환: 실무자 → 경영자",
-    before: {
-      label: "Before",
-      items: [
-        "직접 리서치",
-        "직접 글쓰기",
-        "직접 코딩",
-        "직접 이메일",
-        "직접 데이터 정리",
-        "",
-        "→ 내 시간 = 100%",
-      ],
-    },
-    after: {
-      label: "After",
-      items: [
-        "① 방향 설정",
-        '   "이번 주 목표는..."',
-        "",
-        "② 중간 확인",
-        '   "훅이 약해. 더 강하게."',
-        "",
-        "③ 최종 검수",
-        "   팩트체크 → 승인",
-        "",
-        "×14 에이전트가 90% 실행",
-        "→ 내 시간 = 10% (10배 레버리지)",
-      ],
-    },
-    arrow: "에이전틱",
+    title: "전후 비교",
+    before: { label: "Before", items: ["항목 1"] },
+    after: { label: "After", items: ["항목 1"] },
+    arrow: "변환",
   },
 };
 
-type TemplateKey = keyof typeof SAMPLES;
 
-const TEMPLATE_TABS: { key: TemplateKey; icon: string; label: string }[] = [
-  { key: "comparison", icon: "⊞", label: "3단 비교" },
-  { key: "orgchart", icon: "◎", label: "조직도" },
-  { key: "beforeafter", icon: "⇄", label: "전후 비교" },
-];
 
-const ZOOM_STEPS = [25, 50, 75, 100, 125, 150, 200];
-
-export default function DiagramsPage() {
-  const searchParams = useSearchParams();
-  const initialTemplate = (searchParams.get("t") as TemplateKey) || "comparison";
-  const [template, setTemplate] = useState<TemplateKey>(initialTemplate);
-  const [ratio, setRatio] = useState<RatioPreset>("guide-3:2");
-  const [jsonData, setJsonData] = useState(JSON.stringify(SAMPLES[template], null, 2));
-  const [showEditor, setShowEditor] = useState(false);
-  const [zoom, setZoom] = useState(100);
-  const [exporting, setExporting] = useState(false);
-  const [sketch, setSketch] = useState(searchParams.get("sketch") === "1");
-
-  const handleExport = useCallback(async () => {
-    const el = document.getElementById("diagram-export");
-    if (!el) return;
-    setExporting(true);
-    try {
-      await exportDiagram({
-        element: el,
-        ratio,
-        format: "png",
-        pixelRatio: 2,
-        filename: `diagram-${template}`,
-      });
-    } catch (e) {
-      console.error("Export failed:", e);
-    } finally {
-      setExporting(false);
-    }
-  }, [ratio, template]);
-
-  const handleTemplateChange = useCallback((t: TemplateKey) => {
-    setTemplate(t);
-    setJsonData(JSON.stringify(SAMPLES[t], null, 2));
-  }, []);
-
-  const zoomIn = () => setZoom((z) => {
-    const next = ZOOM_STEPS.find((s) => s > z);
-    return next ?? z;
-  });
-  const zoomOut = () => setZoom((z) => {
-    const prev = [...ZOOM_STEPS].reverse().find((s) => s < z);
-    return prev ?? z;
-  });
-
-  let parsed: Record<string, unknown> = {};
-  try {
-    parsed = JSON.parse(jsonData);
-  } catch {
-    /* invalid json */
-  }
-
-  const ratioInfo = RATIO_PRESETS[ratio];
+/* ─── Diagram Preview (mini) ─── */
+function DiagramPreview({ diagram }: { diagram: Diagram }) {
+  const ratio = (diagram.ratio || "guide-3:2") as RatioPreset;
+  const data = diagram.data || {};
 
   return (
-    <div className="flex flex-col h-full">
-      {/* ─── Top Toolbar ─── */}
-      <div className="flex items-center gap-4 px-4 py-3 border-b border-[#222]">
-        {/* Title */}
-        <h1 className="text-base font-bold text-[#fafafa] shrink-0">📐 다이어그램</h1>
+    <div style={{ width: 280, pointerEvents: "none" }}>
+      {diagram.template === "comparison" && <Comparison ratio={ratio} sketch={diagram.sketch} {...(data as any)} />}
+      {diagram.template === "orgchart" && <OrgChart ratio={ratio} sketch={diagram.sketch} {...(data as any)} />}
+      {diagram.template === "beforeafter" && <BeforeAfter ratio={ratio} sketch={diagram.sketch} {...(data as any)} />}
+    </div>
+  );
+}
 
-        {/* Divider */}
-        <div className="w-px h-5 bg-[#333]" />
+/* ─── Main Page ─── */
+export default function DiagramsPage() {
+  const router = useRouter();
+  const [diagrams, setDiagrams] = useState<Diagram[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showNew, setShowNew] = useState(false);
 
-        {/* Template tabs */}
-        <div className="flex gap-1 p-1 bg-[#111] rounded-lg">
-          {TEMPLATE_TABS.map((t) => (
+  // Fetch diagrams
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await supabase
+        .from("diagrams")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (data) setDiagrams(data);
+      setLoading(false);
+    })();
+  }, []);
+
+  // Create new diagram
+  const handleCreate = async (template: string) => {
+    const data = EMPTY_DATA[template] || EMPTY_DATA.comparison;
+    const { data: row, error } = await supabase
+      .from("diagrams")
+      .insert({
+        title: data.title || "새 다이어그램",
+        template,
+        ratio: "guide-3:2",
+        data,
+        sketch: false,
+      })
+      .select()
+      .single();
+
+    if (row) {
+      router.push(`/diagrams/${row.id}`);
+    } else {
+      console.error("create error:", error);
+    }
+    setShowNew(false);
+  };
+
+  // Delete
+  const handleDelete = async (id: string) => {
+    if (!confirm("삭제하시겠습니까?")) return;
+    await supabase.from("diagrams").delete().eq("id", id);
+    setDiagrams((prev) => prev.filter((d) => d.id !== id));
+  };
+
+  return (
+    <div className="flex flex-col gap-6 h-full">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-lg font-bold text-[#fafafa]">📐 다이어그램</h1>
+        <button
+          onClick={() => setShowNew(true)}
+          className="px-4 py-2 rounded-lg bg-[#FF6B35] text-white text-sm font-medium hover:bg-[#e55a2b] transition-colors"
+        >
+          + 새 다이어그램
+        </button>
+      </div>
+
+      {/* New diagram modal */}
+      {showNew && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center" onClick={() => setShowNew(false)}>
+          <div className="bg-[#141414] border border-[#333] rounded-xl p-6 w-[500px]" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-base font-bold text-[#fafafa] mb-4">템플릿 선택</h2>
+            <div className="grid grid-cols-3 gap-3">
+              {Object.entries(TEMPLATES).map(([key, { label, icon }]) => (
+                <button
+                  key={key}
+                  onClick={() => handleCreate(key)}
+                  className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[#333] hover:border-[#FF6B35] hover:bg-[#1a1a1a] transition-all"
+                >
+                  <span className="text-2xl">{icon}</span>
+                  <span className="text-sm text-[#ccc]">{label}</span>
+                </button>
+              ))}
+            </div>
             <button
-              key={t.key}
-              onClick={() => handleTemplateChange(t.key)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                template === t.key
-                  ? "bg-[#FF6B35] text-white shadow-sm shadow-[#FF6B35]/20"
-                  : "text-[#888] hover:text-[#ccc] hover:bg-[#1a1a1a]"
-              }`}
+              onClick={() => setShowNew(false)}
+              className="mt-4 w-full py-2 text-sm text-[#888] hover:text-[#fafafa] transition-colors"
             >
-              <span className="text-xs">{t.icon}</span>
-              {t.label}
+              취소
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Diagram list */}
+      {loading ? (
+        <div className="text-[#888] text-sm">로딩 중...</div>
+      ) : diagrams.length === 0 ? (
+        <div className="flex flex-col items-center justify-center flex-1 gap-4 text-[#888]">
+          <span className="text-4xl">📐</span>
+          <p className="text-sm">아직 다이어그램이 없습니다</p>
+          <button
+            onClick={() => setShowNew(true)}
+            className="px-4 py-2 rounded-lg border border-[#333] text-sm hover:border-[#FF6B35] hover:text-[#FF6B35] transition-colors"
+          >
+            첫 다이어그램 만들기
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {diagrams.map((d) => (
+            <div
+              key={d.id}
+              className="group border border-[#222] rounded-lg overflow-hidden hover:border-[#444] transition-all cursor-pointer"
+              onClick={() => router.push(`/diagrams/${d.id}`)}
+            >
+              {/* Preview */}
+              <div className="bg-[#0a0a0a] p-3 flex items-center justify-center overflow-hidden" style={{ height: 180 }}>
+                <DiagramPreview diagram={d} />
+              </div>
+
+              {/* Info */}
+              <div className="p-3 flex items-center justify-between">
+                <div className="min-w-0">
+                  <div className="text-sm font-medium text-[#fafafa] truncate">{d.title}</div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs text-[#888]">{TEMPLATES[d.template]?.label || d.template}</span>
+                    {d.sketch && <span className="text-xs text-[#888] bg-[#1a1a1a] px-1.5 py-0.5 rounded">✏️ 스케치</span>}
+                    <span className="text-xs text-[#666]">{RATIO_PRESETS[d.ratio as RatioPreset]?.label || d.ratio}</span>
+                  </div>
+                </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleDelete(d.id); }}
+                  className="opacity-0 group-hover:opacity-100 text-xs text-[#666] hover:text-red-400 transition-all p-1"
+                >
+                  삭제
+                </button>
+              </div>
+            </div>
           ))}
         </div>
-
-        {/* Divider */}
-        <div className="w-px h-5 bg-[#333]" />
-
-        {/* Ratio selector */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-[#666]">비율</span>
-          <select
-            value={ratio}
-            onChange={(e) => setRatio(e.target.value as RatioPreset)}
-            className="px-3 py-1.5 rounded-lg border border-[#333] bg-[#111] text-sm text-[#fafafa] outline-none hover:border-[#555] focus:border-[#FF6B35] transition-colors cursor-pointer"
-          >
-            {Object.entries(RATIO_PRESETS).map(([key, val]) => (
-              <option key={key} value={key}>
-                {val.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Divider */}
-        <div className="w-px h-5 bg-[#333]" />
-
-        {/* Style toggle */}
-        <div className="flex gap-1 p-1 bg-[#111] rounded-lg">
-          <button
-            onClick={() => setSketch(false)}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-              !sketch ? "bg-[#1a1a1a] text-[#fafafa]" : "text-[#888] hover:text-[#ccc]"
-            }`}
-          >
-            ✦ 클린
-          </button>
-          <button
-            onClick={() => setSketch(true)}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-              sketch ? "bg-[#1a1a1a] text-[#fafafa]" : "text-[#888] hover:text-[#ccc]"
-            }`}
-          >
-            ✏️ 스케치
-          </button>
-        </div>
-
-        {/* Spacer */}
-        <div className="flex-1" />
-
-        {/* Right actions */}
-        <button
-          onClick={() => setShowEditor((v) => !v)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-            showEditor
-              ? "bg-[#1a1a1a] text-[#FF6B35] border border-[#FF6B35]/30"
-              : "text-[#888] hover:text-[#ccc] bg-[#111] border border-[#222] hover:border-[#444]"
-          }`}
-        >
-          <span className="text-xs">{showEditor ? "{ }" : "{ }"}</span>
-          JSON
-        </button>
-
-        <button
-          onClick={handleExport}
-          disabled={exporting}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-[#888] hover:text-[#ccc] bg-[#111] border border-[#222] hover:border-[#444] transition-all disabled:opacity-50"
-        >
-          {exporting ? "⏳ 내보내는 중..." : "↓ PNG 내보내기"}
-        </button>
-      </div>
-
-      {/* ─── Main area ─── */}
-      <div className="flex flex-1 min-h-0">
-        {/* JSON Editor panel (side) */}
-        {showEditor && (
-          <div className="w-[400px] shrink-0 border-r border-[#222] flex flex-col">
-            <div className="px-3 py-2 border-b border-[#222] flex items-center justify-between">
-              <span className="text-xs font-medium text-[#888]">데이터 편집</span>
-              <button
-                onClick={() => {
-                  try {
-                    setJsonData(JSON.stringify(JSON.parse(jsonData), null, 2));
-                  } catch { /* skip */ }
-                }}
-                className="text-xs text-[#666] hover:text-[#FF6B35] transition-colors"
-              >
-                정렬
-              </button>
-            </div>
-            <textarea
-              value={jsonData}
-              onChange={(e) => setJsonData(e.target.value)}
-              className="flex-1 p-3 bg-[#0a0a0a] text-xs text-[#ccc] font-mono outline-none resize-none"
-              spellCheck={false}
-            />
-          </div>
-        )}
-
-        {/* Preview canvas */}
-        <div
-          className="flex-1 min-h-0 overflow-auto relative"
-          style={{
-            backgroundImage: "radial-gradient(circle, #1a1a1a 1px, transparent 1px)",
-            backgroundSize: "20px 20px",
-            backgroundColor: "#0d0d0d",
-          }}
-        >
-          <div className="flex items-center justify-center p-8" style={{ minHeight: "100%" }}>
-            <div
-              style={{
-                width: `${zoom}%`,
-                maxWidth: zoom > 100 ? `${zoom}%` : "100%",
-              }}
-            >
-              {template === "comparison" && (
-                <Comparison ratio={ratio} sketch={sketch} {...(parsed as any)} />
-              )}
-              {template === "orgchart" && (
-                <OrgChart ratio={ratio} sketch={sketch} {...(parsed as any)} />
-              )}
-              {template === "beforeafter" && (
-                <BeforeAfter ratio={ratio} sketch={sketch} {...(parsed as any)} />
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ─── Bottom Zoom Bar ─── */}
-      <div className="flex items-center justify-center gap-3 px-4 py-2 border-t border-[#222] bg-[#0a0a0a]">
-        <button
-          onClick={zoomOut}
-          disabled={zoom <= 25}
-          className="w-7 h-7 flex items-center justify-center rounded-md text-sm font-medium text-[#888] hover:text-[#fafafa] hover:bg-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-        >
-          −
-        </button>
-
-        {/* Zoom slider */}
-        <input
-          type="range"
-          min={25}
-          max={200}
-          step={1}
-          value={zoom}
-          onChange={(e) => setZoom(Number(e.target.value))}
-          className="w-40 h-1 rounded-full appearance-none cursor-pointer"
-          style={{
-            background: `linear-gradient(to right, #FF6B35 ${((zoom - 25) / 175) * 100}%, #333 ${((zoom - 25) / 175) * 100}%)`,
-          }}
-        />
-
-        <button
-          onClick={zoomIn}
-          disabled={zoom >= 200}
-          className="w-7 h-7 flex items-center justify-center rounded-md text-sm font-medium text-[#888] hover:text-[#fafafa] hover:bg-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-        >
-          +
-        </button>
-
-        <button
-          onClick={() => setZoom(zoom === 100 ? 75 : 100)}
-          className="px-2 py-0.5 rounded text-xs font-mono text-[#888] hover:text-[#fafafa] hover:bg-[#1a1a1a] transition-all min-w-[3rem] text-center"
-        >
-          {zoom}%
-        </button>
-
-        <div className="w-px h-4 bg-[#333]" />
-
-        <span className="text-[10px] text-[#555]">
-          {ratioInfo.width} × {ratioInfo.height}
-        </span>
-      </div>
+      )}
     </div>
   );
 }
