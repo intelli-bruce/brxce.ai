@@ -1,4 +1,4 @@
-/** Wraps any diagram with bg, sizing, watermark */
+/** Wraps any diagram with bg, sizing, watermark, background texture */
 import { theme, RATIO_PRESETS, type RatioPreset } from "../theme";
 import { Watermark } from "./Watermark";
 
@@ -36,31 +36,67 @@ export function DiagramShell({
         color: theme.colors.text,
       }}
     >
+      {/* Subtle grid background */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage: `
+            linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)
+          `,
+          backgroundSize: "40px 40px",
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* Top accent line */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: "10%",
+          right: "10%",
+          height: 2,
+          background: `linear-gradient(90deg, transparent, ${theme.colors.primary}44, transparent)`,
+        }}
+      />
+
+      {/* Title */}
       {title && (
         <div
           style={{
             position: "absolute",
-            top: 32,
+            top: 28,
             left: 0,
             right: 0,
             textAlign: "center",
-            fontSize: 28,
-            fontWeight: 700,
-            color: theme.colors.primary,
-            letterSpacing: "-0.02em",
           }}
         >
-          {title}
+          <span
+            style={{
+              fontSize: 26,
+              fontWeight: 800,
+              color: theme.colors.text,
+              letterSpacing: "-0.03em",
+              background: `linear-gradient(135deg, ${theme.colors.text}, ${theme.colors.primary})`,
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}
+          >
+            {title}
+          </span>
         </div>
       )}
 
+      {/* Content area */}
       <div
         style={{
           position: "absolute",
-          top: title ? 80 : 24,
-          left: 24,
-          right: 24,
-          bottom: 70,
+          top: title ? 76 : 24,
+          left: 28,
+          right: 28,
+          bottom: 64,
         }}
       >
         {children}

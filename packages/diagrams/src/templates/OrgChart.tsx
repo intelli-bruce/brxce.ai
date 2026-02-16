@@ -1,4 +1,4 @@
-/** Org chart — hub-spoke layout */
+/** Org chart — hub-spoke layout with premium styling */
 import { theme } from "../theme";
 import { DiagramShell } from "../components/DiagramShell";
 import type { RatioPreset } from "../theme";
@@ -19,88 +19,116 @@ export interface OrgChartProps {
   avatarUrl?: string;
 }
 
+function NodeCard({ node, variant }: { node: OrgNode; variant: "top" | "hub" | "group" }) {
+  const color = node.color ?? (variant === "hub" ? theme.colors.primary : theme.colors.stroke);
+  const isHub = variant === "hub";
+  const isTop = variant === "top";
+
+  return (
+    <div
+      style={{
+        border: `${isHub ? 1.5 : 1}px solid ${isHub ? color + "88" : color + "44"}`,
+        borderRadius: isTop ? 999 : theme.radii.md,
+        padding: isTop ? "12px 28px" : isHub ? "14px 32px" : "10px 18px",
+        textAlign: "center",
+        background: isHub
+          ? `linear-gradient(135deg, ${color}15, transparent)`
+          : "transparent",
+        boxShadow: isHub ? `0 0 30px ${color}12` : "none",
+        minWidth: variant === "group" ? 130 : undefined,
+      }}
+    >
+      <div
+        style={{
+          fontSize: isHub ? 17 : isTop ? 15 : 13,
+          fontWeight: 700,
+          color: isHub ? color : isTop ? theme.colors.text : color,
+          letterSpacing: "-0.02em",
+        }}
+      >
+        {node.label}
+      </div>
+      {node.sub && (
+        <div style={{ fontSize: isTop ? 11 : 11, color: theme.colors.textMuted, marginTop: 3 }}>
+          {node.sub}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function OrgChart({ title, top, hub, groups, footnote, ratio = "guide-3:2", avatarUrl }: OrgChartProps) {
   return (
     <DiagramShell title={title} ratio={ratio} avatarUrl={avatarUrl}>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0, height: "100%", paddingTop: 16 }}>
-        {/* Top node (CEO) */}
-        <div
-          style={{
-            border: `2px solid ${top.color ?? theme.colors.stroke}`,
-            borderRadius: "50%",
-            padding: "14px 28px",
-            textAlign: "center",
-          }}
-        >
-          <div style={{ fontSize: 16, fontWeight: 700, color: top.color ?? theme.colors.text }}>{top.label}</div>
-          {top.sub && <div style={{ fontSize: 12, color: theme.colors.textMuted }}>{top.sub}</div>}
-        </div>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0, height: "100%", paddingTop: 12 }}>
+        {/* Top node */}
+        <NodeCard node={top} variant="top" />
 
-        {/* Connector line */}
-        <div style={{ width: 2, height: 28, backgroundColor: theme.colors.textDim }} />
-        <div style={{ fontSize: 11, color: theme.colors.textMuted, marginTop: -4, marginBottom: 4 }}>방향 설정</div>
-        <div style={{ width: 2, height: 12, backgroundColor: theme.colors.textDim }} />
+        {/* Connector: dashed line + label */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0 }}>
+          <div style={{
+            width: 1.5,
+            height: 20,
+            background: `linear-gradient(180deg, ${theme.colors.textDim}, transparent)`,
+          }} />
+          <div style={{
+            fontSize: 10,
+            color: theme.colors.textDim,
+            padding: "2px 10px",
+            border: `1px solid #222`,
+            borderRadius: 999,
+            background: theme.colors.bg,
+          }}>
+            방향 설정 · 검수
+          </div>
+          <div style={{
+            width: 1.5,
+            height: 14,
+            background: `linear-gradient(180deg, transparent, ${theme.colors.primary}66)`,
+          }} />
+        </div>
 
         {/* Hub node */}
-        <div
-          style={{
-            border: `2px solid ${hub.color ?? theme.colors.primary}`,
-            borderRadius: theme.radii.lg,
-            padding: "14px 32px",
-            textAlign: "center",
-          }}
-        >
-          <div style={{ fontSize: 17, fontWeight: 700, color: hub.color ?? theme.colors.primary }}>{hub.label}</div>
-          {hub.sub && <div style={{ fontSize: 12, color: theme.colors.textMuted }}>{hub.sub}</div>}
-        </div>
+        <NodeCard node={hub} variant="hub" />
 
-        {/* Fan-out lines */}
-        <svg width="100%" height="50" style={{ flexShrink: 0 }}>
-          {groups.map((_, i) => {
+        {/* Fan-out SVG */}
+        <svg width="90%" height="44" style={{ flexShrink: 0 }} viewBox="0 0 800 44">
+          {groups.map((g, i) => {
             const total = groups.length;
-            const xPct = ((i + 0.5) / total) * 100;
+            const xEnd = ((i + 0.5) / total) * 800;
+            const color = g.color ?? theme.colors.textDim;
             return (
-              <line
-                key={i}
-                x1="50%"
-                y1="0"
-                x2={`${xPct}%`}
-                y2="48"
-                stroke={theme.colors.textDim}
-                strokeWidth={1.5}
-                markerEnd="url(#arrowhead)"
-              />
+              <g key={i}>
+                <line
+                  x1="400" y1="0" x2={xEnd} y2="40"
+                  stroke={color}
+                  strokeWidth={1.2}
+                  opacity={0.5}
+                />
+                <circle cx={xEnd} cy={40} r={3} fill={color} opacity={0.6} />
+              </g>
             );
           })}
-          <defs>
-            <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-              <polygon points="0 0, 8 3, 0 6" fill={theme.colors.textDim} />
-            </marker>
-          </defs>
+          <circle cx="400" cy="0" r={3} fill={theme.colors.primary} />
         </svg>
 
         {/* Group nodes */}
-        <div style={{ display: "flex", gap: 16, width: "100%", justifyContent: "center", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
           {groups.map((g, i) => (
-            <div
-              key={i}
-              style={{
-                border: `1.5px solid ${g.color ?? theme.colors.support}`,
-                borderRadius: theme.radii.md,
-                padding: "10px 18px",
-                textAlign: "center",
-                minWidth: 120,
-              }}
-            >
-              <div style={{ fontSize: 13, fontWeight: 600, color: g.color ?? theme.colors.text }}>{g.label}</div>
-              {g.sub && <div style={{ fontSize: 11, color: theme.colors.textMuted }}>{g.sub}</div>}
-            </div>
+            <NodeCard key={i} node={g} variant="group" />
           ))}
         </div>
 
         {/* Footnote */}
         {footnote && (
-          <div style={{ marginTop: "auto", fontSize: 12, color: theme.colors.textDim, textAlign: "center" }}>
+          <div style={{
+            marginTop: "auto",
+            fontSize: 12,
+            color: theme.colors.textDim,
+            textAlign: "center",
+            maxWidth: "80%",
+            lineHeight: 1.5,
+          }}>
             {footnote}
           </div>
         )}
