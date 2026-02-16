@@ -319,7 +319,7 @@ export default function BlockEditor({ contentId, bodyMd, onBodySync }: Props) {
       </div>
 
       {/* Blocks */}
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-0">
         {blocks.map((block, idx) => {
           const isActive = activeBlock === block.id;
           const isEditing = editingBlock === block.id;
@@ -330,25 +330,22 @@ export default function BlockEditor({ contentId, bodyMd, onBodySync }: Props) {
           return (
             <div key={block.id}>
               <div
-                className={`group relative flex gap-2 rounded-[10px] border transition-colors ${
+                className={`group relative flex gap-1 rounded-lg border transition-colors ${
                   isActive
-                    ? "border-[#FF6B35]/40 bg-[#FF6B35]/5"
-                    : "border-transparent hover:border-[#333] hover:bg-[#111]"
+                    ? "border-[#FF6B35]/30 bg-[#FF6B35]/5"
+                    : "border-transparent hover:border-[#222]"
                 }`}
                 onClick={() => setActiveBlock(block.id)}
               >
                 {/* Block label */}
-                <div className="flex-shrink-0 w-12 pt-3 pl-2 text-center">
-                  <span className="text-[10px] font-mono text-[#555] group-hover:text-[#888]">
+                <div className="flex-shrink-0 w-8 pt-1 pl-1 text-center">
+                  <span className="text-[9px] font-mono text-[#444] group-hover:text-[#888] leading-none">
                     {blockLabel(idx)}
                   </span>
-                  <div className="text-[10px] text-[#444]">
-                    {BLOCK_ICONS[block.block_type] || "?"}
-                  </div>
                 </div>
 
                 {/* Block content */}
-                <div className="flex-1 py-2.5 pr-2 min-w-0">
+                <div className="flex-1 py-0.5 pr-1 min-w-0">
                   {isEditing ? (
                     <div className="space-y-2">
                       <textarea
@@ -403,7 +400,7 @@ export default function BlockEditor({ contentId, bodyMd, onBodySync }: Props) {
                                 ? block.body.split("\n").map((l) => "> " + l).join("\n")
                                 : block.body
                           }
-                          className="max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+                          className="max-w-none [&>*]:my-0 [&>*]:py-0"
                         />
                       )}
                     </div>
@@ -412,7 +409,7 @@ export default function BlockEditor({ contentId, bodyMd, onBodySync }: Props) {
 
                 {/* Side actions */}
                 {isActive && !isEditing && (
-                  <div className="flex-shrink-0 flex flex-col gap-1 pt-2 pr-2">
+                  <div className="flex-shrink-0 flex flex-row items-center gap-0.5 pr-1">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
