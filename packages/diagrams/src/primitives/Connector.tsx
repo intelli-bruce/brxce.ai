@@ -1,21 +1,16 @@
 /**
- * Connector — arrows and badges between sections.
- *
- * ArrowBadge: circular badge with icon/text (→, ×, etc.)
- * VerticalLine: dashed/gradient connector line
- * ConnectorLabel: small pill label on connectors
+ * Connector — responsive arrows and badges. Uses useScale.
  */
-import { color, font, space, connector, radius } from "../tokens";
+"use client";
+
+import { color, font, space, connector, radius, s } from "../tokens";
+import { useScale } from "../components/DiagramShell";
 
 /* ─── ArrowBadge ─── */
 interface ArrowBadgeProps {
-  /** Arrow or symbol to display */
   symbol?: string;
-  /** Use primary accent styling */
   highlight?: boolean;
-  /** Custom accent color */
   accentColor?: string;
-  /** Badge size override */
   size?: number;
 }
 
@@ -25,23 +20,25 @@ export function ArrowBadge({
   accentColor,
   size = connector.badge.size,
 }: ArrowBadgeProps) {
+  const { factor } = useScale();
   const accent = accentColor ?? color.primary;
   const bg = highlight ? `${accent}22` : color.surfaceRaised;
   const border = highlight ? accent : color.borderStrong;
   const textColor = highlight ? accent : color.textDim;
+  const sz = s(size, factor);
 
   return (
     <div
       style={{
-        width: size,
-        height: size,
+        width: sz,
+        height: sz,
         borderRadius: "50%",
         background: bg,
         border: `1px solid ${border}`,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontSize: connector.badge.fontSize,
+        fontSize: s(connector.badge.fontSize, factor),
         color: textColor,
         flexShrink: 0,
       }}
@@ -51,14 +48,16 @@ export function ArrowBadge({
   );
 }
 
-/* ─── Large Arrow (for Before→After style transitions) ─── */
+/* ─── LargeArrow ─── */
 interface LargeArrowProps {
   label?: string;
   accentColor?: string;
 }
 
 export function LargeArrow({ label, accentColor }: LargeArrowProps) {
+  const { factor } = useScale();
   const accent = accentColor ?? color.primary;
+  const sz = s(48, factor);
 
   return (
     <div
@@ -66,14 +65,14 @@ export function LargeArrow({ label, accentColor }: LargeArrowProps) {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        padding: `0 ${space.lg}px`,
-        gap: space.sm,
+        padding: `0 ${s(space.lg, factor)}px`,
+        gap: s(space.sm, factor),
       }}
     >
       {label && (
         <div
           style={{
-            fontSize: font.size.caption - 1,
+            fontSize: s(font.size.caption - 1, factor),
             fontWeight: font.weight.bold,
             color: accent,
             textTransform: "uppercase",
@@ -85,17 +84,17 @@ export function LargeArrow({ label, accentColor }: LargeArrowProps) {
       )}
       <div
         style={{
-          width: 48,
-          height: 48,
+          width: sz,
+          height: sz,
           borderRadius: "50%",
           background: `linear-gradient(135deg, ${accent}33, ${accent}11)`,
           border: `1.5px solid ${accent}55`,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          fontSize: 22,
+          fontSize: s(22, factor),
           color: accent,
-          boxShadow: `0 0 24px ${accent}22`,
+          boxShadow: `0 0 ${s(24, factor)}px ${accent}22`,
         }}
       >
         →
@@ -107,12 +106,12 @@ export function LargeArrow({ label, accentColor }: LargeArrowProps) {
 /* ─── VerticalLine ─── */
 interface VerticalLineProps {
   height?: number;
-  /** Gradient direction: top (fades from color) or bottom (fades to color) */
   fade?: "top" | "bottom";
   lineColor?: string;
 }
 
 export function VerticalLine({ height = 20, fade = "top", lineColor }: VerticalLineProps) {
+  const { factor } = useScale();
   const c = lineColor ?? color.textDim;
   const gradient =
     fade === "top"
@@ -120,18 +119,19 @@ export function VerticalLine({ height = 20, fade = "top", lineColor }: VerticalL
       : `linear-gradient(180deg, transparent, ${c})`;
 
   return (
-    <div style={{ width: 1.5, height, background: gradient }} />
+    <div style={{ width: Math.max(1, s(1.5, factor)), height: s(height, factor), background: gradient }} />
   );
 }
 
 /* ─── ConnectorLabel ─── */
 export function ConnectorLabel({ children }: { children: React.ReactNode }) {
+  const { factor } = useScale();
   return (
     <div
       style={{
-        fontSize: font.size.tiny,
+        fontSize: s(font.size.tiny, factor),
         color: color.textDim,
-        padding: `2px ${space.sm + 2}px`,
+        padding: `${s(2, factor)}px ${s(space.sm + 2, factor)}px`,
         border: `1px solid ${color.border}`,
         borderRadius: radius.pill,
         background: color.bg,

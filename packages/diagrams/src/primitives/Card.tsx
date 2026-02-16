@@ -1,18 +1,15 @@
 /**
- * Card — the base container used across all diagram templates.
- *
- * Variants:
- *  - default: dark surface card
- *  - highlight: primary-tinted card (hero/emphasis)
- *  - ghost: borderless transparent
+ * Card — responsive base container. Uses useScale for proportional sizing.
  */
-import { card as cardTokens, radius, color, font, space, cardHeader, cardBody } from "../tokens";
+"use client";
+
+import { card as cardTokens, radius, color, font, space, cardHeader, cardBody, s } from "../tokens";
+import { useScale } from "../components/DiagramShell";
 
 export type CardVariant = "default" | "highlight" | "ghost";
 
 interface CardProps {
   variant?: CardVariant;
-  /** Optional custom accent color (overrides highlight color) */
   accentColor?: string;
   children: React.ReactNode;
   style?: React.CSSProperties;
@@ -22,8 +19,8 @@ interface CardProps {
 export function Card({ variant = "default", accentColor, children, style, flex }: CardProps) {
   const tokens = cardTokens[variant];
   const accent = accentColor ?? color.primary;
+  const { factor } = useScale();
 
-  // Override highlight tokens with custom accent
   const bg =
     variant === "highlight" && accentColor
       ? `linear-gradient(180deg, ${accent}0A 0%, ${color.bg} 60%)`
@@ -42,7 +39,7 @@ export function Card({ variant = "default", accentColor, children, style, flex }
       style={{
         background: bg,
         border,
-        borderRadius: tokens.borderRadius,
+        borderRadius: s(tokens.borderRadius, factor),
         boxShadow,
         display: "flex",
         flexDirection: "column",
@@ -67,11 +64,12 @@ interface CardHeaderProps {
 export function CardHeader({ variant = "default", accentColor, children, style }: CardHeaderProps) {
   const isHighlight = variant === "highlight";
   const accent = accentColor ?? color.primary;
+  const { factor } = useScale();
 
   return (
     <div
       style={{
-        padding: cardHeader.padding,
+        padding: `${s(cardHeader.padding.y, factor)}px ${s(cardHeader.padding.x, factor)}px ${s(cardHeader.padding.bottom, factor)}px`,
         borderBottom: isHighlight ? `1px solid ${accent}33` : cardHeader.borderBottom.default,
         textAlign: "center",
         background: isHighlight ? `${accent}08` : cardHeader.background.default,
@@ -93,11 +91,12 @@ interface CardTitleProps {
 export function CardTitle({ variant = "default", accentColor, children }: CardTitleProps) {
   const isHighlight = variant === "highlight";
   const accent = accentColor ?? color.primary;
+  const { factor } = useScale();
 
   return (
     <div
       style={{
-        fontSize: font.size.heading,
+        fontSize: s(font.size.heading, factor),
         fontWeight: font.weight.bold,
         color: isHighlight ? accent : color.text,
         letterSpacing: font.letterSpacing.normal,
@@ -110,8 +109,9 @@ export function CardTitle({ variant = "default", accentColor, children }: CardTi
 
 /* ─── Card.Subtitle ─── */
 export function CardSubtitle({ children }: { children: React.ReactNode }) {
+  const { factor } = useScale();
   return (
-    <div style={{ fontSize: font.size.caption, color: color.textMuted, marginTop: space.xs }}>
+    <div style={{ fontSize: s(font.size.caption, factor), color: color.textMuted, marginTop: s(space.xs, factor) }}>
       {children}
     </div>
   );
@@ -119,13 +119,14 @@ export function CardSubtitle({ children }: { children: React.ReactNode }) {
 
 /* ─── Card.Body ─── */
 export function CardBody({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+  const { factor } = useScale();
   return (
     <div
       style={{
-        padding: cardBody.padding,
+        padding: `${s(cardBody.padding.y, factor)}px ${s(cardBody.padding.x, factor)}px`,
         display: "flex",
         flexDirection: "column",
-        gap: cardBody.gap,
+        gap: s(cardBody.gap, factor),
         flex: 1,
         ...style,
       }}

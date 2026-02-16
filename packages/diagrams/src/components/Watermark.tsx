@@ -1,30 +1,35 @@
-/** Avatar + brxce.ai watermark — bottom-right of every diagram */
-import { color, font, space } from "../tokens";
+/** Avatar + brxce.ai watermark — responsive via useScale */
+"use client";
+
+import { color, font, space, s } from "../tokens";
+import { useScale } from "./DiagramShell";
 
 interface WatermarkProps {
   avatarUrl?: string;
 }
 
 export function Watermark({ avatarUrl = "/profile.jpg" }: WatermarkProps) {
+  const { factor } = useScale();
+
   return (
     <div
       style={{
         position: "absolute",
-        bottom: space.lg,
-        right: space.xl + space.xs,
+        bottom: s(space.lg, factor),
+        right: s(space.xl + space.xs, factor),
         display: "flex",
         alignItems: "center",
-        gap: space.sm + 2,
+        gap: s(10, factor),
       }}
     >
       <div
         style={{
-          width: 32,
-          height: 32,
+          width: s(32, factor),
+          height: s(32, factor),
           borderRadius: "50%",
-          border: `1.5px solid ${color.primary}88`,
+          border: `${Math.max(1, s(1.5, factor))}px solid ${color.primary}88`,
           overflow: "hidden",
-          boxShadow: `0 0 12px ${color.primaryFaint}`,
+          boxShadow: `0 0 ${s(12, factor)}px ${color.primaryFaint}`,
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -37,7 +42,7 @@ export function Watermark({ avatarUrl = "/profile.jpg" }: WatermarkProps) {
       <span
         style={{
           fontFamily: font.family.sans,
-          fontSize: font.size.body,
+          fontSize: s(font.size.body, factor),
           fontWeight: font.weight.semibold,
           color: color.primary,
           letterSpacing: font.letterSpacing.normal,

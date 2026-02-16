@@ -1,22 +1,16 @@
 /**
- * ListItem — consistent bullet-list rendering across all templates.
- *
- * Handles:
- *  - Empty strings → spacer
- *  - ✓ prefix → positive (green)
- *  - ✕ or "X " prefix → negative (dimmed)
- *  - → or × prefix → accent (primary)
- *  - Indented (starts with spaces) → sub-item styling
- *  - Default → normal bullet
+ * ListItem — responsive bullet-list rendering. Uses useScale.
  */
-import { font, bullet, itemText, space, color as colorTokens } from "../tokens";
+"use client";
+
+import { font, bullet, itemText, space, s } from "../tokens";
+import { useScale } from "../components/DiagramShell";
 
 type ItemVariant = "default" | "highlight";
 
 interface ListItemProps {
   text: string;
   variant?: ItemVariant;
-  /** Show bullet dot */
   showBullet?: boolean;
 }
 
@@ -52,30 +46,31 @@ function resolveStyle(text: string, variant: ItemVariant) {
 }
 
 export function ListItem({ text, variant = "default", showBullet = true }: ListItemProps) {
-  // Empty string → spacer
-  if (!text) return <div style={{ height: space.sm }} />;
+  const { factor } = useScale();
+
+  if (!text) return <div style={{ height: s(space.sm, factor) }} />;
 
   const { textColor, bulletColor, fontWeight, isIndented } = resolveStyle(text, variant);
 
   return (
     <div
       style={{
-        fontSize: isIndented ? font.size.subheading : font.size.body,
+        fontSize: s(isIndented ? font.size.subheading : font.size.body, factor),
         fontWeight,
         color: textColor,
         lineHeight: font.lineHeight.relaxed,
         display: "flex",
-        gap: bullet.gap,
+        gap: s(bullet.gap, factor),
         alignItems: "flex-start",
-        paddingLeft: isIndented ? space.lg : 0,
+        paddingLeft: isIndented ? s(space.lg, factor) : 0,
       }}
     >
       {showBullet && (
         <span
           style={{
             color: bulletColor,
-            fontSize: bullet.size,
-            marginTop: bullet.marginTop,
+            fontSize: s(bullet.size, factor),
+            marginTop: s(bullet.marginTop, factor),
             flexShrink: 0,
           }}
         >
@@ -87,7 +82,7 @@ export function ListItem({ text, variant = "default", showBullet = true }: ListI
   );
 }
 
-/* ─── Convenience: render a list of items ─── */
+/* ─── List ─── */
 interface ListProps {
   items: string[];
   variant?: ItemVariant;

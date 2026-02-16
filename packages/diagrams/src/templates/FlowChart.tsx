@@ -1,4 +1,4 @@
-/** React Flow based flow chart — built with design system tokens */
+/** React Flow based flow chart — responsive */
 "use client";
 
 import {
@@ -9,23 +9,9 @@ import {
   Position,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { color, font, radius, connector } from "../tokens";
-import { DiagramShell } from "../components/DiagramShell";
+import { color, font, radius, connector, s } from "../tokens";
+import { DiagramShell, useScale } from "../components/DiagramShell";
 import type { RatioPreset } from "../tokens";
-
-/** Custom node styles using design tokens */
-const nodeStyle = (nodeColor?: string, highlight?: boolean) => ({
-  background: color.bg,
-  color: nodeColor ?? color.text,
-  border: `${highlight ? 2 : connector.strokeWidth}px solid ${nodeColor ?? color.textSecondary}`,
-  borderRadius: radius.md,
-  padding: "10px 16px",
-  fontSize: font.size.subheading - 1,
-  fontFamily: font.family.sans,
-  fontWeight: highlight ? font.weight.bold : font.weight.medium,
-  textAlign: "center" as const,
-  minWidth: 100,
-});
 
 export interface FlowChartNode {
   id: string;
@@ -53,10 +39,25 @@ export interface FlowChartProps {
   avatarUrl?: string;
 }
 
-export function FlowChart({ title, nodes, edges, ratio = "guide-3:2", avatarUrl }: FlowChartProps) {
+function FlowChartInner({ nodes, edges }: Pick<FlowChartProps, "nodes" | "edges">) {
+  const { factor } = useScale();
+
+  const nodeStyle = (nodeColor?: string, highlight?: boolean) => ({
+    background: color.bg,
+    color: nodeColor ?? color.text,
+    border: `${highlight ? 2 : connector.strokeWidth}px solid ${nodeColor ?? color.textSecondary}`,
+    borderRadius: s(radius.md, factor),
+    padding: `${s(10, factor)}px ${s(16, factor)}px`,
+    fontSize: s(font.size.subheading - 1, factor),
+    fontFamily: font.family.sans,
+    fontWeight: highlight ? font.weight.bold : font.weight.medium,
+    textAlign: "center" as const,
+    minWidth: s(100, factor),
+  });
+
   const rfNodes: Node[] = nodes.map((n) => ({
     id: n.id,
-    position: { x: n.x, y: n.y },
+    position: { x: n.x * factor, y: n.y * factor },
     data: { label: n.label },
     type: n.type ?? "default",
     sourcePosition: Position.Right,
@@ -71,26 +72,32 @@ export function FlowChart({ title, nodes, edges, ratio = "guide-3:2", avatarUrl 
     label: e.label,
     animated: e.animated,
     style: { stroke: e.color ?? color.textDim, strokeWidth: connector.strokeWidth },
-    labelStyle: { fill: color.textMuted, fontSize: font.size.caption - 1 },
+    labelStyle: { fill: color.textMuted, fontSize: s(font.size.caption - 1, factor) },
   }));
 
   return (
+    <ReactFlow
+      nodes={rfNodes}
+      edges={rfEdges}
+      fitView
+      proOptions={{ hideAttribution: true }}
+      style={{ background: "transparent" }}
+      nodesDraggable={false}
+      nodesConnectable={false}
+      elementsSelectable={false}
+      panOnDrag={false}
+      zoomOnScroll={false}
+      zoomOnDoubleClick={false}
+    >
+      <Background color={color.borderStrong} gap={s(40, factor)} size={1} />
+    </ReactFlow>
+  );
+}
+
+export function FlowChart({ title, nodes, edges, ratio = "guide-3:2", avatarUrl }: FlowChartProps) {
+  return (
     <DiagramShell title={title} ratio={ratio} avatarUrl={avatarUrl}>
-      <ReactFlow
-        nodes={rfNodes}
-        edges={rfEdges}
-        fitView
-        proOptions={{ hideAttribution: true }}
-        style={{ background: "transparent" }}
-        nodesDraggable={false}
-        nodesConnectable={false}
-        elementsSelectable={false}
-        panOnDrag={false}
-        zoomOnScroll={false}
-        zoomOnDoubleClick={false}
-      >
-        <Background color={color.borderStrong} gap={40} size={1} />
-      </ReactFlow>
+      <FlowChartInner nodes={nodes} edges={edges} />
     </DiagramShell>
   );
 }

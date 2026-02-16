@@ -1,6 +1,9 @@
 // Design tokens
 export * from "./tokens";
 
+// Scale context
+export { useScale } from "./components/DiagramShell";
+
 // Primitives
 export * from "./primitives";
 

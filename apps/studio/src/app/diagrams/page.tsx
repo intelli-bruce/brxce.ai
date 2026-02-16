@@ -97,7 +97,7 @@ export default function DiagramsPage() {
   const [template, setTemplate] = useState<TemplateKey>("comparison");
   const [ratio, setRatio] = useState<RatioPreset>("guide-3:2");
   const [jsonData, setJsonData] = useState(JSON.stringify(SAMPLES[template], null, 2));
-  const [showEditor, setShowEditor] = useState(true);
+  const [showEditor, setShowEditor] = useState(false);
 
   function handleTemplateChange(t: TemplateKey) {
     setTemplate(t);
@@ -111,15 +111,12 @@ export default function DiagramsPage() {
     /* invalid json */
   }
 
-  const preset = RATIO_PRESETS[ratio];
-
   return (
     <div className="flex flex-col gap-4 h-full">
       {/* Toolbar */}
-      <div className="flex items-center gap-4 flex-wrap">
-        <h1 className="text-xl font-bold">📐 다이어그램</h1>
+      <div className="flex items-center gap-3 flex-wrap">
+        <h1 className="text-lg font-bold">📐 다이어그램</h1>
 
-        {/* Template selector */}
         <div className="flex gap-1 p-1 bg-[#111] rounded-lg">
           {(Object.keys(TEMPLATE_LABELS) as TemplateKey[]).map((t) => (
             <button
@@ -136,7 +133,6 @@ export default function DiagramsPage() {
           ))}
         </div>
 
-        {/* Ratio selector */}
         <select
           value={ratio}
           onChange={(e) => setRatio(e.target.value as RatioPreset)}
@@ -144,53 +140,42 @@ export default function DiagramsPage() {
         >
           {Object.entries(RATIO_PRESETS).map(([key, val]) => (
             <option key={key} value={key}>
-              {val.label} ({val.width}×{val.height})
+              {val.label}
             </option>
           ))}
         </select>
-
-        <span className="text-xs text-[#555]">
-          {preset.width}×{preset.height}
-        </span>
 
         <button
           onClick={() => setShowEditor((v) => !v)}
           className="px-3 py-1 rounded-md text-xs font-medium text-[#888] hover:text-[#fafafa] bg-[#111] transition-colors"
         >
-          {showEditor ? "에디터 접기 ◀" : "에디터 펼치기 ▶"}
+          {showEditor ? "JSON 닫기" : "JSON 편집"}
         </button>
       </div>
 
-      <div className="flex gap-4 flex-1 min-h-0">
-        {/* JSON editor */}
-        {showEditor && <div className="w-[360px] flex-shrink-0 flex flex-col">
-          <label className="text-xs text-[#888] mb-1">데이터 (JSON)</label>
+      {/* JSON editor (collapsible) */}
+      {showEditor && (
+        <div className="max-h-[200px]">
           <textarea
             value={jsonData}
             onChange={(e) => setJsonData(e.target.value)}
-            className="flex-1 p-3 rounded-lg border border-[#333] bg-[#0a0a0a] text-xs text-[#ccc] font-mono outline-none resize-none focus:border-[#FF6B35]"
+            className="w-full h-[200px] p-3 rounded-lg border border-[#333] bg-[#0a0a0a] text-xs text-[#ccc] font-mono outline-none resize-none focus:border-[#FF6B35]"
             spellCheck={false}
           />
-        </div>}
-
-        {/* Preview */}
-        <div className="flex-1 overflow-auto bg-[#111] rounded-lg p-4 flex items-start justify-center" id="preview-container">
-          <div
-            style={{
-              zoom: Math.min(1, (showEditor ? 0.55 : 0.78)),
-            }}
-          >
-            {template === "comparison" && (
-              <Comparison ratio={ratio} {...(parsed as any)} />
-            )}
-            {template === "orgchart" && (
-              <OrgChart ratio={ratio} {...(parsed as any)} />
-            )}
-            {template === "beforeafter" && (
-              <BeforeAfter ratio={ratio} {...(parsed as any)} />
-            )}
-          </div>
         </div>
+      )}
+
+      {/* Preview — diagram fills available width, aspect-ratio handles height */}
+      <div className="flex-1 min-h-0">
+        {template === "comparison" && (
+          <Comparison ratio={ratio} {...(parsed as any)} />
+        )}
+        {template === "orgchart" && (
+          <OrgChart ratio={ratio} {...(parsed as any)} />
+        )}
+        {template === "beforeafter" && (
+          <BeforeAfter ratio={ratio} {...(parsed as any)} />
+        )}
       </div>
     </div>
   );

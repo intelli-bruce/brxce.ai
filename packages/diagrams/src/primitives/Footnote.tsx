@@ -1,7 +1,7 @@
-/**
- * Footnote — bottom annotation text, auto-positioned.
- */
-import { font, color } from "../tokens";
+"use client";
+
+import { font, color, s } from "../tokens";
+import { useScale } from "../components/DiagramShell";
 
 interface FootnoteProps {
   children: React.ReactNode;
@@ -9,11 +9,12 @@ interface FootnoteProps {
 }
 
 export function Footnote({ children, align = "center" }: FootnoteProps) {
+  const { factor } = useScale();
   return (
     <div
       style={{
         marginTop: "auto",
-        fontSize: font.size.caption,
+        fontSize: s(font.size.caption, factor),
         color: color.textDim,
         textAlign: align,
         maxWidth: "80%",

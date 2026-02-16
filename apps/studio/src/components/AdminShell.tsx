@@ -72,7 +72,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   return (
     <div className="flex min-h-screen">
       <Sidebar />
-      <main className="flex-1 px-8 py-8 max-w-6xl">{children}</main>
+      <main className="flex-1 px-6 py-6 min-w-0">{children}</main>
     </div>
   );
 }

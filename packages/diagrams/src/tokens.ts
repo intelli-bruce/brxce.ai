@@ -1,8 +1,11 @@
 /**
  * Design tokens — single source of truth for all diagram styling.
  *
- * Every visual value lives here. Templates import tokens, never raw numbers.
- * Naming follows: {category}.{variant}.{property}
+ * ⚠️ LAYOUT-FIRST PRINCIPLE:
+ * - All sizes are defined as ratios relative to a 1200px reference width.
+ * - At runtime, DiagramShell measures its container and computes a scale factor.
+ * - Templates receive this scale factor and multiply all px values by it.
+ * - This means: same diagram, any container, always proportional.
  */
 
 /* ─── Color Palette ─── */
@@ -49,24 +52,30 @@ export const color = {
   },
 } as const;
 
-/* ─── Typography ─── */
+/* ─── Reference width for proportional scaling ─── */
+export const REF_WIDTH = 1200;
+
+/**
+ * Scale a base px value by a factor.
+ * Usage: s(26, scale) → proportional title size
+ */
+export function s(basePx: number, scale: number): number {
+  return Math.round(basePx * scale * 100) / 100;
+}
+
+/* ─── Typography (base values at 1200px ref width) ─── */
 export const font = {
   family: {
     sans: "'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
     mono: "'JetBrains Mono', 'Fira Code', monospace",
   },
+  /** Base font sizes (px at 1200px reference width). Multiply by scale factor at runtime. */
   size: {
-    /** Diagram main title */
     title: 26,
-    /** Section / card header */
     heading: 18,
-    /** Card sub-header, labels */
     subheading: 14,
-    /** Body text, list items */
     body: 15,
-    /** Captions, badges, footnotes */
     caption: 12,
-    /** Smallest — metadata, timestamps */
     tiny: 10,
   },
   weight: {
@@ -89,21 +98,14 @@ export const font = {
   },
 } as const;
 
-/* ─── Spacing ─── */
+/* ─── Spacing (base values at 1200px) ─── */
 export const space = {
-  /** 4px — micro gaps */
   xs: 4,
-  /** 8px — tight gaps, inline spacing */
   sm: 8,
-  /** 12px — default inner gap */
   md: 12,
-  /** 16px — section padding */
   lg: 16,
-  /** 20px — card padding */
   xl: 20,
-  /** 28px — diagram edge margin */
   xxl: 28,
-  /** 40px — major section breaks */
   xxxl: 40,
 } as const;
 
@@ -126,21 +128,18 @@ export const shadow = {
 
 /* ─── Card Styles (pre-composed) ─── */
 export const card = {
-  /** Default dark card */
   default: {
     background: `linear-gradient(180deg, ${color.surface} 0%, ${color.bg} 60%)`,
     border: `1px solid ${color.border}`,
     borderRadius: radius.lg,
     boxShadow: shadow.card,
   },
-  /** Highlighted / primary card */
   highlight: {
     background: `linear-gradient(180deg, ${color.primaryGhost} 0%, ${color.bg} 60%)`,
     border: `1.5px solid ${color.primaryDim}`,
     borderRadius: radius.lg,
     boxShadow: shadow.cardHighlight,
   },
-  /** Ghost / minimal card (no fill, just border) */
   ghost: {
     background: "transparent",
     border: `1px solid ${color.border}`,
@@ -149,29 +148,22 @@ export const card = {
   },
 } as const;
 
-/* ─── Connector / Arrow tokens ─── */
+/* ─── Connector tokens ─── */
 export const connector = {
-  /** Circular badge between sections (e.g., → arrow) */
   badge: {
     size: 28,
     borderRadius: "50%" as const,
     fontSize: font.size.subheading,
   },
-  /** Line thickness */
   strokeWidth: 1.5,
-  /** SVG connector dot */
   dotRadius: 3,
 } as const;
 
 /* ─── Bullet / List Item tokens ─── */
 export const bullet = {
-  /** The ● character size */
   size: font.size.tiny,
-  /** Vertical offset to align with text */
   marginTop: 6,
-  /** Gap between bullet and text */
   gap: space.sm,
-  /** Colors by context */
   color: {
     default: color.textDim,
     highlight: color.primary,
@@ -180,7 +172,7 @@ export const bullet = {
   },
 } as const;
 
-/* ─── Item text colors (for list items across all templates) ─── */
+/* ─── Item text colors ─── */
 export const itemText = {
   default: color.textSecondary,
   highlight: "#E0E0E0",
@@ -192,7 +184,7 @@ export const itemText = {
 
 /* ─── Card Header tokens ─── */
 export const cardHeader = {
-  padding: `${space.xl}px ${space.xl}px ${space.lg}px`,
+  padding: { y: space.xl, x: space.xl, bottom: space.lg },
   borderBottom: {
     default: `1px solid ${color.borderSubtle}`,
     highlight: `1px solid ${color.primary}33`,
@@ -205,17 +197,27 @@ export const cardHeader = {
 
 /* ─── Card Body tokens ─── */
 export const cardBody = {
-  padding: `${space.lg}px ${space.xl}px`,
+  padding: { y: space.lg, x: space.xl },
   gap: 6,
 } as const;
 
-/* ─── Export Ratio Presets ─── */
+/* ─── Aspect Ratio Presets (for CSS aspect-ratio) ─── */
 export const RATIO_PRESETS = {
-  "blog-16:9": { width: 1920, height: 1080, label: "블로그 (16:9)" },
-  "insta-4:5": { width: 1080, height: 1350, label: "인스타 (4:5)" },
-  "square-1:1": { width: 1080, height: 1080, label: "정사각 (1:1)" },
-  "wide-21:9": { width: 2520, height: 1080, label: "와이드 (21:9)" },
-  "guide-3:2": { width: 1800, height: 1200, label: "가이드 (3:2)" },
+  "blog-16:9": { ratio: 16 / 9, label: "블로그 (16:9)", exportWidth: 1920, exportHeight: 1080 },
+  "insta-4:5": { ratio: 4 / 5, label: "인스타 (4:5)", exportWidth: 1080, exportHeight: 1350 },
+  "square-1:1": { ratio: 1, label: "정사각 (1:1)", exportWidth: 1080, exportHeight: 1080 },
+  "wide-21:9": { ratio: 21 / 9, label: "와이드 (21:9)", exportWidth: 2520, exportHeight: 1080 },
+  "guide-3:2": { ratio: 3 / 2, label: "가이드 (3:2)", exportWidth: 1800, exportHeight: 1200 },
 } as const;
 
 export type RatioPreset = keyof typeof RATIO_PRESETS;
+
+/* ─── Scale context ─── */
+export interface ScaleContext {
+  /** Multiply base px values by this factor */
+  factor: number;
+  /** Container width in px */
+  width: number;
+  /** Container height in px */
+  height: number;
+}
