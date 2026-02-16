@@ -146,13 +146,7 @@ export function DiagramShell({
                 fontSize: s(font.size.title, scale.factor),
                 fontWeight: sketch ? font.weight.bold : font.weight.black,
                 letterSpacing: sketch ? "0" : font.letterSpacing.tight,
-                ...(sketch
-                  ? { color: color.text }
-                  : {
-                      background: `linear-gradient(135deg, ${color.text}, ${color.primary})`,
-                      WebkitBackgroundClip: "text",
-                      WebkitTextFillColor: "transparent",
-                    }),
+                color: color.text,
               }}
             >
               {title}
