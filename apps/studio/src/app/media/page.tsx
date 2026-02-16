@@ -293,6 +293,11 @@ function ThumbCard({
       <div className="aspect-square flex items-center justify-center bg-[#0a0a0a] cursor-pointer relative" onClick={onClick}>
         {isImage(file.name) ? (
           <img src={file.url} alt={file.name} className="w-full h-full object-cover group-hover:opacity-80 transition-opacity" loading="lazy" />
+        ) : isVideo(file.name) && file.source === "local" ? (
+          <div className="w-full h-full relative">
+            <img src={`/api/media/serve?path=${encodeURIComponent(`/Volumes/WorkSSD/Media/${file.name}`)}&thumb=400`} alt={file.name} className="w-full h-full object-cover group-hover:opacity-80 transition-opacity" loading="lazy" />
+            <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-2xl drop-shadow-lg">▶</span>
+          </div>
         ) : isVideo(file.name) ? (
           <div className="w-full h-full flex items-center justify-center bg-[#0a0a0a]">
             <span className="text-3xl">🎬</span>
