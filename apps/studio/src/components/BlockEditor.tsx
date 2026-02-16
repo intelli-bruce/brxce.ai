@@ -55,6 +55,8 @@ export default function BlockEditor({ contentId, bodyMd, onBodySync }: Props) {
   const [showRevisions, setShowRevisions] = useState<string | null>(null);
   const [aiPrompt, setAiPrompt] = useState("");
   const [showAiInput, setShowAiInput] = useState<string | null>(null);
+  const [aiGenerating, setAiGenerating] = useState<number | null>(null);
+  const [aiTask, setAiTask] = useState<{ blockIndex: number; task: string } | null>(null);
 
   const sb = createSupabaseBrowser();
 
@@ -481,15 +483,37 @@ export default function BlockEditor({ contentId, bodyMd, onBodySync }: Props) {
                       }}
                     />
                     <button
-                      onClick={() => {
-                        // TODO: wire to OpenClaw generation
-                        alert(`AI 생성 예정\n블록: ${blockLabel(idx)}\n지시: ${aiPrompt}`);
+                      onClick={async () => {
+                        const prompt = aiPrompt;
                         setShowAiInput(null);
                         setAiPrompt("");
+                        setAiGenerating(idx);
+                        try {
+                          const res = await fetch("/api/generate", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              type: "block",
+                              content_id: contentId,
+                              block_index: idx,
+                              block_prompt: prompt,
+                            }),
+                          });
+                          const data = await res.json();
+                          if (data.ok && data.task) {
+                            // Task built — show confirmation
+                            setAiTask({ blockIndex: idx, task: data.task });
+                          }
+                        } catch (e) {
+                          console.error("Generation failed:", e);
+                        } finally {
+                          setAiGenerating(null);
+                        }
                       }}
-                      className="px-3 py-1.5 rounded-lg bg-[#FF6B35] text-white text-xs font-semibold hover:bg-[#e55a2a]"
+                      disabled={aiGenerating === idx}
+                      className="px-3 py-1.5 rounded-lg bg-[#FF6B35] text-white text-xs font-semibold hover:bg-[#e55a2a] disabled:opacity-50"
                     >
-                      생성
+                      {aiGenerating === idx ? "⏳" : "생성"}
                     </button>
                   </div>
                   <p className="text-[10px] text-[#888] mt-1.5">
@@ -548,6 +572,22 @@ export default function BlockEditor({ contentId, bodyMd, onBodySync }: Props) {
           );
         })}
       </div>
+
+      {/* AI Task Panel */}
+      {aiTask && (
+        <div className="mt-4 p-4 rounded-xl border border-[#FF6B35]/30 bg-[#FF6B35]/5">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-semibold text-[#FF6B35]">✨ AI 생성 태스크 (B{aiTask.blockIndex + 1})</h4>
+            <button onClick={() => setAiTask(null)} className="text-[#888] hover:text-[#fafafa] text-xs">✕</button>
+          </div>
+          <pre className="text-[10px] text-[#888] bg-[#0a0a0a] rounded-lg p-3 overflow-x-auto font-mono leading-relaxed border border-[#1a1a1a] max-h-[200px] overflow-y-auto whitespace-pre-wrap">
+            {aiTask.task}
+          </pre>
+          <p className="text-[10px] text-[#666] mt-2">
+            OpenClaw 서브에이전트로 전달하여 생성합니다. 결과는 블록에 자동 반영됩니다.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

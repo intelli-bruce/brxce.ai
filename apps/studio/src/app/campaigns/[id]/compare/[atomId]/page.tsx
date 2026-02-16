@@ -74,9 +74,17 @@ export default function ComparePageWrapper() {
       base_variant_id: branchTarget,
       feedback: branchFeedback,
     };
-    await sb.from("campaign_atoms").update({ status: "generating", generation_config: config }).eq("id", atomId);
     setBranchTarget(null);
     setBranchFeedback("");
+    try {
+      await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "campaign", atom_id: atomId, config }),
+      });
+    } catch (e) {
+      console.error("Branch generation failed:", e);
+    }
     loadData();
   }
 

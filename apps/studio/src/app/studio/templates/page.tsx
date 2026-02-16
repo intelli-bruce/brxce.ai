@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   Comparison,
   OrgChart,
@@ -37,6 +37,7 @@ import type {
 
 /* ── Types ── */
 interface TemplateInfo {
+  id: string;
   name: string;
   desc: string;
   sub: string;
@@ -45,9 +46,7 @@ interface TemplateInfo {
   sketch?: boolean;
   propsSchema: Record<string, string>;
   sampleData: Record<string, unknown>;
-  /** If set, render live React component preview */
   livePreview?: "comparison" | "orgchart" | "beforeafter" | "flowchart" | "ogimage" | "thumbnail" | "quote" | "socialpost" | "infographic" | "cardnews" | "stepbystep" | "listcarousel" | "beforeaftercarousel" | "quotecarousel";
-  /** Fallback ASCII preview */
   asciiPreview?: { blocks: string[]; accent?: string };
 }
 
@@ -159,7 +158,7 @@ const QUOTECAROUSEL_SAMPLE: QuoteCarouselProps = {
 const IMAGE_TEMPLATES: TemplateInfo[] = [
   // Diagrams (live preview)
   {
-    name: "Comparison", sub: "다이어그램", desc: "두 항목 또는 세 항목을 나란히 비교",
+    id: "comparison", name: "Comparison", sub: "다이어그램", desc: "두 항목 또는 세 항목을 나란히 비교",
     layout: "3컬럼 · 카드(제목+부제+리스트) · 컬럼간 화살표 뱃지",
     ratios: ["guide 3:2", "blog 16:9", "square 1:1"], sketch: true,
     propsSchema: { columns: "Column[] — { title, subtitle, variant?, items[] }", highlight: "number", arrows: "Arrow[] — { label }" },
@@ -167,7 +166,7 @@ const IMAGE_TEMPLATES: TemplateInfo[] = [
     livePreview: "comparison",
   },
   {
-    name: "OrgChart", sub: "다이어그램", desc: "중앙 허브에서 방사형으로 퍼지는 구조도",
+    id: "orgchart", name: "OrgChart", sub: "다이어그램", desc: "중앙 허브에서 방사형으로 퍼지는 구조도",
     layout: "중앙 허브 카드 + 방사형 노드 + SVG 커넥터",
     ratios: ["guide 3:2", "wide 21:9"], sketch: true,
     propsSchema: { hub: "{ label, sub }", groups: "Node[] — { label, sub }", top: "{ label }", footnote: "string" },
@@ -175,7 +174,7 @@ const IMAGE_TEMPLATES: TemplateInfo[] = [
     livePreview: "orgchart",
   },
   {
-    name: "BeforeAfter", sub: "다이어그램", desc: "두 상태를 큰 화살표로 연결하는 전후 비교",
+    id: "beforeafter", name: "BeforeAfter", sub: "다이어그램", desc: "두 상태를 큰 화살표로 연결하는 전후 비교",
     layout: "2패널(Before/After 카드) + LargeArrow 커넥터",
     ratios: ["guide 3:2", "blog 16:9"], sketch: true,
     propsSchema: { before: "{ label, items[] }", after: "{ label, items[] }", arrow: "string" },
@@ -183,7 +182,7 @@ const IMAGE_TEMPLATES: TemplateInfo[] = [
     livePreview: "beforeafter",
   },
   {
-    name: "FlowChart", sub: "다이어그램", desc: "노드와 엣지로 구성된 프로세스 흐름도",
+    id: "flowchart", name: "FlowChart", sub: "다이어그램", desc: "노드와 엣지로 구성된 프로세스 흐름도",
     layout: "React Flow 기반 · 커스텀 노드 · 디자인 토큰",
     ratios: ["guide 3:2", "blog 16:9"], sketch: false,
     propsSchema: { nodes: "FlowNode[] — { id, label, x, y }", edges: "FlowEdge[] — { source, target, label? }" },
@@ -192,14 +191,14 @@ const IMAGE_TEMPLATES: TemplateInfo[] = [
   },
   // Cover / Thumbnail
   {
-    name: "OgImage", sub: "커버", desc: "Open Graph 소셜 미리보기 이미지 (1200×630)",
+    id: "ogimage", name: "OgImage", sub: "커버", desc: "Open Graph 소셜 미리보기 이미지 (1200×630)",
     layout: "제목 + 부제 + 브랜드 로고 오버레이", ratios: ["1200×630"],
     propsSchema: { title: "string", subtitle: "string", tag: "string" },
     sampleData: OGIMAGE_SAMPLE as unknown as Record<string, unknown>,
     livePreview: "ogimage",
   },
   {
-    name: "Thumbnail", sub: "커버", desc: "YouTube/블로그 썸네일 (1280×720)",
+    id: "thumbnail", name: "Thumbnail", sub: "커버", desc: "YouTube/블로그 썸네일 (1280×720)",
     layout: "배경 이미지 + 타이틀 텍스트 + 뱃지", ratios: ["1280×720"],
     propsSchema: { title: "string", badge: "string" },
     sampleData: THUMBNAIL_SAMPLE as unknown as Record<string, unknown>,
@@ -207,21 +206,21 @@ const IMAGE_TEMPLATES: TemplateInfo[] = [
   },
   // Social
   {
-    name: "Quote", sub: "소셜", desc: "인용구 카드 (1080×1080)",
+    id: "quote", name: "Quote", sub: "소셜", desc: "인용구 카드 (1080×1080)",
     layout: "큰 따옴표 + 인용문 + 저자 + 브랜딩", ratios: ["1080×1080"],
     propsSchema: { quote: "string", author: "string" },
     sampleData: QUOTE_SAMPLE as unknown as Record<string, unknown>,
     livePreview: "quote",
   },
   {
-    name: "SocialPost", sub: "소셜", desc: "소셜 미디어 정사각형 (1080×1080)",
+    id: "socialpost", name: "SocialPost", sub: "소셜", desc: "소셜 미디어 정사각형 (1080×1080)",
     layout: "배경 + 메인 텍스트 + CTA", ratios: ["1080×1080"],
     propsSchema: { text: "string", cta: "string" },
     sampleData: SOCIALPOST_SAMPLE as unknown as Record<string, unknown>,
     livePreview: "socialpost",
   },
   {
-    name: "Infographic", sub: "인포그래픽", desc: "데이터 시각화 세로 인포그래픽",
+    id: "infographic", name: "Infographic", sub: "인포그래픽", desc: "데이터 시각화 세로 인포그래픽",
     layout: "섹션별 데이터 블록 세로 배치", ratios: ["1080×1920"],
     propsSchema: { title: "string", sections: "Section[]" },
     sampleData: INFOGRAPHIC_SAMPLE as unknown as Record<string, unknown>,
@@ -230,30 +229,30 @@ const IMAGE_TEMPLATES: TemplateInfo[] = [
 ];
 
 const CAROUSEL_TEMPLATES: TemplateInfo[] = [
-  { name: "CardNews", sub: "카드뉴스", desc: "커버→본문→CTA 구조 캐러셀", layout: "슬라이드: 커버(제목+훅) → 본문(1포인트/장) → CTA", ratios: ["1080×1350 (4:5)"], propsSchema: { cover: "{ title, hook }", slides: "Slide[]", cta: "string" },
+  { id: "cardnews", name: "CardNews", sub: "카드뉴스", desc: "커버→본문→CTA 구조 캐러셀", layout: "슬라이드: 커버(제목+훅) → 본문(1포인트/장) → CTA", ratios: ["1080×1350 (4:5)"], propsSchema: { cover: "{ title, hook }", slides: "Slide[]", cta: "string" },
     sampleData: CARDNEWS_SAMPLE as unknown as Record<string, unknown>, livePreview: "cardnews" },
-  { name: "StepByStep", sub: "가이드", desc: "단계별 가이드 캐러셀", layout: "슬라이드: 번호 + 제목 + 설명", ratios: ["1080×1350"], propsSchema: { steps: "Step[] — { number, title, desc }" },
+  { id: "stepbystep", name: "StepByStep", sub: "가이드", desc: "단계별 가이드 캐러셀", layout: "슬라이드: 번호 + 제목 + 설명", ratios: ["1080×1350"], propsSchema: { steps: "Step[] — { number, title, desc }" },
     sampleData: STEPBYSTEP_SAMPLE as unknown as Record<string, unknown>, livePreview: "stepbystep" },
-  { name: "ListCarousel", sub: "리스트", desc: "리스트형 아이템 슬라이드", layout: "슬라이드: 리스트 항목 카드", ratios: ["1080×1350"], propsSchema: { items: "ListItem[]" },
+  { id: "listcarousel", name: "ListCarousel", sub: "리스트", desc: "리스트형 아이템 슬라이드", layout: "슬라이드: 리스트 항목 카드", ratios: ["1080×1350"], propsSchema: { items: "ListItem[]" },
     sampleData: LISTCAROUSEL_SAMPLE as unknown as Record<string, unknown>, livePreview: "listcarousel" },
-  { name: "BeforeAfterCarousel", sub: "비교", desc: "전후 비교 슬라이드 페어", layout: "Before 슬라이드 → After 슬라이드", ratios: ["1080×1350"], propsSchema: { before: "Slide", after: "Slide" },
+  { id: "beforeaftercarousel", name: "BeforeAfterCarousel", sub: "비교", desc: "전후 비교 슬라이드 페어", layout: "Before 슬라이드 → After 슬라이드", ratios: ["1080×1350"], propsSchema: { before: "Slide", after: "Slide" },
     sampleData: BEFOREAFTER_CAROUSEL_SAMPLE as unknown as Record<string, unknown>, livePreview: "beforeaftercarousel" },
-  { name: "QuoteCarousel", sub: "인용", desc: "명언/인용 캐러셀", layout: "각 슬라이드에 인용문+출처", ratios: ["1080×1350"], propsSchema: { quotes: "Quote[]" },
+  { id: "quotecarousel", name: "QuoteCarousel", sub: "인용", desc: "명언/인용 캐러셀", layout: "각 슬라이드에 인용문+출처", ratios: ["1080×1350"], propsSchema: { quotes: "Quote[]" },
     sampleData: QUOTECAROUSEL_SAMPLE as unknown as Record<string, unknown>, livePreview: "quotecarousel" },
 ];
 
 const VIDEO_TEMPLATES: TemplateInfo[] = [
-  { name: "VSReel", sub: "비교", desc: "VS 비교 릴스 (좌우 분할)", layout: "좌 vs 우 비교 + 점수 + 승자", ratios: ["1080×1920 (9:16)", "60fps"], propsSchema: { left: "Item", right: "Item", rounds: "Round[]" }, sampleData: {},
+  { id: "vsreel", name: "VSReel", sub: "비교", desc: "VS 비교 릴스 (좌우 분할)", layout: "좌 vs 우 비교 + 점수 + 승자", ratios: ["1080×1920 (9:16)", "60fps"], propsSchema: { left: "Item", right: "Item", rounds: "Round[]" }, sampleData: {},
     asciiPreview: { blocks: ["┌────┬────┐", "│ VS │ VS │", "│ L  │ R  │", "│ 3  │ 5  │", "│   WINNER│", "└────┴────┘"], accent: "#FF6B35" } },
-  { name: "NewsBreaking", sub: "뉴스", desc: "뉴스 속보 스타일", layout: "BREAKING 배너 + 슬라이딩 텍스트", ratios: ["1080×1920"], propsSchema: { headline: "string", body: "string" }, sampleData: {},
+  { id: "newsbreaking", name: "NewsBreaking", sub: "뉴스", desc: "뉴스 속보 스타일", layout: "BREAKING 배너 + 슬라이딩 텍스트", ratios: ["1080×1920"], propsSchema: { headline: "string", body: "string" }, sampleData: {},
     asciiPreview: { blocks: ["┌──────────┐", "│ BREAKING │", "│══════════│", "│ headline │", "│  body... │", "└──────────┘"], accent: "#FF922B" } },
-  { name: "ShortFormVideo", sub: "숏폼", desc: "숏폼 세로 영상 + 자막", layout: "배경 영상 + 자막 오버레이", ratios: ["1080×1920"], propsSchema: { captions: "Caption[]", bgVideo: "string" }, sampleData: {},
+  { id: "shortformvideo", name: "ShortFormVideo", sub: "숏폼", desc: "숏폼 세로 영상 + 자막", layout: "배경 영상 + 자막 오버레이", ratios: ["1080×1920"], propsSchema: { captions: "Caption[]", bgVideo: "string" }, sampleData: {},
     asciiPreview: { blocks: ["┌──────────┐", "│  [video] │", "│ ───────  │", "│ caption  │", "└──────────┘"], accent: "#66D9E8" } },
-  { name: "Demo60s", sub: "데모", desc: "60초 데모 영상", layout: "화면 녹화 + 줌인 + 자막", ratios: ["1080×1920"], propsSchema: { screenRecording: "string", annotations: "Annotation[]" }, sampleData: {},
+  { id: "demo60s", name: "Demo60s", sub: "데모", desc: "60초 데모 영상", layout: "화면 녹화 + 줌인 + 자막", ratios: ["1080×1920"], propsSchema: { screenRecording: "string", annotations: "Annotation[]" }, sampleData: {},
     asciiPreview: { blocks: ["┌──────────┐", "│ ┌──────┐ │", "│ │screen│ │", "│ └──────┘ │", "│ 🔍 zoom  │", "└──────────┘"], accent: "#B197FC" } },
-  { name: "DayInTheLife", sub: "브이로그", desc: "일상 브이로그 스타일", layout: "시간대별 클립 + 시계", ratios: ["1080×1920"], propsSchema: { clips: "Clip[]" }, sampleData: {},
+  { id: "dayinthelife", name: "DayInTheLife", sub: "브이로그", desc: "일상 브이로그 스타일", layout: "시간대별 클립 + 시계", ratios: ["1080×1920"], propsSchema: { clips: "Clip[]" }, sampleData: {},
     asciiPreview: { blocks: ["┌──────────┐", "│  09:00   │", "│  [clip1] │", "│  12:00   │", "│  [clip2] │", "└──────────┘"], accent: "#69DB7C" } },
-  { name: "TextOverVideo", sub: "타이포", desc: "배경 영상 위 대형 타이포그래피", layout: "배경 영상 + 텍스트 애니메이션", ratios: ["1080×1920"], propsSchema: { texts: "TextFrame[]", bgVideo: "string" }, sampleData: {},
+  { id: "textovervideo", name: "TextOverVideo", sub: "타이포", desc: "배경 영상 위 대형 타이포그래피", layout: "배경 영상 + 텍스트 애니메이션", ratios: ["1080×1920"], propsSchema: { texts: "TextFrame[]", bgVideo: "string" }, sampleData: {},
     asciiPreview: { blocks: ["┌──────────┐", "│  BIG     │", "│  TEXT    │", "│ [video]  │", "└──────────┘"], accent: "#FFD43B" } },
 ];
 
@@ -347,6 +346,7 @@ function TemplatePreview({ tmpl, large, sketch }: { tmpl: TemplateInfo; large?: 
 
 export default function TemplatesPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const initial = (searchParams.get("tab") as TabKey) || "image";
   const [tab, setTab] = useState<TabKey>(initial);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -397,7 +397,7 @@ export default function TemplatesPage() {
               return (
                 <div key={tmpl.name} className="bg-[#111] rounded-xl border border-[#222] overflow-hidden">
                   {/* Collapsed: preview + info */}
-                  <button onClick={() => setExpanded(isExpanded ? null : tmpl.name)}
+                  <button onClick={() => router.push(`/studio/templates/${tmpl.id}`)}
                     className="w-full text-left px-5 py-4 flex items-start gap-5 hover:bg-[#151515] transition-colors border-none bg-transparent cursor-pointer">
                     <div className="shrink-0 w-56">
                       <TemplatePreview tmpl={tmpl} sketch={sketchMode} />
@@ -417,44 +417,8 @@ export default function TemplatesPage() {
                       <p className="text-[#888] text-xs mb-2">{tmpl.desc}</p>
                       <p className="text-[10px] text-[#555]">{tmpl.ratios.join(" · ")}</p>
                     </div>
-                    <span className="text-[#555] text-xs shrink-0 pt-1">{isExpanded ? "▲" : "▼"}</span>
+                    <span className="text-[#555] text-xs shrink-0 pt-1">→</span>
                   </button>
-
-                  {/* Expanded: larger preview + details */}
-                  {isExpanded && (
-                    <div className="px-5 pb-5 border-t border-[#1a1a1a] pt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <h5 className="text-[10px] font-semibold text-[#555] uppercase tracking-wider mb-2">렌더 미리보기</h5>
-                        <TemplatePreview tmpl={tmpl} large sketch={sketchMode} />
-                        <p className="text-xs text-[#888] mt-3">{tmpl.layout}</p>
-                      </div>
-                      <div className="space-y-4">
-                        <div>
-                          <h5 className="text-[10px] font-semibold text-[#555] uppercase tracking-wider mb-2">Props 스키마</h5>
-                          <div className="bg-[#0a0a0a] rounded-lg p-3 space-y-1 border border-[#1a1a1a]">
-                            {Object.entries(tmpl.propsSchema).map(([key, val]) => (
-                              <div key={key} className="flex gap-2">
-                                <code className="text-[11px] text-[#FF6B35] font-mono">{key}</code>
-                                <span className="text-[11px] text-[#666] font-mono">{val}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                        {Object.keys(tmpl.sampleData).length > 0 && (
-                          <div>
-                            <h5 className="text-[10px] font-semibold text-[#555] uppercase tracking-wider mb-2">샘플 데이터</h5>
-                            <pre className="text-[10px] text-[#888] bg-[#0a0a0a] rounded-lg p-3 overflow-x-auto font-mono leading-relaxed border border-[#1a1a1a] max-h-[200px]">
-                              {JSON.stringify(tmpl.sampleData, null, 2)}
-                            </pre>
-                          </div>
-                        )}
-                        <div>
-                          <h5 className="text-[10px] font-semibold text-[#555] uppercase tracking-wider mb-2">산출물</h5>
-                          <p className="text-[10px] text-[#555] italic">media_assets 연결 시 자동 표시</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
               );
             })}

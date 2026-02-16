@@ -21,17 +21,12 @@ export async function exportDiagram({
   pixelRatio = 2,
   filename = "diagram",
 }: ExportOptions): Promise<Blob> {
-  console.log("[export] starting...", { ratio, format });
-
   const preset = RATIO_PRESETS[ratio];
   const width = preset.exportWidth;
   const height = preset.exportHeight;
 
-  console.log("[export] target size:", width, "x", height);
-
   // Dynamic import (avoids SSR issues)
   const htmlToImage = await import("html-to-image");
-  console.log("[export] html-to-image loaded");
 
   // Store original styles
   const orig = {
@@ -49,7 +44,6 @@ export async function exportDiagram({
 
   // Wait for reflow
   await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-  console.log("[export] reflow done, rendering...");
 
   const fn = format === "jpeg" ? htmlToImage.toJpeg : htmlToImage.toPng;
 
@@ -62,12 +56,9 @@ export async function exportDiagram({
       backgroundColor: "#0A0A0A",
     });
 
-    console.log("[export] rendered, dataUrl length:", dataUrl.length);
-
     // Convert dataUrl to blob
     const res = await fetch(dataUrl);
     const blob = await res.blob();
-    console.log("[export] blob size:", blob.size);
 
     // Trigger download
     const url = URL.createObjectURL(blob);
@@ -79,7 +70,6 @@ export async function exportDiagram({
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    console.log("[export] download triggered");
     return blob;
   } finally {
     // Restore original styles
@@ -87,6 +77,5 @@ export async function exportDiagram({
     element.style.aspectRatio = orig.aspectRatio;
     element.style.height = orig.height;
     element.style.borderRadius = orig.borderRadius;
-    console.log("[export] styles restored");
   }
 }

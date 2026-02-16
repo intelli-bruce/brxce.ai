@@ -138,18 +138,21 @@ export default function CampaignCockpitPage() {
 
   async function handleGenerate(config: GenerationConfig) {
     if (!generateAtom) return;
-    // 1. generation_config 저장 + status → generating
-    await sb.from("campaign_atoms").update({
-      status: "generating",
-      generation_config: config,
-    }).eq("id", generateAtom.id);
-
+    const atomId = generateAtom.id;
     setAtoms(prev => prev.map(a =>
-      a.id === generateAtom.id ? { ...a, status: 'generating' as any, generation_config: config } : a
+      a.id === atomId ? { ...a, status: 'generating' as any, generation_config: config } : a
     ));
     setGenerateAtom(null);
-    // 서브에이전트가 atom.status=generating을 감지하고 생성 시작
-    // 또는 텔레그램에서 Creator 에이전트에게 직접 지시
+
+    try {
+      await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "campaign", atom_id: atomId, config }),
+      });
+    } catch (e) {
+      console.error("Generation trigger failed:", e);
+    }
   }
 
   function handleVariantSelect(atomId: string, variantId: string) {
