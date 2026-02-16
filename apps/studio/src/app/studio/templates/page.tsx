@@ -16,11 +16,13 @@ import {
   ListCarousel,
   BeforeAfterCarousel,
   QuoteCarousel,
+  FlowChart,
 } from "@brxce/diagrams";
 import type {
   ComparisonProps,
   OrgChartProps,
   BeforeAfterProps,
+  FlowChartProps,
   OgImageProps,
   ThumbnailProps,
   QuoteProps,
@@ -78,6 +80,26 @@ const BEFOREAFTER_SAMPLE: BeforeAfterProps = {
   before: { label: "Before", items: ["매일 2시간 소요", "실수 빈번", "확장 불가", "컨텍스트 유실"] },
   after: { label: "After", items: ["10분으로 단축", "일관된 품질", "무한 확장", "메모리 지속"] },
   arrow: "전환",
+  ratio: "guide-3:2",
+};
+
+/* ── FlowChart sample data ── */
+const FLOWCHART_SAMPLE: FlowChartProps = {
+  title: "",
+  nodes: [
+    { id: "1", label: "아이디어", x: 0, y: 80, type: "input", highlight: true, color: "#FF6B35" },
+    { id: "2", label: "기획", x: 200, y: 0 },
+    { id: "3", label: "제작", x: 200, y: 160 },
+    { id: "4", label: "검토", x: 400, y: 80 },
+    { id: "5", label: "발행", x: 600, y: 80, type: "output", highlight: true, color: "#69DB7C" },
+  ],
+  edges: [
+    { source: "1", target: "2", label: "분석" },
+    { source: "1", target: "3", label: "초안" },
+    { source: "2", target: "4" },
+    { source: "3", target: "4" },
+    { source: "4", target: "5", label: "승인", animated: true },
+  ],
   ratio: "guide-3:2",
 };
 
@@ -164,9 +186,9 @@ const IMAGE_TEMPLATES: TemplateInfo[] = [
     name: "FlowChart", sub: "다이어그램", desc: "노드와 엣지로 구성된 프로세스 흐름도",
     layout: "React Flow 기반 · 커스텀 노드 · 디자인 토큰",
     ratios: ["guide 3:2", "blog 16:9"], sketch: false,
-    propsSchema: { nodes: "FlowNode[] — { id, data, position }", edges: "FlowEdge[] — { source, target }" },
-    sampleData: {},
-    asciiPreview: { blocks: ["(시작) ──► (처리) ──► (완료)", "              │", "           (분기) ──► (예외)"], accent: "#B197FC" },
+    propsSchema: { nodes: "FlowNode[] — { id, label, x, y }", edges: "FlowEdge[] — { source, target, label? }" },
+    sampleData: FLOWCHART_SAMPLE as unknown as Record<string, unknown>,
+    livePreview: "flowchart",
   },
   // Cover / Thumbnail
   {
@@ -275,6 +297,8 @@ function LivePreview({ type, sketch }: { type: string; sketch: boolean }) {
           <BeforeAfter {...BEFOREAFTER_SAMPLE} sketch={sketch} />
         </div>
       );
+    case "flowchart":
+      return <div style={wrapStyle}><FlowChart {...FLOWCHART_SAMPLE} /></div>;
     case "ogimage":
       return <div style={wrapStyle}><OgImage {...OGIMAGE_SAMPLE} sketch={sketch} /></div>;
     case "thumbnail":
