@@ -66,7 +66,7 @@ export function s(basePx: number, scale: number): number {
 /* ─── Typography (base values at 1200px ref width) ─── */
 export const font = {
   family: {
-    sans: "'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    sans: "'Instrument Sans', 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
     mono: "'JetBrains Mono', 'Fira Code', monospace",
   },
   /** Base font sizes (px at 1200px reference width). Multiply by scale factor at runtime. */

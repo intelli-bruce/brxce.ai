@@ -7,9 +7,21 @@
  */
 "use client";
 
-import { createContext, useContext, useRef, useState, useEffect } from "react";
+import { createContext, useContext, useRef, useState, useEffect, useMemo } from "react";
 import { color, font, space, REF_WIDTH, RATIO_PRESETS, type RatioPreset, type ScaleContext, s } from "../tokens";
 import { Watermark } from "./Watermark";
+
+/* ─── Google Fonts loader (Instrument Sans) ─── */
+const FONT_URL = "https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap";
+let fontLoaded = false;
+function ensureFont() {
+  if (fontLoaded || typeof document === "undefined") return;
+  fontLoaded = true;
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = FONT_URL;
+  document.head.appendChild(link);
+}
 
 /* ─── Diagram Context (scale + sketch) ─── */
 interface DiagramCtx extends ScaleContext {
@@ -42,6 +54,8 @@ export function DiagramShell({
   const preset = RATIO_PRESETS[ratio];
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState<ScaleContext>({ factor: 1, width: REF_WIDTH, height: REF_WIDTH / preset.ratio });
+
+  useEffect(() => { ensureFont(); }, []);
 
   useEffect(() => {
     if (exportMode) {

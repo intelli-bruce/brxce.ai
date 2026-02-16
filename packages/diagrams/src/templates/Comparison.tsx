@@ -21,6 +21,7 @@ export interface ComparisonProps {
   ratio?: RatioPreset;
   avatarUrl?: string;
   sketch?: boolean;
+  exportMode?: { width: number; height: number };
 }
 
 function ComparisonInner({ columns }: { columns: ComparisonColumn[] }) {
@@ -81,9 +82,9 @@ function ComparisonInner({ columns }: { columns: ComparisonColumn[] }) {
   );
 }
 
-export function Comparison({ title, columns, ratio = "guide-3:2", avatarUrl, sketch }: ComparisonProps) {
+export function Comparison({ title, columns, ratio = "guide-3:2", avatarUrl, sketch, exportMode }: ComparisonProps) {
   return (
-    <DiagramShell title={title} ratio={ratio} avatarUrl={avatarUrl} sketch={sketch}>
+    <DiagramShell title={title} ratio={ratio} avatarUrl={avatarUrl} sketch={sketch} exportMode={exportMode}>
       <ComparisonInner columns={columns} />
     </DiagramShell>
   );

@@ -15,6 +15,7 @@ export interface BeforeAfterProps {
   ratio?: RatioPreset;
   avatarUrl?: string;
   sketch?: boolean;
+  exportMode?: { width: number; height: number };
 }
 
 function BeforeAfterInner({ before, after, arrow }: Pick<BeforeAfterProps, "before" | "after" | "arrow">) {
@@ -61,9 +62,10 @@ export function BeforeAfter({
   ratio = "guide-3:2",
   avatarUrl,
   sketch,
+  exportMode,
 }: BeforeAfterProps) {
   return (
-    <DiagramShell title={title} ratio={ratio} avatarUrl={avatarUrl} sketch={sketch}>
+    <DiagramShell title={title} ratio={ratio} avatarUrl={avatarUrl} sketch={sketch} exportMode={exportMode}>
       <BeforeAfterInner before={before} after={after} arrow={arrow} />
     </DiagramShell>
   );
