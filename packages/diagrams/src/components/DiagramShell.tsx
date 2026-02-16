@@ -12,7 +12,7 @@ import { color, font, space, REF_WIDTH, RATIO_PRESETS, type RatioPreset, type Sc
 import { Watermark } from "./Watermark";
 
 /* ─── Google Fonts loader (Instrument Sans) ─── */
-const FONT_URL = "https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap";
+const FONT_URL = "https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap";
 let fontLoaded = false;
 function ensureFont() {
   if (fontLoaded || typeof document === "undefined") return;
