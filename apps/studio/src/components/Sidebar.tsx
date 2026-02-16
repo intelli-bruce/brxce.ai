@@ -35,7 +35,12 @@ const navItems: NavItem[] = [
   { type: "link", href: "/style-profiles", label: "스타일 프로필", icon: "🎭" },
 ];
 
-export default function Sidebar() {
+interface SidebarProps {
+  collapsed: boolean;
+  onToggle: () => void;
+}
+
+export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -45,16 +50,30 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="w-56 h-screen sticky top-0 border-r border-[#222] bg-[#0a0a0a] flex flex-col shrink-0">
-      <div className="px-5 py-5 border-b border-[#222]">
-        <Link href="/" className="text-base font-bold text-[#fafafa] no-underline">
-          BrxceStudio
-        </Link>
+    <aside
+      className={`h-screen sticky top-0 border-r border-[#222] bg-[#0a0a0a] flex flex-col shrink-0 transition-all duration-200 ${
+        collapsed ? "w-14" : "w-56"
+      }`}
+    >
+      <div className={`flex items-center border-b border-[#222] ${collapsed ? "px-2 py-5 justify-center" : "px-5 py-5 justify-between"}`}>
+        {!collapsed && (
+          <Link href="/" className="text-base font-bold text-[#fafafa] no-underline">
+            BrxceStudio
+          </Link>
+        )}
+        <button
+          onClick={onToggle}
+          className="text-[#555] hover:text-[#fafafa] bg-transparent border-none cursor-pointer text-sm p-1 rounded hover:bg-[#1a1a1a] transition-colors"
+          title={collapsed ? "사이드바 열기" : "사이드바 접기"}
+        >
+          {collapsed ? "▶" : "◀"}
+        </button>
       </div>
 
-      <nav className="flex-1 py-3 px-3 flex flex-col gap-0.5 overflow-y-auto">
+      <nav className="flex-1 py-3 px-1.5 flex flex-col gap-0.5 overflow-y-auto">
         {navItems.map((item, i) => {
           if (item.type === "section") {
+            if (collapsed) return <div key={`sec-${i}`} className="border-t border-[#222] my-1.5 mx-1" />;
             return (
               <div
                 key={`sec-${i}`}
@@ -71,31 +90,35 @@ export default function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
+              title={collapsed ? item.label : undefined}
               className={`flex items-center gap-2.5 py-2 rounded-lg text-sm no-underline transition-colors ${
-                item.indent ? "pl-7 pr-3" : "px-3"
+                collapsed ? "px-0 justify-center" : item.indent ? "pl-7 pr-3" : "px-3"
               } ${
                 isActive(item.href)
                   ? "bg-[#1a1a1a] text-[#fafafa] font-medium"
                   : "text-[#888] hover:text-[#fafafa] hover:bg-[#111]"
               }`}
             >
-              <span className="text-base">{item.icon}</span>
-              {item.label}
+              <span className={collapsed ? "text-lg" : "text-base"}>{item.icon}</span>
+              {!collapsed && item.label}
             </Link>
           );
         })}
       </nav>
 
-      <div className="px-3 py-4 border-t border-[#222]">
+      <div className={`border-t border-[#222] ${collapsed ? "px-1.5 py-4" : "px-3 py-4"}`}>
         <button
           onClick={async () => {
             const sb = createSupabaseBrowser();
             await sb.auth.signOut();
             router.push("/auth/login");
           }}
-          className="w-full px-3 py-2 rounded-lg text-sm text-[#666] hover:text-[#fafafa] hover:bg-[#111] bg-transparent border-none cursor-pointer text-left transition-colors"
+          className={`w-full rounded-lg text-sm text-[#666] hover:text-[#fafafa] hover:bg-[#111] bg-transparent border-none cursor-pointer transition-colors ${
+            collapsed ? "px-0 py-2 text-center" : "px-3 py-2 text-left"
+          }`}
+          title={collapsed ? "로그아웃" : undefined}
         >
-          로그아웃
+          {collapsed ? "🚪" : "로그아웃"}
         </button>
       </div>
     </aside>
