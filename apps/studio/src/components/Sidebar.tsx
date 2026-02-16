@@ -31,6 +31,7 @@ const navItems: NavItem[] = [
   { type: "link", href: "/campaigns/series", label: "시리즈", icon: "📚", indent: true },
   { type: "link", href: "/analytics", label: "성과", icon: "📈" },
   { type: "link", href: "/style-profiles", label: "스타일 프로필", icon: "🎭" },
+  { type: "link", href: "/diagrams", label: "다이어그램", icon: "📐" },
 ];
 
 export default function Sidebar() {
