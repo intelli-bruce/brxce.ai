@@ -10,20 +10,21 @@
   },
   "dependencies": {
     "@brxce/brand": "workspace:*",
+    "@brxce/diagrams": "workspace:*",
     "@brxce/supabase": "workspace:*",
     "@brxce/ui": "workspace:^",
     "@excalidraw/excalidraw": "^0.18.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.95.3",
     "@tailwindcss/typography": "^0.5.19",
+    "@xyflow/react": "^12.6.0",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-markdown": "^10.1.0",
     "rehype-highlight": "^7.0.2",
     "remark-gfm": "^4.0.1",
-    "@brxce/diagrams": "workspace:*",
-    "@xyflow/react": "^12.6.0"
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

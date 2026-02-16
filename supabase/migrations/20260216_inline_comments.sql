@@ -13,8 +13,11 @@ CREATE TABLE IF NOT EXISTS inline_comments (
   updated_at timestamptz DEFAULT now()
 );
 
-CREATE INDEX idx_inline_comments_content ON inline_comments(content_id);
+CREATE INDEX IF NOT EXISTS idx_inline_comments_content ON inline_comments(content_id);
 
 -- RLS: allow all for authenticated (admin app)
 ALTER TABLE inline_comments ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow all for service role" ON inline_comments FOR ALL USING (true) WITH CHECK (true);
+DO $$ BEGIN
+  CREATE POLICY "Allow all for service role" ON inline_comments FOR ALL USING (true) WITH CHECK (true);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
