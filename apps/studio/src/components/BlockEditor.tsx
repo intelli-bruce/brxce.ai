@@ -419,7 +419,9 @@ export default function BlockEditor({ contentId, bodyMd, onBodySync }: Props) {
                               ? "#".repeat((block.meta?.level as number) || 1) + " " + block.body
                               : block.block_type === "blockquote"
                                 ? block.body.split("\n").map((l) => "> " + l).join("\n")
-                                : block.body
+                                : block.block_type === "list"
+                                  ? block.body
+                                  : block.body.replace(/\n/g, "  \n")
                           }
                           className="max-w-none [&>*]:my-0 [&>*]:py-0"
                         />
