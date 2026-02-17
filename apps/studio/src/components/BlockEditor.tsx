@@ -231,6 +231,40 @@ export default function BlockEditor({ contentId, bodyMd, onBodySync }: Props) {
     { type: "code", label: "코드", icon: "</>", defaultBody: "" },
   ] as const;
 
+  async function addBlockAtPosition(blockType: string, position: number, meta: Record<string, unknown> = {}) {
+    const template = BLOCK_TYPES.find(t => t.type === blockType);
+    const defaultBody = template?.defaultBody ?? "";
+    const blockMeta = { ...meta, ...(template && "meta" in template ? template.meta : {}) };
+    const isImmediate = blockType === "divider";
+
+    const { data } = await sb
+      .from("content_blocks")
+      .insert({
+        content_id: contentId,
+        block_type: blockType,
+        body: isImmediate ? "---" : defaultBody,
+        position: Math.max(1, position),
+        current_version: 1,
+        meta: blockMeta,
+      })
+      .select()
+      .single();
+
+    if (data) {
+      await sb.from("block_revisions").insert({
+        block_id: data.id, version: 1, body: data.body, trigger: "블록 추가", actor: "user",
+      });
+      await loadBlocks();
+      if (!isImmediate) {
+        setEditingBlock(data.id);
+        setEditText(data.body);
+      } else {
+        syncBodyMd();
+      }
+    }
+    setInsertMenu(null);
+  }
+
   async function addBlockAfter(afterBlock: Block, blockType = "paragraph", meta: Record<string, unknown> = {}) {
     const newPos = afterBlock.position + 5;
     const template = BLOCK_TYPES.find(t => t.type === blockType);
@@ -372,6 +406,47 @@ export default function BlockEditor({ contentId, bodyMd, onBodySync }: Props) {
 
           return (
             <div key={block.id}>
+              {/* Insert line between blocks */}
+              <div className="group/insert relative h-2 -my-1 flex items-center justify-center z-10">
+                <div className="absolute inset-x-0 top-1/2 h-px bg-[#FF6B35]/0 group-hover/insert:bg-[#FF6B35]/30 transition-colors" />
+                <div className="relative">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setInsertMenu(insertMenu === `before-${block.id}` ? null : `before-${block.id}`);
+                    }}
+                    className="opacity-0 group-hover/insert:opacity-100 transition-opacity w-5 h-5 rounded-full bg-[#FF6B35] text-white text-[11px] leading-none flex items-center justify-center border-none cursor-pointer hover:bg-[#e55a2a]"
+                    title="블록 추가"
+                  >
+                    +
+                  </button>
+                  {insertMenu === `before-${block.id}` && (
+                    <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 z-50 bg-[#1a1a1a] border border-[#333] rounded-lg shadow-xl py-1 min-w-[140px]">
+                      {BLOCK_TYPES.map(bt => (
+                        <button
+                          key={bt.type}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Insert before this block = after previous block
+                            const prevBlock = blocks[idx - 1];
+                            if (prevBlock) {
+                              addBlockAfter(prevBlock, bt.type);
+                            } else {
+                              // First block — insert at position 5
+                              addBlockAtPosition(bt.type, block.position - 5);
+                            }
+                          }}
+                          className="w-full text-left px-3 py-1.5 text-xs text-[#ccc] hover:bg-[#252525] hover:text-[#fafafa] flex items-center gap-2 bg-transparent border-none cursor-pointer"
+                        >
+                          <span className="w-4 text-center">{bt.icon}</span>
+                          {bt.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div
                 className={`group relative flex gap-1 rounded-lg border transition-colors ${
                   isActive
@@ -502,35 +577,6 @@ export default function BlockEditor({ contentId, bodyMd, onBodySync }: Props) {
                     >
                       v{block.current_version}
                     </button>
-                    <div className="relative">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setInsertMenu(insertMenu === block.id ? null : block.id);
-                        }}
-                        className="text-[10px] px-1.5 py-0.5 rounded border border-[#333] text-[#888] hover:text-[#fafafa] hover:border-[#555]"
-                        title="아래에 블록 추가"
-                      >
-                        ＋
-                      </button>
-                      {insertMenu === block.id && (
-                        <div className="absolute right-0 top-full mt-1 z-50 bg-[#1a1a1a] border border-[#333] rounded-lg shadow-xl py-1 min-w-[140px]">
-                          {BLOCK_TYPES.map(bt => (
-                            <button
-                              key={bt.type}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                addBlockAfter(block, bt.type);
-                              }}
-                              className="w-full text-left px-3 py-1.5 text-xs text-[#ccc] hover:bg-[#252525] hover:text-[#fafafa] flex items-center gap-2 bg-transparent border-none cursor-pointer"
-                            >
-                              <span className="w-4 text-center">{bt.icon}</span>
-                              {bt.label}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -648,6 +694,42 @@ export default function BlockEditor({ contentId, bodyMd, onBodySync }: Props) {
             </div>
           );
         })}
+
+        {/* Insert line after last block */}
+        {blocks.length > 0 && (
+          <div className="group/insert relative h-2 flex items-center justify-center z-10">
+            <div className="absolute inset-x-0 top-1/2 h-px bg-[#FF6B35]/0 group-hover/insert:bg-[#FF6B35]/30 transition-colors" />
+            <div className="relative">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setInsertMenu(insertMenu === "after-last" ? null : "after-last");
+                }}
+                className="opacity-0 group-hover/insert:opacity-100 transition-opacity w-5 h-5 rounded-full bg-[#FF6B35] text-white text-[11px] leading-none flex items-center justify-center border-none cursor-pointer hover:bg-[#e55a2a]"
+                title="블록 추가"
+              >
+                +
+              </button>
+              {insertMenu === "after-last" && (
+                <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 z-50 bg-[#1a1a1a] border border-[#333] rounded-lg shadow-xl py-1 min-w-[140px]">
+                  {BLOCK_TYPES.map(bt => (
+                    <button
+                      key={bt.type}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        addBlockAfter(blocks[blocks.length - 1], bt.type);
+                      }}
+                      className="w-full text-left px-3 py-1.5 text-xs text-[#ccc] hover:bg-[#252525] hover:text-[#fafafa] flex items-center gap-2 bg-transparent border-none cursor-pointer"
+                    >
+                      <span className="w-4 text-center">{bt.icon}</span>
+                      {bt.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* AI Task Panel */}
