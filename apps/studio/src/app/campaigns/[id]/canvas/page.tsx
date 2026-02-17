@@ -84,8 +84,20 @@ export default function CampaignCanvasPage() {
     );
   }
 
+  // Hide sidebar for full-screen canvas
+  useEffect(() => {
+    const sidebar = document.querySelector("aside");
+    const main = sidebar?.nextElementSibling as HTMLElement | null;
+    if (sidebar) sidebar.style.display = "none";
+    if (main) main.style.marginLeft = "0";
+    return () => {
+      if (sidebar) sidebar.style.display = "";
+      if (main) main.style.marginLeft = "";
+    };
+  }, []);
+
   return (
-    <div className="h-screen flex flex-col bg-[#0a0a0a]">
+    <div className="h-screen flex flex-col bg-[#0a0a0a] fixed inset-0 z-50">
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-[#222] bg-[#0f0f0f]">
         <div className="flex items-center gap-3">
