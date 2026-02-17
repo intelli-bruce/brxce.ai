@@ -22,6 +22,8 @@ export default function CampaignCanvasPage() {
   const [atoms, setAtoms] = useState<Atom[]>([]);
   const [currentBodyMd, setCurrentBodyMd] = useState("");
   const [loading, setLoading] = useState(true);
+  const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
+  const [selectedSnapshot, setSelectedSnapshot] = useState<Snapshot | null>(null);
 
   const load = useCallback(async () => {
     // Campaign
@@ -122,23 +124,110 @@ export default function CampaignCanvasPage() {
         </div>
       </div>
 
-      {/* Canvas — takes all remaining space */}
-      <div className="flex-1">
-        <VersionCanvas
-          snapshots={snapshots}
-          variants={variants}
-          atoms={atoms}
-          currentBodyMd={currentBodyMd}
-          onSnapshotClick={(snapId) => {
-            if (confirm("이 스냅샷으로 복원할까요?")) restoreSnapshot(snapId);
-          }}
-          onVariantClick={(varId) => {
-            const atom = atoms.find((a) =>
-              variants.some((v) => v.id === varId && v.atom_id === a.id),
-            );
-            if (atom) router.push(`/campaigns/${id}/compare/${atom.id}`);
-          }}
-        />
+      {/* Canvas + Inspector */}
+      <div className="flex-1 flex">
+        {/* Canvas */}
+        <div className="flex-1">
+          <VersionCanvas
+            snapshots={snapshots}
+            variants={variants}
+            atoms={atoms}
+            currentBodyMd={currentBodyMd}
+            onSnapshotClick={(snapId) => {
+              const snap = snapshots.find(s => s.id === snapId);
+              setSelectedSnapshot(snap || null);
+              setSelectedVariant(null);
+            }}
+            onVariantClick={(varId) => {
+              const v = variants.find(v => v.id === varId);
+              setSelectedVariant(v || null);
+              setSelectedSnapshot(null);
+            }}
+          />
+        </div>
+
+        {/* Inspector Panel */}
+        {(selectedVariant || selectedSnapshot) && (
+          <div className="w-[400px] border-l border-[#222] bg-[#0f0f0f] overflow-y-auto flex-shrink-0">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-[#222]">
+              <span className="text-xs font-semibold text-[#fafafa]">
+                {selectedVariant ? "🧬 Variant" : "📸 스냅샷"}
+              </span>
+              <button
+                onClick={() => { setSelectedVariant(null); setSelectedSnapshot(null); }}
+                className="text-xs text-[#666] bg-transparent border-none cursor-pointer hover:text-[#fafafa]"
+              >
+                ✕
+              </button>
+            </div>
+
+            {selectedVariant && (() => {
+              const atom = atoms.find(a => a.id === selectedVariant.atom_id);
+              const body = selectedVariant.output?.body || selectedVariant.output?.text || "";
+              return (
+                <div className="p-4 space-y-4">
+                  {/* Meta */}
+                  <div className="flex flex-wrap gap-2 text-[10px]">
+                    <span className="px-2 py-0.5 rounded bg-[#FF6B35]/20 text-[#FF6B35] font-bold">G{selectedVariant.generation}</span>
+                    <span className="px-2 py-0.5 rounded bg-[#222] text-[#888]">{atom?.channel}</span>
+                    <span className="px-2 py-0.5 rounded bg-[#222] text-[#888]">{atom?.format}</span>
+                    {selectedVariant.is_selected && <span className="px-2 py-0.5 rounded bg-[#4ECDC4] text-black font-bold">선택됨</span>}
+                    {selectedVariant.params?.tone && <span className="px-2 py-0.5 rounded bg-[#222] text-[#888]">{selectedVariant.params.tone}</span>}
+                  </div>
+                  <div className="text-[10px] text-[#555] space-y-1">
+                    <div>모델: {selectedVariant.model || "—"}</div>
+                    <div>ID: <span className="font-mono">{selectedVariant.id}</span></div>
+                    <div>{new Date(selectedVariant.created_at).toLocaleString("ko-KR")}</div>
+                    {selectedVariant.score != null && <div>점수: {"★".repeat(selectedVariant.score)}{"☆".repeat(5 - selectedVariant.score)}</div>}
+                  </div>
+                  {/* Full body */}
+                  <div className="bg-[#141414] rounded-lg p-3 border border-[#222]">
+                    <div className="text-[10px] text-[#666] mb-2">{body.length}자</div>
+                    <div className="text-[12px] text-[#e0e0e0] whitespace-pre-wrap leading-relaxed">
+                      {body || "콘텐츠 없음"}
+                    </div>
+                  </div>
+                  {/* Actions */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        const atomObj = atoms.find(a => a.id === selectedVariant.atom_id);
+                        if (atomObj) router.push(`/campaigns/${id}/compare/${atomObj.id}`);
+                      }}
+                      className="flex-1 text-xs py-2 rounded-lg border border-[#333] text-[#4ECDC4] bg-transparent cursor-pointer hover:bg-[#4ECDC4]/10"
+                    >
+                      비교 페이지 →
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {selectedSnapshot && (
+              <div className="p-4 space-y-4">
+                <div className="text-[10px] text-[#555] space-y-1">
+                  <div>라벨: {selectedSnapshot.label || "—"}</div>
+                  <div>ID: <span className="font-mono">{selectedSnapshot.id}</span></div>
+                  <div>{new Date(selectedSnapshot.created_at).toLocaleString("ko-KR")}</div>
+                </div>
+                <div className="bg-[#141414] rounded-lg p-3 border border-[#222]">
+                  <div className="text-[10px] text-[#666] mb-2">{(selectedSnapshot.body_md || "").length}자</div>
+                  <div className="text-[11px] text-[#e0e0e0] whitespace-pre-wrap leading-relaxed line-clamp-[30]">
+                    {selectedSnapshot.body_md || "내용 없음"}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { if (confirm("이 스냅샷으로 복원할까요?")) restoreSnapshot(selectedSnapshot.id); }}
+                    className="flex-1 text-xs py-2 rounded-lg border border-[#FF6B35]/30 text-[#FF6B35] bg-transparent cursor-pointer hover:bg-[#FF6B35]/10"
+                  >
+                    이 버전으로 복원
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
