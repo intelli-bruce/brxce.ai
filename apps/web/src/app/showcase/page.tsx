@@ -19,6 +19,7 @@ export default function ShowcasePage() {
   const router = useRouter();
   const [selections, setSelections] = useState<Selections>({});
   const [activeSection, setActiveSection] = useState("section-title");
+  const [previewWidth, setPreviewWidth] = useState<number>(375);
 
   useEffect(() => {
     if (process.env.NODE_ENV !== "development") {
@@ -65,7 +66,7 @@ export default function ShowcasePage() {
                 setSelections({});
                 localStorage.removeItem("showcase-selections");
               }}
-              className="ml-auto text-[11px] text-[#666] hover:text-[#999] bg-transparent border border-[#333] px-2 py-1 rounded cursor-pointer"
+              className="ml-auto text-[11px] text-[#666] hover:text-[#999] bg-transparent border border-[#333] px-2 py-1 rounded cursor-pointer shrink-0"
             >
               선택 초기화
             </button>
@@ -226,6 +227,29 @@ export default function ShowcasePage() {
           <h2 className="text-xl font-bold mb-1">🔍 비교 — 상용 vs 선택</h2>
           <p className="text-sm text-[#888] mb-4">왼쪽: 현재 배포된 버전 / 오른쪽: 위에서 선택한 조합</p>
 
+          {/* Width selector */}
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-[12px] text-[#888]">미리보기 너비:</span>
+            {[
+              { w: 375, label: "375px (iPhone SE/mini)" },
+              { w: 393, label: "393px (iPhone 15)" },
+              { w: 430, label: "430px (iPhone 15 Pro Max)" },
+              { w: 0, label: "자동" },
+            ].map((opt) => (
+              <button
+                key={opt.w}
+                onClick={() => setPreviewWidth(opt.w)}
+                className={`text-[11px] px-2.5 py-1 rounded-full border cursor-pointer transition-all ${
+                  previewWidth === opt.w
+                    ? "bg-[#fafafa] text-[#0a0a0a] border-[#fafafa] font-semibold"
+                    : "bg-transparent text-[#888] border-[#333] hover:border-[#555]"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
           {/* Selection summary */}
           <div className="bg-[#111] border border-[#222] rounded-xl p-4 mb-8">
             <div className="text-[12px] text-[#888] font-mono mb-2">선택 현황</div>
@@ -258,13 +282,17 @@ export default function ShowcasePage() {
           </div>
 
           {/* Side by side */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <div className="text-[12px] font-mono text-[#888] mb-3 text-center">🟢 현재 상용</div>
+          <div className="flex justify-center gap-4 overflow-x-auto pb-4">
+            <div style={previewWidth ? { width: previewWidth, minWidth: previewWidth } : undefined} className={previewWidth ? "" : "flex-1"}>
+              <div className="text-[12px] font-mono text-[#888] mb-3 text-center">
+                🟢 현재 상용 {previewWidth ? `(${previewWidth}px)` : ""}
+              </div>
               <FullPagePreview selections={{}} />
             </div>
-            <div>
-              <div className="text-[12px] font-mono text-[#ffa500] mb-3 text-center">🟡 선택 조합</div>
+            <div style={previewWidth ? { width: previewWidth, minWidth: previewWidth } : undefined} className={previewWidth ? "" : "flex-1"}>
+              <div className="text-[12px] font-mono text-[#ffa500] mb-3 text-center">
+                🟡 선택 조합 {previewWidth ? `(${previewWidth}px)` : ""}
+              </div>
               <FullPagePreview selections={selections} />
             </div>
           </div>
@@ -520,6 +548,64 @@ const bioVariants: VariantDef[] = [
           OpenClaw × ClaudeCode로 회사를 굴리는 개발자 CEO.
           수십 개의 AI 에이전트를 직접 빌딩하며 얻은 실전 인사이트를 공유합니다.
         </div>
+      </div>
+    ),
+  },
+  {
+    id: "D",
+    label: "D — 375px 최적화 (짧은 문장)",
+    render: () => (
+      <div className="text-center text-sm leading-[1.8] text-[#ccc]">
+        <span className="text-[#fafafa] font-medium">✦ 에이전틱 워크플로우</span>
+        <br />OpenClaw × ClaudeCode로
+        <br />회사를 굴리는 개발자 CEO
+        <br />
+        <br />수십 개의 AI 에이전트를 직접 빌딩.
+        <br />해본 것만 공유합니다.
+      </div>
+    ),
+  },
+  {
+    id: "E",
+    label: "E — 375px 최적화 (좌정렬 리스트)",
+    render: () => (
+      <div className="text-[13px] leading-[1.8] text-[#ccc]">
+        <div className="text-center text-[#fafafa] font-medium mb-2">✦ 에이전틱 워크플로우</div>
+        <div className="space-y-1">
+          <div>✦ AI 에이전트로 회사를 굴리는 CEO</div>
+          <div>✦ 수십 개 에이전트 직접 빌딩</div>
+          <div>✦ 해본 것만 공유합니다</div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: "F",
+    label: "F — 375px 최적화 (2줄 압축)",
+    render: () => (
+      <div className="text-center text-[13px] leading-[1.7] text-[#ccc]">
+        <span className="text-[15px] text-[#fafafa] font-semibold">✦ 에이전틱 워크플로우</span>
+        <br />
+        <span className="text-[#888]">AI 에이전트로 회사를 굴리는 개발자 CEO.</span>
+        <br />
+        <span className="text-[#888]">직접 빌딩한 실전 인사이트를 공유합니다.</span>
+      </div>
+    ),
+  },
+  {
+    id: "G",
+    label: "G — 375px 최적화 (태그 스타일)",
+    render: () => (
+      <div className="text-center">
+        <div className="text-[15px] text-[#fafafa] font-semibold mb-3">✦ 에이전틱 워크플로우</div>
+        <div className="flex flex-wrap justify-center gap-2 mb-3">
+          {["AI 에이전트", "OpenClaw", "ClaudeCode", "워크플로우 자동화"].map((tag) => (
+            <span key={tag} className="text-[11px] px-2.5 py-1 rounded-full bg-[#1a1a1a] border border-[#333] text-[#888]">
+              {tag}
+            </span>
+          ))}
+        </div>
+        <div className="text-[13px] text-[#888]">해본 것만 공유합니다.</div>
       </div>
     ),
   },

@@ -202,13 +202,13 @@ export default function Home() {
         </div>
 
         {/* Bio */}
-        <div className="text-center text-sm leading-[1.7] text-[#ccc] mb-6">
+        <div className="text-center text-sm leading-[1.8] text-[#ccc] mb-6">
           <span className="text-[#fafafa] font-medium">✦ 에이전틱 워크플로우</span>
+          <br />OpenClaw × ClaudeCode로
+          <br />회사를 굴리는 개발자 CEO
           <br />
-          ✦ OpenClaw × ClaudeCode로 회사를 굴리는 개발자 CEO
-          <br />
-          ✦ 수십 개의 AI 에이전트를 직접 빌딩하며 얻은 실전 인사이트
-          <br />✦ 직접 활용해 본 결과를 공유합니다.
+          <br />수십 개의 AI 에이전트를 직접 빌딩.
+          <br />해본 것만 공유합니다.
         </div>
 
         {/* Discord CTA */}
