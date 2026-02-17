@@ -69,8 +69,8 @@ interface VersionCanvasProps {
 
 /* ── Dagre layout ── */
 const NODE_SIZES: Record<string, { w: number; h: number }> = {
-  snapshot: { w: 340, h: 140 },
-  variant: { w: 300, h: 130 },
+  snapshot: { w: 380, h: 280 },
+  variant: { w: 340, h: 320 },
   meta: { w: 220, h: 50 },
 };
 
@@ -120,7 +120,7 @@ function buildGraph(
       data: {
         label: s.label,
         createdAt: s.created_at,
-        bodyPreview: (s.body_md || "").slice(0, 120),
+        bodyPreview: (s.body_md || "").slice(0, 500),
         isCurrent: false,
       } satisfies SnapshotNodeData,
     });
@@ -146,7 +146,7 @@ function buildGraph(
     data: {
       label: "현재 버전 (라이브)",
       createdAt: new Date().toISOString(),
-      bodyPreview: currentBodyMd.slice(0, 120),
+      bodyPreview: currentBodyMd.slice(0, 500),
       isCurrent: true,
     } satisfies SnapshotNodeData,
   });
@@ -226,7 +226,7 @@ function buildGraph(
             model: v.model || "",
             tone: v.params?.tone || "",
             isSelected: v.is_selected,
-            bodyPreview: body.slice(0, 140),
+            body: body,
             score: v.score,
             channel: atom.channel,
             createdAt: v.created_at,

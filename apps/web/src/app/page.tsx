@@ -222,31 +222,30 @@ export default function Home() {
           디스코드 커뮤니티 참여하기
         </a>
 
-        {/* Stats */}
-        <div className="flex justify-center items-center gap-6 mb-7">
-          {[
-            { num: "50+", label: "AI 프로젝트" },
-            { num: "38", label: "클라이언트" },
-            { num: "3", label: "자체 AI 서비스" },
-          ].map((s, i, arr) => (
-            <div key={s.label} className="flex items-center gap-6">
-              <div className="text-center">
-                <div className="text-xl font-bold">{s.num}</div>
-                <div className="text-[11px] text-[#888] mt-0.5">{s.label}</div>
-              </div>
-              {i < arr.length - 1 && <span className="w-px h-8 bg-[#333]" />}
+        {/* Stats — Goal Progress */}
+        <div className="w-full mb-7">
+          <div className="bg-[#111] border border-[#222] rounded-xl p-5 text-center">
+            <div className="text-[12px] text-[#666] mb-0.5">🎯 목표</div>
+            <div className="text-[13px] text-[#ccc] font-medium mb-3">에이전틱 워크플로우로 10억 만들기</div>
+            <div className="text-[11px] text-[#888] mb-0.5">지금까지 순수익</div>
+            <div className="text-3xl font-bold bg-gradient-to-r from-[#ff6b6b] to-[#ffa500] bg-clip-text text-transparent mb-3">₩14,505,000</div>
+            <div className="w-full bg-[#1a1a1a] rounded-full h-2.5 mb-2">
+              <div className="bg-gradient-to-r from-[#ff6b6b] to-[#ffa500] h-2.5 rounded-full" style={{ width: "2%" }} />
             </div>
-          ))}
+            <div className="flex justify-between text-[10px] text-[#555] px-0.5">
+              <span>₩0</span>
+              <span>1.45%</span>
+              <span>₩10억</span>
+            </div>
+          </div>
         </div>
 
         {/* Links */}
         <div className="w-full flex flex-col gap-3">
           {/* Section: 에이전틱 워크플로우 */}
-          <div className="flex items-center gap-3 mt-8 mb-1 text-[15px] font-bold tracking-wide">
+          <div className="flex items-center gap-3 mt-8 mb-1 text-[15px] font-bold text-[#ccc] tracking-wide">
             <span className="flex-1 h-px bg-[#333]" />
-            <span className="bg-gradient-to-r from-[#ff6b6b] to-[#ffa500] bg-clip-text text-transparent">
-              에이전틱 워크플로우
-            </span>
+            ✦ 에이전틱 워크플로우
             <span className="flex-1 h-px bg-[#333]" />
           </div>
 

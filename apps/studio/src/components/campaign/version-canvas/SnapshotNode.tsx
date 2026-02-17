@@ -17,40 +17,73 @@ function SnapshotNode({ data, selected }: { data: SnapshotNodeData; selected?: b
     month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit",
   });
 
+  // Extract first heading and first paragraph from markdown preview
+  const lines = (data.bodyPreview || "").split("\n").filter(Boolean);
+  const heading = lines.find(l => l.startsWith("#"))?.replace(/^#+\s*/, "") || "";
+  const bodyLines = lines.filter(l => !l.startsWith("#")).slice(0, 6);
+
   return (
     <div className="snapshot-node">
       <Handle type="target" position={Position.Left} />
       <div
         className={`
-          w-[320px] rounded-xl border-2 p-3 transition-all
+          w-[360px] rounded-xl border-2 overflow-hidden transition-all
           ${data.isCurrent
-            ? "border-[#FF6B35] bg-[#FF6B35]/10 shadow-lg shadow-[#FF6B35]/20"
+            ? "border-[#FF6B35] shadow-lg shadow-[#FF6B35]/20"
             : selected
-              ? "border-[#FF6B35]/60 bg-[#1a1a1a] shadow-md"
-              : "border-[#333] bg-[#141414] hover:border-[#555]"
+              ? "border-[#FF6B35]/60 shadow-md"
+              : "border-[#333] hover:border-[#555]"
           }
         `}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between mb-2">
+        {/* Guide article header */}
+        <div className="px-4 py-2 bg-[#0a0a0a] border-b border-[#222] flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-base">📸</span>
-            <span className={`text-xs font-semibold ${data.isCurrent ? "text-[#FF6B35]" : "text-[#ccc]"}`}>
-              {data.label || "스냅샷"}
-            </span>
+            <span className="text-sm">🦞</span>
+            <span className="text-[10px] font-semibold text-[#FF6B35]">brxce.ai</span>
+            <span className="text-[10px] text-[#555]">/guides</span>
           </div>
-          {data.isCurrent && (
-            <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#FF6B35] text-white font-bold">CURRENT</span>
+          <div className="flex items-center gap-2">
+            {data.isCurrent && (
+              <span className="text-[8px] px-1.5 py-0.5 rounded bg-[#FF6B35] text-white font-bold">LIVE</span>
+            )}
+            <span className="text-[9px] text-[#555]">{time}</span>
+          </div>
+        </div>
+
+        {/* Article body mockup */}
+        <div className="px-4 py-3 bg-[#101010]">
+          {/* Snapshot label */}
+          <div className="text-[9px] text-[#666] mb-2 flex items-center gap-1.5">
+            <span>📸</span>
+            <span>{data.label || "스냅샷"}</span>
+          </div>
+
+          {/* Title */}
+          {heading && (
+            <h3 className="text-[13px] font-bold text-[#fafafa] leading-snug mb-2 line-clamp-2">
+              {heading}
+            </h3>
           )}
-        </div>
 
-        {/* Body preview */}
-        <div className="text-[11px] text-[#888] leading-relaxed line-clamp-3 mb-2">
-          {data.bodyPreview || "내용 없음"}
-        </div>
+          {/* Body excerpt - styled like article content */}
+          <div className="space-y-1.5">
+            {bodyLines.map((line, i) => (
+              <p key={i} className="text-[10px] text-[#999] leading-relaxed line-clamp-2">
+                {line}
+              </p>
+            ))}
+          </div>
 
-        {/* Footer */}
-        <div className="text-[10px] text-[#555]">{time}</div>
+          {/* Fade out */}
+          <div className="mt-2 h-4 bg-gradient-to-b from-transparent to-[#101010]" />
+
+          {/* Footer */}
+          <div className="flex items-center justify-between mt-1 text-[9px] text-[#555]">
+            <span>{data.bodyPreview.length.toLocaleString()}자</span>
+            <span className="text-[#444]">⋮</span>
+          </div>
+        </div>
       </div>
       <Handle type="source" position={Position.Right} />
     </div>

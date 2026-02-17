@@ -526,16 +526,41 @@ const bioVariants: VariantDef[] = [
 ];
 
 /* ── Stats ── */
+// Order variants: left / center / right for revenue placement
+const statsLeft = [
+  { num: "₩14,505,000", label: "에이전틱 워크플로우 순수익" },
+  { num: "38", label: "클라이언트" },
+  { num: "3", label: "자체 AI 서비스" },
+];
+const statsCenter = [
+  { num: "38", label: "클라이언트" },
+  { num: "₩14,505,000", label: "에이전틱 워크플로우 순수익" },
+  { num: "3", label: "자체 AI 서비스" },
+];
+const statsRight = [
+  { num: "38", label: "클라이언트" },
+  { num: "3", label: "자체 AI 서비스" },
+  { num: "₩14,505,000", label: "에이전틱 워크플로우 순수익" },
+];
+
+// Goal-based variants
+const goalTarget = "10억";
+const goalCurrent = "₩14,505,000";
+const goalPercent = 1.45; // 14,505,000 / 1,000,000,000 * 100
+
 const statsVariants: VariantDef[] = [
   {
     id: "A",
-    label: "A — 현재 상용 (가로 3열)",
+    label: "A — 현재 상용 (왼쪽, 구분선)",
     render: () => (
-      <div className="flex justify-center gap-6">
-        {statsData.map((s) => (
-          <div key={s.label} className="text-center">
-            <div className="text-xl font-bold">{s.num}</div>
-            <div className="text-[11px] text-[#888] mt-0.5">{s.label}</div>
+      <div className="flex justify-center items-center gap-6">
+        {statsLeft.map((s, i) => (
+          <div key={s.label} className="flex items-center gap-6">
+            <div className="text-center">
+              <div className="text-xl font-bold">{s.num}</div>
+              <div className="text-[11px] text-[#888] mt-0.5">{s.label}</div>
+            </div>
+            {i < statsLeft.length - 1 && <span className="w-px h-8 bg-[#333]" />}
           </div>
         ))}
       </div>
@@ -543,16 +568,16 @@ const statsVariants: VariantDef[] = [
   },
   {
     id: "B",
-    label: "B — 구분선 포함",
+    label: "B — 가운데 배치 (구분선)",
     render: () => (
       <div className="flex justify-center items-center gap-6">
-        {statsData.map((s, i) => (
+        {statsCenter.map((s, i) => (
           <div key={s.label} className="flex items-center gap-6">
             <div className="text-center">
-              <div className="text-xl font-bold">{s.num}</div>
+              <div className={`text-xl font-bold ${s.num.startsWith("₩") ? "text-[#ffa500]" : ""}`}>{s.num}</div>
               <div className="text-[11px] text-[#888] mt-0.5">{s.label}</div>
             </div>
-            {i < statsData.length - 1 && <span className="w-px h-8 bg-[#333]" />}
+            {i < statsCenter.length - 1 && <span className="w-px h-8 bg-[#333]" />}
           </div>
         ))}
       </div>
@@ -560,15 +585,171 @@ const statsVariants: VariantDef[] = [
   },
   {
     id: "C",
-    label: "C — 카드형",
+    label: "C — 오른쪽 배치 (구분선)",
     render: () => (
-      <div className="flex justify-center gap-3">
-        {statsData.map((s) => (
-          <div key={s.label} className="text-center bg-[#111] border border-[#222] rounded-xl px-5 py-3 flex-1">
-            <div className="text-xl font-bold">{s.num}</div>
-            <div className="text-[11px] text-[#888] mt-0.5">{s.label}</div>
+      <div className="flex justify-center items-center gap-6">
+        {statsRight.map((s, i) => (
+          <div key={s.label} className="flex items-center gap-6">
+            <div className="text-center">
+              <div className="text-xl font-bold">{s.num}</div>
+              <div className="text-[11px] text-[#888] mt-0.5">{s.label}</div>
+            </div>
+            {i < statsRight.length - 1 && <span className="w-px h-8 bg-[#333]" />}
           </div>
         ))}
+      </div>
+    ),
+  },
+  {
+    id: "D",
+    label: "D — 수익 상단 강조 + 하단 2열",
+    render: () => (
+      <div className="flex flex-col items-center gap-4">
+        <div className="text-center">
+          <div className="text-2xl font-bold text-[#ffa500]">₩14,505,000</div>
+          <div className="text-[11px] text-[#888] mt-0.5">에이전틱 워크플로우 순수익</div>
+        </div>
+        <div className="flex items-center gap-6">
+          <div className="text-center">
+            <div className="text-xl font-bold">38</div>
+            <div className="text-[11px] text-[#888] mt-0.5">클라이언트</div>
+          </div>
+          <span className="w-px h-8 bg-[#333]" />
+          <div className="text-center">
+            <div className="text-xl font-bold">3</div>
+            <div className="text-[11px] text-[#888] mt-0.5">자체 AI 서비스</div>
+          </div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: "E",
+    label: "E — 가운데 강조 (색상 + 크기)",
+    render: () => (
+      <div className="flex justify-center items-center gap-6">
+        <div className="text-center">
+          <div className="text-lg font-bold">38</div>
+          <div className="text-[11px] text-[#888] mt-0.5">클라이언트</div>
+        </div>
+        <span className="w-px h-8 bg-[#333]" />
+        <div className="text-center">
+          <div className="text-2xl font-bold bg-gradient-to-r from-[#ff6b6b] to-[#ffa500] bg-clip-text text-transparent">₩14,505,000</div>
+          <div className="text-[11px] text-[#888] mt-0.5">에이전틱 워크플로우 순수익</div>
+        </div>
+        <span className="w-px h-8 bg-[#333]" />
+        <div className="text-center">
+          <div className="text-lg font-bold">3</div>
+          <div className="text-[11px] text-[#888] mt-0.5">자체 AI 서비스</div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: "F",
+    label: "F — 카드형 (가운데 강조)",
+    render: () => (
+      <div className="flex justify-center gap-3">
+        <div className="text-center bg-[#111] border border-[#222] rounded-xl px-5 py-3 flex-1">
+          <div className="text-xl font-bold">38</div>
+          <div className="text-[11px] text-[#888] mt-0.5">클라이언트</div>
+        </div>
+        <div className="text-center bg-[#111] border border-[#ffa500]/30 rounded-xl px-5 py-3 flex-1">
+          <div className="text-xl font-bold text-[#ffa500]">₩14,505,000</div>
+          <div className="text-[11px] text-[#888] mt-0.5">에이전틱 워크플로우 순수익</div>
+        </div>
+        <div className="text-center bg-[#111] border border-[#222] rounded-xl px-5 py-3 flex-1">
+          <div className="text-xl font-bold">3</div>
+          <div className="text-[11px] text-[#888] mt-0.5">자체 AI 서비스</div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: "G",
+    label: "G — 🎯 목표 프로그레스 (미니멀)",
+    render: () => (
+      <div className="text-center">
+        <div className="text-[13px] text-[#888] mb-1">에이전틱 워크플로우로 10억 만들기</div>
+        <div className="text-2xl font-bold text-[#ffa500] mb-2">₩14,505,000</div>
+        <div className="w-full bg-[#1a1a1a] rounded-full h-2 mb-1.5">
+          <div className="bg-gradient-to-r from-[#ff6b6b] to-[#ffa500] h-2 rounded-full transition-all" style={{ width: `${Math.max(goalPercent, 2)}%` }} />
+        </div>
+        <div className="text-[11px] text-[#555]">{goalPercent.toFixed(2)}% of 10억</div>
+      </div>
+    ),
+  },
+  {
+    id: "H",
+    label: "H — 🎯 목표 + 하단 Stats",
+    render: () => (
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-full text-center">
+          <div className="text-[13px] text-[#888] mb-1">에이전틱 워크플로우로 10억 만들기</div>
+          <div className="text-2xl font-bold text-[#ffa500] mb-2">₩14,505,000</div>
+          <div className="w-full bg-[#1a1a1a] rounded-full h-2 mb-1.5">
+            <div className="bg-gradient-to-r from-[#ff6b6b] to-[#ffa500] h-2 rounded-full" style={{ width: `${Math.max(goalPercent, 2)}%` }} />
+          </div>
+          <div className="text-[11px] text-[#555]">{goalPercent.toFixed(2)}% of 10억</div>
+        </div>
+        <div className="flex items-center gap-6">
+          <div className="text-center">
+            <div className="text-lg font-bold">38</div>
+            <div className="text-[11px] text-[#888] mt-0.5">클라이언트</div>
+          </div>
+          <span className="w-px h-6 bg-[#333]" />
+          <div className="text-center">
+            <div className="text-lg font-bold">3</div>
+            <div className="text-[11px] text-[#888] mt-0.5">자체 AI 서비스</div>
+          </div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: "I",
+    label: "I — 🎯 카드형 프로그레스",
+    render: () => (
+      <div className="bg-[#111] border border-[#222] rounded-xl p-5 text-center">
+        <div className="text-[12px] text-[#666] mb-0.5">🎯 목표</div>
+        <div className="text-[13px] text-[#ccc] font-medium mb-3">에이전틱 워크플로우로 10억 만들기</div>
+        <div className="text-[11px] text-[#888] mb-0.5">지금까지 순수익</div>
+        <div className="text-3xl font-bold bg-gradient-to-r from-[#ff6b6b] to-[#ffa500] bg-clip-text text-transparent mb-3">₩14,505,000</div>
+        <div className="w-full bg-[#1a1a1a] rounded-full h-2.5 mb-2">
+          <div className="bg-gradient-to-r from-[#ff6b6b] to-[#ffa500] h-2.5 rounded-full" style={{ width: `${Math.max(goalPercent, 2)}%` }} />
+        </div>
+        <div className="flex justify-between text-[10px] text-[#555] px-0.5">
+          <span>₩0</span>
+          <span>{goalPercent.toFixed(2)}%</span>
+          <span>₩10억</span>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: "J",
+    label: "J — 🎯 인라인 한 줄 + 바",
+    render: () => (
+      <div>
+        <div className="flex items-baseline justify-between mb-2">
+          <span className="text-[13px] text-[#888]">에이전틱 워크플로우로 10억 만들기</span>
+          <span className="text-[15px] font-bold text-[#ffa500]">₩14,505,000</span>
+        </div>
+        <div className="w-full bg-[#1a1a1a] rounded-full h-1.5">
+          <div className="bg-gradient-to-r from-[#ff6b6b] to-[#ffa500] h-1.5 rounded-full" style={{ width: `${Math.max(goalPercent, 2)}%` }} />
+        </div>
+        <div className="text-right text-[10px] text-[#555] mt-1">{goalPercent.toFixed(2)}% / 10억</div>
+      </div>
+    ),
+  },
+  {
+    id: "K",
+    label: "K — 🎯 큰 숫자 + 목표 텍스트만 (바 없음)",
+    render: () => (
+      <div className="text-center">
+        <div className="text-[12px] text-[#666] mb-2">에이전틱 워크플로우로 10억 만들기</div>
+        <div className="text-3xl font-bold text-[#fafafa] mb-1">₩14,505,000</div>
+        <div className="text-[12px] text-[#555]">지금까지 순수익 · 목표의 {goalPercent.toFixed(2)}%</div>
       </div>
     ),
   },
