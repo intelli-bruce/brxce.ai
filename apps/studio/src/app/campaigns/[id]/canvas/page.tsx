@@ -76,14 +76,6 @@ export default function CampaignCanvasPage() {
     setCurrentBodyMd(snap.body_md);
   };
 
-  if (loading) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-[#0a0a0a] text-[#888]">
-        로딩 중...
-      </div>
-    );
-  }
-
   // Hide sidebar for full-screen canvas
   useEffect(() => {
     const sidebar = document.querySelector("aside");
@@ -95,6 +87,14 @@ export default function CampaignCanvasPage() {
       if (main) main.style.marginLeft = "";
     };
   }, []);
+
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-[#0a0a0a] text-[#888] fixed inset-0 z-50">
+        로딩 중...
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen flex flex-col bg-[#0a0a0a] fixed inset-0 z-50">
