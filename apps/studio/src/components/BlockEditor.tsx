@@ -219,17 +219,34 @@ export default function BlockEditor({ contentId, bodyMd, onBodySync }: Props) {
   }
 
   /* ─── add block after ─── */
-  async function addBlockAfter(afterBlock: Block) {
+  const [insertMenu, setInsertMenu] = useState<string | null>(null);
+
+  const BLOCK_TYPES = [
+    { type: "paragraph", label: "텍스트", icon: "¶", defaultBody: "" },
+    { type: "heading", label: "제목", icon: "H", defaultBody: "", meta: { level: 2 } },
+    { type: "list", label: "리스트", icon: "☰", defaultBody: "- " },
+    { type: "blockquote", label: "인용", icon: "❝", defaultBody: "" },
+    { type: "image", label: "이미지", icon: "🖼", defaultBody: "" },
+    { type: "divider", label: "구분선", icon: "—", defaultBody: "---" },
+    { type: "code", label: "코드", icon: "</>", defaultBody: "" },
+  ] as const;
+
+  async function addBlockAfter(afterBlock: Block, blockType = "paragraph", meta: Record<string, unknown> = {}) {
     const newPos = afterBlock.position + 5;
+    const template = BLOCK_TYPES.find(t => t.type === blockType);
+    const defaultBody = template?.defaultBody ?? "";
+    const blockMeta = { ...meta, ...(template && "meta" in template ? template.meta : {}) };
+    const isImmediate = blockType === "divider";
+
     const { data } = await sb
       .from("content_blocks")
       .insert({
         content_id: contentId,
-        block_type: "paragraph",
-        body: "새 블록 — 편집하세요",
+        block_type: blockType,
+        body: isImmediate ? "---" : defaultBody,
         position: newPos,
         current_version: 1,
-        meta: {},
+        meta: blockMeta,
       })
       .select()
       .single();
@@ -243,9 +260,14 @@ export default function BlockEditor({ contentId, bodyMd, onBodySync }: Props) {
         actor: "user",
       });
       await loadBlocks();
-      setEditingBlock(data.id);
-      setEditText(data.body);
+      if (!isImmediate) {
+        setEditingBlock(data.id);
+        setEditText(data.body);
+      } else {
+        syncBodyMd();
+      }
     }
+    setInsertMenu(null);
   }
 
   /* ─── delete block ─── */
@@ -356,7 +378,7 @@ export default function BlockEditor({ contentId, bodyMd, onBodySync }: Props) {
                     ? "border-[#FF6B35]/30 bg-[#FF6B35]/5"
                     : "border-transparent hover:border-[#222]"
                 }`}
-                onClick={() => setActiveBlock(block.id)}
+                onClick={() => { setActiveBlock(block.id); setInsertMenu(null); }}
               >
                 {/* Block label */}
                 <div className="flex-shrink-0 w-8 pt-1 pl-1 text-center">
@@ -369,12 +391,27 @@ export default function BlockEditor({ contentId, bodyMd, onBodySync }: Props) {
                 <div className="flex-1 py-0.5 pr-1 min-w-0">
                   {isEditing ? (
                     <div className="space-y-2">
-                      <textarea
-                        value={editText}
-                        onChange={(e) => setEditText(e.target.value)}
-                        className="w-full p-2.5 rounded-lg border border-[#444] bg-[#0a0a0a] text-sm text-[#fafafa] font-mono outline-none focus:border-[#FF6B35] min-h-[80px] resize-y"
-                        autoFocus
-                      />
+                      {block.block_type === "image" ? (
+                        <div className="space-y-2">
+                          <input
+                            value={editText}
+                            onChange={(e) => setEditText(e.target.value)}
+                            placeholder="이미지 URL (https://...)"
+                            className="w-full p-2.5 rounded-lg border border-[#444] bg-[#0a0a0a] text-sm text-[#fafafa] font-mono outline-none focus:border-[#FF6B35]"
+                            autoFocus
+                          />
+                          {editText && (
+                            <img src={editText} alt="미리보기" className="max-h-48 rounded-lg border border-[#222]" />
+                          )}
+                        </div>
+                      ) : (
+                        <textarea
+                          value={editText}
+                          onChange={(e) => setEditText(e.target.value)}
+                          className="w-full p-2.5 rounded-lg border border-[#444] bg-[#0a0a0a] text-sm text-[#fafafa] font-mono outline-none focus:border-[#FF6B35] min-h-[80px] resize-y"
+                          autoFocus
+                        />
+                      )}
                       <input
                         value={commentTexts[block.id] || ""}
                         onChange={(e) => setCommentTexts(prev => ({ ...prev, [block.id]: e.target.value }))}
@@ -465,16 +502,35 @@ export default function BlockEditor({ contentId, bodyMd, onBodySync }: Props) {
                     >
                       v{block.current_version}
                     </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        addBlockAfter(block);
-                      }}
-                      className="text-[10px] px-1.5 py-0.5 rounded border border-[#333] text-[#888] hover:text-[#fafafa] hover:border-[#555]"
-                      title="아래에 블록 추가"
-                    >
-                      ＋
-                    </button>
+                    <div className="relative">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setInsertMenu(insertMenu === block.id ? null : block.id);
+                        }}
+                        className="text-[10px] px-1.5 py-0.5 rounded border border-[#333] text-[#888] hover:text-[#fafafa] hover:border-[#555]"
+                        title="아래에 블록 추가"
+                      >
+                        ＋
+                      </button>
+                      {insertMenu === block.id && (
+                        <div className="absolute right-0 top-full mt-1 z-50 bg-[#1a1a1a] border border-[#333] rounded-lg shadow-xl py-1 min-w-[140px]">
+                          {BLOCK_TYPES.map(bt => (
+                            <button
+                              key={bt.type}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                addBlockAfter(block, bt.type);
+                              }}
+                              className="w-full text-left px-3 py-1.5 text-xs text-[#ccc] hover:bg-[#252525] hover:text-[#fafafa] flex items-center gap-2 bg-transparent border-none cursor-pointer"
+                            >
+                              <span className="w-4 text-center">{bt.icon}</span>
+                              {bt.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
