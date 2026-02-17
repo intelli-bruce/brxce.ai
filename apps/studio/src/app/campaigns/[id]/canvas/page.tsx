@@ -1,176 +1,132 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
-import type { CampaignAtom, CampaignVariant } from "@/lib/campaign/types";
+import dynamic from "next/dynamic";
+import type { Snapshot, Variant, Atom } from "@/components/campaign/version-canvas/VersionCanvas";
 
-const CHANNEL_ICONS: Record<string, string> = {
-  threads: "🧵", x: "𝕏", linkedin: "💼", instagram: "📸",
-  youtube: "▶️", newsletter: "📧", brxce_guide: "🦞",
-};
+const VersionCanvas = dynamic(
+  () => import("@/components/campaign/version-canvas/VersionCanvas"),
+  { ssr: false },
+);
 
-export default function CanvasPage() {
+export default function CampaignCanvasPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [atoms, setAtoms] = useState<(CampaignAtom & { variants: CampaignVariant[] })[]>([]);
-  const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [dragging, setDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const containerRef = useRef<HTMLDivElement>(null);
   const sb = createSupabaseBrowser();
 
-  useEffect(() => {
-    async function load() {
-      const { data: atomsData } = await sb.from("campaign_atoms").select("*").eq("campaign_id", id);
-      if (!atomsData) return;
-      const atomIds = atomsData.map(a => a.id);
-      const { data: vars } = await sb.from("campaign_variants").select("*").in("atom_id", atomIds).order("generation");
+  const [title, setTitle] = useState("");
+  const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
+  const [variants, setVariants] = useState<Variant[]>([]);
+  const [atoms, setAtoms] = useState<Atom[]>([]);
+  const [currentBodyMd, setCurrentBodyMd] = useState("");
+  const [loading, setLoading] = useState(true);
 
-      const enriched = atomsData.map(a => ({
-        ...a as CampaignAtom,
-        variants: ((vars || []) as CampaignVariant[]).filter(v => v.atom_id === a.id),
-      }));
-      setAtoms(enriched);
+  const load = useCallback(async () => {
+    // Campaign
+    const { data: camp } = await sb.from("campaigns").select("title,source_content_id").eq("id", id).single();
+    if (!camp) return;
+    setTitle(camp.title);
+
+    // Source content body
+    if (camp.source_content_id) {
+      const { data: content } = await sb.from("contents").select("body_md").eq("id", camp.source_content_id).single();
+      if (content) setCurrentBodyMd(content.body_md || "");
+
+      // Snapshots
+      const { data: snaps } = await sb
+        .from("document_snapshots")
+        .select("id,label,body_md,created_at")
+        .eq("content_id", camp.source_content_id)
+        .order("created_at", { ascending: true });
+      setSnapshots((snaps || []) as Snapshot[]);
     }
-    load();
-  }, [id]);
 
-  function handleWheel(e: React.WheelEvent) {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? -0.1 : 0.1;
-    setZoom(z => Math.max(0.3, Math.min(2, z + delta)));
+    // Atoms
+    const { data: atomsData } = await sb
+      .from("campaign_atoms")
+      .select("id,channel,format,is_pillar")
+      .eq("campaign_id", id);
+    const atomsList = (atomsData || []) as Atom[];
+    setAtoms(atomsList);
+
+    // Variants for all atoms
+    if (atomsList.length > 0) {
+      const { data: varsData } = await sb
+        .from("campaign_variants")
+        .select("id,atom_id,generation,model,params,output,is_selected,score,created_at")
+        .in("atom_id", atomsList.map((a) => a.id));
+      setVariants((varsData || []) as Variant[]);
+    }
+
+    setLoading(false);
+  }, [id, sb]);
+
+  useEffect(() => { load(); }, []);
+
+  const restoreSnapshot = async (snapId: string) => {
+    const { data: snap } = await sb.from("document_snapshots").select("body_md").eq("id", snapId).single();
+    if (!snap?.body_md) return;
+    // Find source_content_id
+    const { data: camp } = await sb.from("campaigns").select("source_content_id").eq("id", id).single();
+    if (!camp?.source_content_id) return;
+    await sb.from("contents").update({ body_md: snap.body_md }).eq("id", camp.source_content_id);
+    await sb.from("content_blocks").delete().eq("content_id", camp.source_content_id);
+    setCurrentBodyMd(snap.body_md);
+  };
+
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-[#0a0a0a] text-[#888]">
+        로딩 중...
+      </div>
+    );
   }
-
-  function handleMouseDown(e: React.MouseEvent) {
-    if (e.button !== 0) return;
-    setDragging(true);
-    setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
-  }
-
-  function handleMouseMove(e: React.MouseEvent) {
-    if (!dragging) return;
-    setPan({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
-  }
-
-  function handleMouseUp() { setDragging(false); }
-
-  // Group atoms: visual (carousel/image/video) vs text
-  const visualAtoms = atoms.filter(a => ["carousel", "image", "video"].includes(a.format));
-  const textAtoms = atoms.filter(a => ["long_text", "medium_text", "short_text"].includes(a.format));
 
   return (
-    <div className="h-[calc(100vh-2rem)] flex flex-col">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-[#222] bg-[#0c0c0c] shrink-0">
-        <button onClick={() => router.push(`/campaigns/${id}`)} className="text-xs text-[#888] bg-transparent border-none cursor-pointer hover:text-[#fafafa]">
-          ← 콕핏으로
-        </button>
+    <div className="h-screen flex flex-col bg-[#0a0a0a]">
+      {/* Top bar */}
+      <div className="flex items-center justify-between px-4 py-2 border-b border-[#222] bg-[#0f0f0f]">
         <div className="flex items-center gap-3">
-          <button onClick={() => setZoom(z => Math.min(2, z + 0.2))} className="px-2 py-1 rounded border border-[#333] bg-[#0a0a0a] text-[#888] text-xs cursor-pointer">+</button>
-          <span className="text-xs text-[#888]">{Math.round(zoom * 100)}%</span>
-          <button onClick={() => setZoom(z => Math.max(0.3, z - 0.2))} className="px-2 py-1 rounded border border-[#333] bg-[#0a0a0a] text-[#888] text-xs cursor-pointer">−</button>
-          <button onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }} className="px-2 py-1 rounded border border-[#333] bg-[#0a0a0a] text-[#888] text-xs cursor-pointer">리셋</button>
+          <button
+            onClick={() => router.push(`/campaigns/${id}`)}
+            className="text-xs text-[#888] bg-transparent border-none cursor-pointer hover:text-[#fafafa]"
+          >
+            ← 콕핏
+          </button>
+          <span className="text-sm font-semibold text-[#fafafa]">{title}</span>
+          <span className="text-[10px] text-[#555]">
+            {snapshots.length} snapshots · {variants.length} variants · {atoms.length} atoms
+          </span>
+        </div>
+        <div className="flex items-center gap-2 text-[10px] text-[#555]">
+          <span>📸 스냅샷</span>
+          <span className="w-3 h-3 rounded-sm bg-[#FF6B35] inline-block" />
+          <span>🧬 variant</span>
+          <span className="w-3 h-3 rounded-sm bg-[#4ECDC4] inline-block" />
+          <span>💬 메타</span>
+          <span className="w-3 h-3 rounded-sm bg-[#666] inline-block" />
         </div>
       </div>
 
-      {/* Canvas */}
-      <div
-        ref={containerRef}
-        className="flex-1 overflow-hidden bg-[#080808] cursor-grab active:cursor-grabbing"
-        onWheel={handleWheel}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-      >
-        <div
-          style={{
-            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-            transformOrigin: "0 0",
-            padding: "40px",
+      {/* Canvas — takes all remaining space */}
+      <div className="flex-1">
+        <VersionCanvas
+          snapshots={snapshots}
+          variants={variants}
+          atoms={atoms}
+          currentBodyMd={currentBodyMd}
+          onSnapshotClick={(snapId) => {
+            if (confirm("이 스냅샷으로 복원할까요?")) restoreSnapshot(snapId);
           }}
-        >
-          {/* Visual atoms row */}
-          {visualAtoms.length > 0 && (
-            <div className="mb-8">
-              <div className="text-xs text-[#555] uppercase mb-3">비주얼</div>
-              <div className="flex gap-6 flex-wrap">
-                {visualAtoms.map(atom => (
-                  <div key={atom.id} className="flex gap-3">
-                    {atom.variants.map(v => (
-                      <div
-                        key={v.id}
-                        className={`w-[200px] bg-[#141414] border rounded-xl overflow-hidden cursor-pointer hover:border-[#444] transition-colors ${
-                          v.is_selected ? "border-[#FF6B35]" : "border-[#222]"
-                        }`}
-                        onClick={() => router.push(`/campaigns/${id}/compare/${atom.id}`)}
-                      >
-                        <div className="aspect-[4/5] bg-[#0a0a0a] flex items-center justify-center">
-                          <span className="text-2xl opacity-20">{CHANNEL_ICONS[atom.channel]}</span>
-                        </div>
-                        <div className="p-2">
-                          <div className="text-[10px] text-[#888]">G{v.generation} · {v.params?.template || atom.format}</div>
-                          {v.is_selected && <div className="text-[10px] text-[#FF6B35]">✓ 선택됨</div>}
-                        </div>
-                      </div>
-                    ))}
-                    {atom.variants.length === 0 && (
-                      <div className="w-[200px] aspect-[4/5] bg-[#0a0a0a] border border-dashed border-[#333] rounded-xl flex items-center justify-center">
-                        <span className="text-xs text-[#555]">{CHANNEL_ICONS[atom.channel]} 생성 전</span>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Text atoms row */}
-          {textAtoms.length > 0 && (
-            <div>
-              <div className="text-xs text-[#555] uppercase mb-3">텍스트</div>
-              <div className="flex gap-6 flex-wrap">
-                {textAtoms.map(atom => (
-                  <div key={atom.id} className="flex gap-3">
-                    {atom.variants.map(v => (
-                      <div
-                        key={v.id}
-                        className={`w-[280px] bg-[#141414] border rounded-xl p-3 cursor-pointer hover:border-[#444] transition-colors ${
-                          v.is_selected ? "border-[#FF6B35]" : "border-[#222]"
-                        }`}
-                        onClick={() => router.push(`/campaigns/${id}/compare/${atom.id}`)}
-                      >
-                        <div className="flex items-center gap-1.5 mb-2">
-                          <span className="text-sm">{CHANNEL_ICONS[atom.channel]}</span>
-                          <span className="text-[10px] text-[#888]">G{v.generation}</span>
-                          {v.is_selected && <span className="text-[10px] text-[#FF6B35]">✓</span>}
-                          {v.score && <span className="text-[10px] text-yellow-400 ml-auto">{"★".repeat(v.score)}</span>}
-                        </div>
-                        <div className="text-xs text-[#ccc] whitespace-pre-wrap max-h-[120px] overflow-hidden leading-relaxed">
-                          {v.output?.body?.substring(0, 200) || "—"}
-                        </div>
-                      </div>
-                    ))}
-                    {atom.variants.length === 0 && (
-                      <div className="w-[280px] h-[160px] bg-[#0a0a0a] border border-dashed border-[#333] rounded-xl flex items-center justify-center">
-                        <span className="text-xs text-[#555]">{CHANNEL_ICONS[atom.channel]} 생성 전</span>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {atoms.length === 0 && (
-            <div className="text-center py-20 text-[#555]">
-              <p className="text-lg">콘텐츠가 없습니다</p>
-              <p className="text-xs mt-2">콕핏에서 콘텐츠를 추가하세요</p>
-            </div>
-          )}
-        </div>
+          onVariantClick={(varId) => {
+            const atom = atoms.find((a) =>
+              variants.some((v) => v.id === varId && v.atom_id === a.id),
+            );
+            if (atom) router.push(`/campaigns/${id}/compare/${atom.id}`);
+          }}
+        />
       </div>
     </div>
   );

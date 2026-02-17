@@ -223,15 +223,18 @@ export default function Home() {
         </a>
 
         {/* Stats */}
-        <div className="flex justify-center gap-6 mb-7">
+        <div className="flex justify-center items-center gap-6 mb-7">
           {[
             { num: "50+", label: "AI 프로젝트" },
             { num: "38", label: "클라이언트" },
             { num: "3", label: "자체 AI 서비스" },
-          ].map((s) => (
-            <div key={s.label} className="text-center">
-              <div className="text-xl font-bold">{s.num}</div>
-              <div className="text-[11px] text-[#888] mt-0.5">{s.label}</div>
+          ].map((s, i, arr) => (
+            <div key={s.label} className="flex items-center gap-6">
+              <div className="text-center">
+                <div className="text-xl font-bold">{s.num}</div>
+                <div className="text-[11px] text-[#888] mt-0.5">{s.label}</div>
+              </div>
+              {i < arr.length - 1 && <span className="w-px h-8 bg-[#333]" />}
             </div>
           ))}
         </div>
@@ -358,20 +361,21 @@ export default function Home() {
 
         {/* Newsletter Subscribe */}
         <div className="w-full mt-10">
-          <div className="flex items-center gap-3 mb-4 text-[13px] font-semibold text-[#888] tracking-wide">
-            <span className="flex-1 h-px bg-[#333]" />
-            뉴스레터
-            <span className="flex-1 h-px bg-[#333]" />
+          <div className="bg-gradient-to-b from-[#1a1a1a] to-[#0a0a0a] border border-[#333] rounded-xl p-6 text-center">
+            <div className="text-[13px] text-[#888] mb-1">매주 화요일</div>
+            <div className="text-[17px] font-bold mb-3">에이전틱 워크플로우 인사이트</div>
+            <SubscribeForm />
           </div>
-          <p className="text-sm text-[#888] text-center mb-3">
-            AI 에이전트 활용 인사이트를 이메일로 받아보세요.
-          </p>
-          <SubscribeForm />
         </div>
 
         {/* Footer */}
-        <div className="mt-10 text-xs text-[#555] text-center">
-          © 2026 Bruce Choe · bruce@brxce.ai
+        <div className="mt-10 flex flex-col items-center gap-2 text-xs text-[#555]">
+          <div className="flex gap-4">
+            <Link href="/guides" className="hover:text-[#999] no-underline text-[#555] transition-colors">블로그</Link>
+            <Link href="/guides" className="hover:text-[#999] no-underline text-[#555] transition-colors">가이드</Link>
+            <button onClick={() => { setInquiryDone(false); setEmail(""); setInquiryOpen(true); }} className="hover:text-[#999] bg-transparent border-none text-[#555] text-xs cursor-pointer transition-colors">문의</button>
+          </div>
+          <div>© 2026 Bruce Choe · bruce@brxce.ai</div>
         </div>
       </div>
 

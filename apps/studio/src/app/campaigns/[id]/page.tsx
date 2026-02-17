@@ -12,8 +12,7 @@ import { ProseBody } from "@brxce/ui";
 import type { Campaign, CampaignAtom, CampaignVariant, GenerationConfig, FactCheckFlag } from "@/lib/campaign/types";
 import IdBadge from "@/components/IdBadge";
 import ChannelPreview, { CHANNEL_SPECS } from "@/components/campaign/ChannelPreview";
-import dynamic from "next/dynamic";
-const VersionCanvas = dynamic(() => import("@/components/campaign/version-canvas/VersionCanvas"), { ssr: false });
+// VersionCanvas is now a separate page: /campaigns/[id]/canvas
 
 const FUNNEL_COLORS: Record<string, string> = {
   tofu: "bg-green-500/20 text-green-400 border-green-500/30",
@@ -73,7 +72,7 @@ export default function CampaignCockpitPage() {
   const [pillarEditMode, setPillarEditMode] = useState(false);
   const [snapshots, setSnapshots] = useState<{ id: string; created_at: string; label: string }[]>([]);
   const [showSnapshots, setShowSnapshots] = useState(false);
-  const [showVersionCanvas, setShowVersionCanvas] = useState(false);
+  // Version canvas is now a separate full page
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
   const sb = createSupabaseBrowser();
@@ -504,8 +503,8 @@ export default function CampaignCockpitPage() {
                   📋 히스토리 ({snapshots.length})
                 </button>
                 <button
-                  onClick={() => setShowVersionCanvas(!showVersionCanvas)}
-                  className={`text-xs px-2 py-0.5 rounded border cursor-pointer ${showVersionCanvas ? 'border-[#FF6B35] text-[#FF6B35] bg-[#FF6B35]/10' : 'text-[#888] border-transparent bg-transparent hover:text-[#fafafa]'}`}
+                  onClick={() => router.push(`/campaigns/${id}/canvas`)}
+                  className="text-xs text-[#888] bg-transparent border-none cursor-pointer hover:text-[#fafafa]"
                 >
                   🗺️ 캔버스
                 </button>
@@ -559,25 +558,6 @@ export default function CampaignCockpitPage() {
                   ))}
                 </div>
               )}
-            </div>
-          )}
-
-          {/* Version Canvas */}
-          {showVersionCanvas && (
-            <div className="border-b border-[#222]" style={{ height: 500 }}>
-              <VersionCanvas
-                snapshots={snapshots.map(s => ({ ...s, body_md: null }))}
-                variants={Object.values(variants).flat()}
-                atoms={atoms}
-                currentBodyMd={sourceContent.body_md}
-                onSnapshotClick={(snapId) => {
-                  if (confirm("이 스냅샷으로 복원할까요?")) restoreSnapshot(snapId);
-                }}
-                onVariantClick={(varId) => {
-                  const atom = atoms.find(a => variants[a.id]?.some(v => v.id === varId));
-                  if (atom) router.push(`/campaigns/${id}/compare/${atom.id}`);
-                }}
-              />
             </div>
           )}
 
