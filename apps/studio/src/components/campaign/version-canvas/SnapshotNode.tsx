@@ -8,6 +8,7 @@ export interface SnapshotNodeData extends Record<string, unknown> {
   createdAt: string;
   bodyPreview: string;
   isCurrent: boolean;
+  mediaUrls?: string[];
 }
 
 export type SnapshotNodeType = Node<SnapshotNodeData, "snapshot">;
@@ -77,6 +78,21 @@ function SnapshotNode({ data, selected }: { data: SnapshotNodeData; selected?: b
 
           {/* Fade out */}
           <div className="mt-2 h-4 bg-gradient-to-b from-transparent to-[#101010]" />
+
+          {/* Media thumbnails */}
+          {data.mediaUrls && data.mediaUrls.length > 0 && (
+            <div className="flex gap-1.5 mt-2 overflow-hidden">
+              {data.mediaUrls.map((url, i) => (
+                <img
+                  key={i}
+                  src={url}
+                  alt=""
+                  className="w-16 h-12 rounded object-cover border border-[#333] flex-shrink-0"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                />
+              ))}
+            </div>
+          )}
 
           {/* Footer */}
           <div className="flex items-center justify-between mt-1 text-[9px] text-[#555]">

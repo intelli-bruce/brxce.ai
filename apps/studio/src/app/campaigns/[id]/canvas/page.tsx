@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import dynamic from "next/dynamic";
-import type { Snapshot, Variant, Atom } from "@/components/campaign/version-canvas/VersionCanvas";
+import type { Snapshot, Variant, Atom, MediaAsset } from "@/components/campaign/version-canvas/VersionCanvas";
 
 const VersionCanvas = dynamic(
   () => import("@/components/campaign/version-canvas/VersionCanvas"),
@@ -22,6 +22,7 @@ export default function CampaignCanvasPage() {
   const [atoms, setAtoms] = useState<Atom[]>([]);
   const [currentBodyMd, setCurrentBodyMd] = useState("");
   const [loading, setLoading] = useState(true);
+  const [mediaAssets, setMediaAssets] = useState<MediaAsset[]>([]);
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
   const [selectedSnapshot, setSelectedSnapshot] = useState<Snapshot | null>(null);
 
@@ -61,6 +62,13 @@ export default function CampaignCanvasPage() {
         .in("atom_id", atomsList.map((a) => a.id));
       setVariants((varsData || []) as Variant[]);
     }
+
+    // Media assets for this campaign
+    const { data: mediaData } = await sb
+      .from("media_assets")
+      .select("id,storage_url,file_name,asset_type,campaign_id,content_id,source_atom_id")
+      .eq("campaign_id", id);
+    setMediaAssets((mediaData || []) as MediaAsset[]);
 
     setLoading(false);
   }, [id, sb]);
@@ -132,6 +140,7 @@ export default function CampaignCanvasPage() {
             snapshots={snapshots}
             variants={variants}
             atoms={atoms}
+            mediaAssets={mediaAssets}
             currentBodyMd={currentBodyMd}
             onSnapshotClick={(snapId) => {
               const snap = snapshots.find(s => s.id === snapId);

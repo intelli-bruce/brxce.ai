@@ -13,6 +13,7 @@ export interface VariantNodeData extends Record<string, unknown> {
   score: number | null;
   channel: string;
   createdAt: string;
+  mediaUrls?: string[];
 }
 
 export type VariantNodeType = Node<VariantNodeData, "variant">;
@@ -179,6 +180,22 @@ function VariantNode({ data, selected }: { data: VariantNodeData; selected?: boo
 
         {/* Channel mockup */}
         <ChannelMockup channel={data.channel} body={data.body} />
+
+        {/* Media thumbnails */}
+        {data.mediaUrls && data.mediaUrls.length > 0 && (
+          <div className="flex gap-1 px-2 py-1.5 bg-[#0a0a0a] border-t border-[#222]">
+            {data.mediaUrls.map((url, i) => (
+              <img
+                key={i}
+                src={url}
+                alt=""
+                className="w-14 h-10 rounded object-cover border border-[#333] flex-shrink-0"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+              />
+            ))}
+            <span className="text-[8px] text-[#555] self-center ml-1">🖼</span>
+          </div>
+        )}
       </div>
       <Handle type="source" position={Position.Right} />
     </div>

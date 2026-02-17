@@ -58,10 +58,21 @@ export interface Atom {
   is_pillar: boolean;
 }
 
+export interface MediaAsset {
+  id: string;
+  storage_url: string;
+  file_name: string | null;
+  asset_type: string;
+  campaign_id: string | null;
+  content_id: string | null;
+  source_atom_id: string | null;
+}
+
 interface VersionCanvasProps {
   snapshots: Snapshot[];
   variants: Variant[];
   atoms: Atom[];
+  mediaAssets?: MediaAsset[];
   currentBodyMd: string;
   onSnapshotClick?: (snapshotId: string) => void;
   onVariantClick?: (variantId: string) => void;
@@ -69,8 +80,8 @@ interface VersionCanvasProps {
 
 /* ── Dagre layout ── */
 const NODE_SIZES: Record<string, { w: number; h: number }> = {
-  snapshot: { w: 380, h: 280 },
-  variant: { w: 340, h: 320 },
+  snapshot: { w: 380, h: 320 },
+  variant: { w: 340, h: 360 },
   meta: { w: 220, h: 50 },
 };
 
@@ -103,6 +114,7 @@ function buildGraph(
   variants: Variant[],
   atoms: Atom[],
   currentBodyMd: string,
+  mediaAssets: MediaAsset[] = [],
 ): { nodes: Node[]; edges: Edge[] } {
   const nodes: Node[] = [];
   const edges: Edge[] = [];
@@ -111,6 +123,11 @@ function buildGraph(
   const sorted = [...snapshots].sort(
     (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
   );
+
+  // Content-level media (not atom-specific)
+  const contentMedia = mediaAssets
+    .filter((m) => !m.source_atom_id && m.asset_type?.startsWith("image"))
+    .map((m) => m.storage_url);
 
   sorted.forEach((s, i) => {
     nodes.push({
@@ -122,6 +139,7 @@ function buildGraph(
         createdAt: s.created_at,
         bodyPreview: (s.body_md || "").slice(0, 500),
         isCurrent: false,
+        mediaUrls: [],
       } satisfies SnapshotNodeData,
     });
 
@@ -148,6 +166,7 @@ function buildGraph(
       createdAt: new Date().toISOString(),
       bodyPreview: currentBodyMd.slice(0, 500),
       isCurrent: true,
+      mediaUrls: contentMedia.slice(0, 4),
     } satisfies SnapshotNodeData,
   });
 
@@ -213,6 +232,11 @@ function buildGraph(
       }
 
       // Variant nodes
+      // Atom-level media
+      const atomMedia = mediaAssets
+        .filter((m) => m.source_atom_id === atomId && m.asset_type?.startsWith("image"))
+        .map((m) => m.storage_url);
+
       genVariants.forEach((v) => {
         const vId = `var-${v.id}`;
         const body = v.output?.body || v.output?.text || "";
@@ -230,6 +254,7 @@ function buildGraph(
             score: v.score,
             channel: atom.channel,
             createdAt: v.created_at,
+            mediaUrls: atomMedia.slice(0, 2),
           } satisfies VariantNodeData,
         });
         edges.push({
@@ -259,6 +284,7 @@ export default function VersionCanvas({
   snapshots,
   variants,
   atoms,
+  mediaAssets = [],
   currentBodyMd,
   onSnapshotClick,
   onVariantClick,
@@ -267,8 +293,8 @@ export default function VersionCanvas({
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
   const graph = useMemo(
-    () => buildGraph(snapshots, variants, atoms, currentBodyMd),
-    [snapshots, variants, atoms, currentBodyMd],
+    () => buildGraph(snapshots, variants, atoms, currentBodyMd, mediaAssets),
+    [snapshots, variants, atoms, currentBodyMd, mediaAssets],
   );
 
   useEffect(() => {
