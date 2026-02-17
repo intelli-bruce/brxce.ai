@@ -51,7 +51,7 @@ export default function BlockEditor({ contentId, bodyMd, onBodySync }: Props) {
   const [activeBlock, setActiveBlock] = useState<string | null>(null);
   const [editingBlock, setEditingBlock] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
-  const [commentText, setCommentText] = useState("");
+  const [commentTexts, setCommentTexts] = useState<Record<string, string>>({});
   const [showRevisions, setShowRevisions] = useState<string | null>(null);
   const [aiPrompt, setAiPrompt] = useState("");
   const [showAiInput, setShowAiInput] = useState<string | null>(null);
@@ -186,12 +186,12 @@ export default function BlockEditor({ contentId, bodyMd, onBodySync }: Props) {
       block_id: block.id,
       version: newVersion,
       body: editText,
-      trigger: commentText || "수동 편집",
+      trigger: commentTexts[block.id] || "수동 편집",
       actor: "user",
     });
 
     setEditingBlock(null);
-    setCommentText("");
+    setCommentTexts(prev => { const next = { ...prev }; delete next[block.id]; return next; });
     await loadBlocks();
     syncBodyMd();
   }
@@ -376,8 +376,8 @@ export default function BlockEditor({ contentId, bodyMd, onBodySync }: Props) {
                         autoFocus
                       />
                       <input
-                        value={commentText}
-                        onChange={(e) => setCommentText(e.target.value)}
+                        value={commentTexts[block.id] || ""}
+                        onChange={(e) => setCommentTexts(prev => ({ ...prev, [block.id]: e.target.value }))}
                         placeholder="변경 사유 (선택)"
                         className="w-full p-2 rounded-lg border border-[#333] bg-[#0a0a0a] text-xs text-[#ccc] outline-none focus:border-[#555]"
                       />
