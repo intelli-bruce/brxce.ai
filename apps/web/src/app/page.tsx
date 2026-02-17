@@ -239,9 +239,11 @@ export default function Home() {
         {/* Links */}
         <div className="w-full flex flex-col gap-3">
           {/* Section: 에이전틱 워크플로우 */}
-          <div className="flex items-center gap-3 mt-8 mb-1 text-[13px] font-semibold text-[#888] tracking-wide">
+          <div className="flex items-center gap-3 mt-8 mb-1 text-[15px] font-bold tracking-wide">
             <span className="flex-1 h-px bg-[#333]" />
-            에이전틱 워크플로우
+            <span className="bg-gradient-to-r from-[#ff6b6b] to-[#ffa500] bg-clip-text text-transparent">
+              에이전틱 워크플로우
+            </span>
             <span className="flex-1 h-px bg-[#333]" />
           </div>
 

@@ -11,6 +11,9 @@ import BlockEditor from "@/components/BlockEditor";
 import { ProseBody } from "@brxce/ui";
 import type { Campaign, CampaignAtom, CampaignVariant, GenerationConfig, FactCheckFlag } from "@/lib/campaign/types";
 import IdBadge from "@/components/IdBadge";
+import ChannelPreview, { CHANNEL_SPECS } from "@/components/campaign/ChannelPreview";
+import dynamic from "next/dynamic";
+const VersionCanvas = dynamic(() => import("@/components/campaign/version-canvas/VersionCanvas"), { ssr: false });
 
 const FUNNEL_COLORS: Record<string, string> = {
   tofu: "bg-green-500/20 text-green-400 border-green-500/30",
@@ -70,6 +73,7 @@ export default function CampaignCockpitPage() {
   const [pillarEditMode, setPillarEditMode] = useState(false);
   const [snapshots, setSnapshots] = useState<{ id: string; created_at: string; label: string }[]>([]);
   const [showSnapshots, setShowSnapshots] = useState(false);
+  const [showVersionCanvas, setShowVersionCanvas] = useState(false);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
   const sb = createSupabaseBrowser();
@@ -255,66 +259,122 @@ export default function CampaignCockpitPage() {
     setPillarEditMode(false);
   }
 
-  function renderAtomCard(atom: CampaignAtom) {
-    const atomVariants = variants[atom.id] || [];
-    const isExpanded = expandedAtom === atom.id;
-    const selectedVariant = atomVariants.find(v => v.is_selected);
+  function renderVariantCard(atom: CampaignAtom, variant: CampaignVariant) {
+    const spec = CHANNEL_SPECS[atom.channel];
+    const body = variant.output?.body || variant.output?.text || "";
+    const charLen = body.length;
+    const charPct = spec ? Math.round((charLen / spec.charLimit) * 100) : 0;
+    const isSelected = variant.is_selected;
 
     return (
-      <div key={atom.id} className="bg-[#141414] border border-[#222] rounded-xl overflow-hidden">
-        <div className="p-4 cursor-pointer hover:bg-[#1a1a1a] transition-colors" onClick={() => setExpandedAtom(isExpanded ? null : atom.id)}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-lg">{CHANNEL_ICONS[atom.channel] || "📄"}</span>
-              <span className="text-sm font-medium text-[#fafafa]">{atom.channel}</span>
-              <IdBadge id={atom.id} />
-              <span className="text-xs px-1.5 py-0.5 rounded bg-[#222] text-[#888]">{FORMAT_LABELS[atom.format]}</span>
-              {atom.is_pillar && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#3B82F6]/20 text-[#3B82F6] font-medium">PILLAR</span>}
-              <span className={`text-xs px-2 py-0.5 rounded ${ATOM_STATUS_COLORS[atom.status]}`}>{atom.status}</span>
-              {atom.status === 'generating' && <span className="text-xs text-yellow-400 animate-pulse">⏳ 생성 중...</span>}
-              {atomVariants.length > 0 && (
-                <button onClick={(e) => { e.stopPropagation(); router.push(`/campaigns/${id}/compare/${atom.id}`); }} className="text-xs text-[#4ECDC4] bg-transparent border-none cursor-pointer hover:underline">
-                  {atomVariants.length}개 variant →
+      <div
+        key={variant.id}
+        className={`bg-[#141414] rounded-xl overflow-hidden transition-all ${isSelected ? "border-2 border-[#FF6B35] shadow-[0_0_12px_rgba(255,107,53,0.15)]" : "border border-[#222]"}`}
+      >
+        <div className="flex flex-col lg:flex-row">
+          {/* Left: Channel mockup preview */}
+          <div className="p-4 border-b lg:border-b-0 lg:border-r border-[#222] flex-shrink-0">
+            <ChannelPreview channel={atom.channel} variant={variant} />
+          </div>
+
+          {/* Right: Meta info */}
+          <div className="p-4 flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-3">
+              {isSelected && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#FF6B35]/20 text-[#FF6B35] font-bold">✓ SELECTED</span>}
+              {variant.params?.tone && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#222] text-[#888]">{variant.params.tone}</span>}
+              <IdBadge id={variant.id} />
+            </div>
+
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs mb-3">
+              <div><span className="text-[#666]">Generation:</span> <span className="text-[#aaa]">#{variant.generation}</span></div>
+              <div><span className="text-[#666]">Model:</span> <span className="text-[#aaa]">{variant.model || "—"}</span></div>
+              <div><span className="text-[#666]">글자수:</span> <span className={`${charPct > 100 ? "text-red-400 font-bold" : "text-[#aaa]"}`}>{charLen.toLocaleString()}자</span></div>
+              <div><span className="text-[#666]">제한 대비:</span> <span className={`${charPct > 100 ? "text-red-400 font-bold" : charPct > 90 ? "text-yellow-400" : "text-[#aaa]"}`}>{charPct}%</span></div>
+              {variant.score != null && <div><span className="text-[#666]">Score:</span> <span className="text-[#aaa]">{variant.score}/5</span></div>}
+              {variant.cost_tokens > 0 && <div><span className="text-[#666]">Cost:</span> <span className="text-[#aaa]">{variant.cost_tokens.toLocaleString()} tok</span></div>}
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex gap-2 flex-wrap">
+              {!isSelected && (
+                <button
+                  onClick={() => handleVariantSelect(atom.id, variant.id)}
+                  className="px-3 py-1.5 rounded-lg bg-[#FF6B35] text-white text-xs cursor-pointer border-none hover:bg-[#e55a2b]"
+                >
+                  ✓ 선택
                 </button>
               )}
-            </div>
-            <div className="flex items-center gap-2">
-              {selectedVariant && (
-                <span className="text-xs text-[#888] max-w-[200px] truncate">
-                  {selectedVariant.output?.body?.substring(0, 50)}...
-                </span>
-              )}
-              <span className="text-xs text-[#555]">{atom.publish_method === "auto" ? "🤖" : "📋"}</span>
-              <span className="text-[#555] text-sm">{isExpanded ? '▼' : '▶'}</span>
+              <button
+                onClick={() => {
+                  const fb = prompt("피드백 (분기 이유):");
+                  if (fb) handleBranch(atom.id, variant.id, fb);
+                }}
+                className="px-3 py-1.5 rounded-lg border border-[#333] text-[#888] text-xs cursor-pointer bg-transparent hover:text-[#fafafa] hover:border-[#555]"
+              >
+                🔀 분기
+              </button>
+              <button
+                onClick={() => router.push(`/campaigns/${id}/compare/${atom.id}`)}
+                className="px-3 py-1.5 rounded-lg border border-[#333] text-[#4ECDC4] text-xs cursor-pointer bg-transparent hover:border-[#4ECDC4]/50"
+              >
+                비교 →
+              </button>
             </div>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  function renderAtomCard(atom: CampaignAtom) {
+    const atomVariants = variants[atom.id] || [];
+    const isExpanded = expandedAtom === atom.id;
+
+    return (
+      <div key={atom.id} className="mb-4">
+        {/* Atom header */}
+        <div
+          className="flex items-center gap-3 p-3 bg-[#0f0f0f] rounded-lg cursor-pointer hover:bg-[#161616] transition-colors"
+          onClick={() => setExpandedAtom(isExpanded ? null : atom.id)}
+        >
+          <IdBadge id={atom.id} />
+          <span className="text-xs px-1.5 py-0.5 rounded bg-[#222] text-[#888]">{FORMAT_LABELS[atom.format]}</span>
+          <span className={`text-xs px-2 py-0.5 rounded ${ATOM_STATUS_COLORS[atom.status]}`}>{atom.status}</span>
+          {atom.status === 'generating' && <span className="text-xs text-yellow-400 animate-pulse">⏳ 생성 중...</span>}
+          <span className="text-[10px] text-[#555]">{atomVariants.length}개 variant</span>
+          <div className="flex-1" />
+          <div className="flex items-center gap-2">
+            {(atom.status === 'pending' || atom.status === 'selected') && (
+              <button onClick={(e) => { e.stopPropagation(); setGenerateAtom(atom); }} className="px-2.5 py-1 rounded-lg bg-[#FF6B35] text-white text-[11px] cursor-pointer border-none hover:bg-[#e55a2b]">🚀 생성</button>
+            )}
+            {atom.status === 'selected' && (
+              <button onClick={(e) => { e.stopPropagation(); updateAtomStatus(atom.id, "fact_check"); }} className="px-2.5 py-1 rounded-lg border border-orange-500/30 text-orange-400 text-[11px] cursor-pointer bg-transparent hover:bg-orange-500/10">📋 팩트체크</button>
+            )}
+            {atom.status === 'fact_check' && (
+              <button onClick={(e) => { e.stopPropagation(); updateAtomStatus(atom.id, "approved"); }} className="px-2.5 py-1 rounded-lg border border-emerald-500/30 text-emerald-400 text-[11px] cursor-pointer bg-transparent hover:bg-emerald-500/10">✅ 승인</button>
+            )}
+            {atom.status === 'approved' && (
+              <button onClick={(e) => { e.stopPropagation(); setScheduleAtom(atom); }} className="px-2.5 py-1 rounded-lg border border-indigo-500/30 text-indigo-400 text-[11px] cursor-pointer bg-transparent hover:bg-indigo-500/10">📅 스케줄</button>
+            )}
+            <span className="text-[#555] text-sm">{isExpanded ? '▼' : '▶'}</span>
+          </div>
+        </div>
+
+        {/* Expanded: variant cards */}
         {isExpanded && (
-          <div className="border-t border-[#222] p-4">
-            <div className="flex gap-2 mb-4">
-              {(atom.status === 'pending' || atom.status === 'selected') && (
-                <button onClick={(e) => { e.stopPropagation(); setGenerateAtom(atom); }} className="px-3 py-1.5 rounded-lg bg-[#FF6B35] text-white text-xs cursor-pointer border-none hover:bg-[#e55a2b]">🚀 생성하기</button>
-              )}
-              {atom.status === 'selected' && (
-                <button onClick={() => updateAtomStatus(atom.id, "fact_check")} className="px-3 py-1.5 rounded-lg border border-orange-500/30 text-orange-400 text-xs cursor-pointer bg-transparent hover:bg-orange-500/10">📋 팩트체크</button>
-              )}
-              {atom.status === 'fact_check' && (
-                <button onClick={() => updateAtomStatus(atom.id, "approved")} className="px-3 py-1.5 rounded-lg border border-emerald-500/30 text-emerald-400 text-xs cursor-pointer bg-transparent hover:bg-emerald-500/10">✅ 승인</button>
-              )}
-              {atom.status === 'approved' && (
-                <button onClick={() => setScheduleAtom(atom)} className="px-3 py-1.5 rounded-lg border border-indigo-500/30 text-indigo-400 text-xs cursor-pointer bg-transparent hover:bg-indigo-500/10">📅 스케줄</button>
-              )}
-            </div>
-            {atomVariants.length > 0 && (
-              <div className="mb-4">
-                <VariantCompare variants={atomVariants} atomId={atom.id} onSelect={(vid) => handleVariantSelect(atom.id, vid)} onBranch={(vid, feedback) => handleBranch(atom.id, vid, feedback)} />
+          <div className="mt-3 flex flex-col gap-3">
+            {atomVariants.length > 0 ? (
+              atomVariants.map(v => renderVariantCard(atom, v))
+            ) : (
+              <div className="p-4 border border-dashed border-[#333] rounded-xl text-center text-xs text-[#555]">
+                variant 없음 — 생성하기를 눌러주세요
               </div>
             )}
             {atom.fact_check_flags && atom.fact_check_flags.length > 0 && (
               <FactCheckPanel atomId={atom.id} flags={atom.fact_check_flags} onUpdate={(flags) => { setAtoms(prev => prev.map(a => a.id === atom.id ? { ...a, fact_check_flags: flags } : a)); }} />
             )}
             {atom.error_log && (
-              <div className="mt-3 p-3 bg-red-500/5 border border-red-500/20 rounded-lg text-xs text-red-400">{atom.error_log}</div>
+              <div className="p-3 bg-red-500/5 border border-red-500/20 rounded-lg text-xs text-red-400">{atom.error_log}</div>
             )}
           </div>
         )}
@@ -444,6 +504,12 @@ export default function CampaignCockpitPage() {
                   📋 히스토리 ({snapshots.length})
                 </button>
                 <button
+                  onClick={() => setShowVersionCanvas(!showVersionCanvas)}
+                  className={`text-xs px-2 py-0.5 rounded border cursor-pointer ${showVersionCanvas ? 'border-[#FF6B35] text-[#FF6B35] bg-[#FF6B35]/10' : 'text-[#888] border-transparent bg-transparent hover:text-[#fafafa]'}`}
+                >
+                  🗺️ 캔버스
+                </button>
+                <button
                   onClick={() => saveSnapshot("manual")}
                   className="text-xs text-[#888] bg-transparent border-none cursor-pointer hover:text-[#fafafa]"
                 >
@@ -496,6 +562,25 @@ export default function CampaignCockpitPage() {
             </div>
           )}
 
+          {/* Version Canvas */}
+          {showVersionCanvas && (
+            <div className="border-b border-[#222]" style={{ height: 500 }}>
+              <VersionCanvas
+                snapshots={snapshots.map(s => ({ ...s, body_md: null }))}
+                variants={Object.values(variants).flat()}
+                atoms={atoms}
+                currentBodyMd={sourceContent.body_md}
+                onSnapshotClick={(snapId) => {
+                  if (confirm("이 스냅샷으로 복원할까요?")) restoreSnapshot(snapId);
+                }}
+                onVariantClick={(varId) => {
+                  const atom = atoms.find(a => variants[a.id]?.some(v => v.id === varId));
+                  if (atom) router.push(`/campaigns/${id}/compare/${atom.id}`);
+                }}
+              />
+            </div>
+          )}
+
           {/* Content body */}
           {showContentPreview && (
             <div className="p-6">
@@ -544,27 +629,76 @@ export default function CampaignCockpitPage() {
             </div>
           )}
 
-          {/* Derivative section */}
+          {/* Derivative section — channel-grouped */}
           <div className="mb-6">
-            <div className="text-xs font-semibold uppercase tracking-wider text-[#06B6D4] mb-2 flex items-center gap-2">
+            <div className="text-xs font-semibold uppercase tracking-wider text-[#06B6D4] mb-4 flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-[#06B6D4]" />
               Derivatives
               <span className="text-[#555] normal-case font-normal">— Pillar에서 파생</span>
               {!pillarReady && <span className="text-[10px] text-yellow-500 font-normal">(Pillar 확정 후 생성 가능)</span>}
             </div>
-            <div className="border-l-2 border-[#06B6D4]/30 pl-4">
-              {derivatives.length > 0 ? (
-                <div className="flex flex-col gap-3">
-                  {derivatives.map(atom => renderAtomCard(atom))}
+
+            {derivatives.length > 0 ? (() => {
+              // Group by channel
+              const channelGroups: Record<string, CampaignAtom[]> = {};
+              derivatives.forEach(a => {
+                if (!channelGroups[a.channel]) channelGroups[a.channel] = [];
+                channelGroups[a.channel].push(a);
+              });
+
+              return (
+                <div className="flex flex-col gap-6">
+                  {Object.entries(channelGroups).map(([channel, channelAtoms]) => {
+                    const spec = CHANNEL_SPECS[channel];
+                    const totalVariants = channelAtoms.reduce((sum, a) => sum + (variants[a.id]?.length || 0), 0);
+                    const statusCounts: Record<string, number> = {};
+                    channelAtoms.forEach(a => { statusCounts[a.status] = (statusCounts[a.status] || 0) + 1; });
+
+                    return (
+                      <div key={channel} className="bg-[#141414] border border-[#222] rounded-xl overflow-hidden">
+                        {/* Channel group header */}
+                        <div className="p-4 border-b border-[#222]">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <span className="text-xl">{CHANNEL_ICONS[channel] || "📄"}</span>
+                              <span className="text-sm font-bold text-[#fafafa] capitalize">{channel}</span>
+                              <span className="text-[10px] text-[#666]">{channelAtoms.length}개 atom · {totalVariants}개 variant</span>
+                              {/* Status badges */}
+                              <div className="flex gap-1">
+                                {Object.entries(statusCounts).map(([st, cnt]) => (
+                                  <span key={st} className={`text-[10px] px-1.5 py-0.5 rounded ${ATOM_STATUS_COLORS[st]}`}>
+                                    {st} {cnt}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                          {/* Channel spec summary */}
+                          {spec && (
+                            <div className="mt-2 flex gap-4 text-[10px] text-[#555]">
+                              <span>📝 {spec.charLimit.toLocaleString()}자</span>
+                              <span>🖼 {spec.imageRatio} ({spec.imagePx})</span>
+                              <span>📎 최대 {spec.maxImages}장</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Atoms within this channel */}
+                        <div className="p-4">
+                          {channelAtoms.map(atom => renderAtomCard(atom))}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              ) : (
-                <div className="p-4 border border-dashed border-[#333] rounded-xl text-center">
-                  <span className="text-xs text-[#555]">
-                    {pillarReady ? "파생 콘텐츠를 추가하세요" : "Pillar 확정 후 파생 생성 가능"}
-                  </span>
-                </div>
-              )}
-            </div>
+              );
+            })() : (
+              <div className="p-4 border border-dashed border-[#333] rounded-xl text-center">
+                <span className="text-xs text-[#555]">
+                  {pillarReady ? "파생 콘텐츠를 추가하세요" : "Pillar 확정 후 파생 생성 가능"}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Other atoms (legacy, no pillar link) */}
