@@ -46,7 +46,6 @@ const STATUS_COLORS: Record<string, string> = {
 const STATUSES = ["idea", "draft", "fact-check", "ready", "published", "archived"];
 const CATEGORIES = ["all", "가이드북", "실전 활용법", "크리에이터", "tech"];
 
-type ViewMode = "card" | "table";
 
 /* ── Sortable Row ── */
 function SortableRow({
@@ -197,7 +196,7 @@ export default function ContentsPage() {
   const [filter, setFilter] = useState("all");
   const [category, setCategory] = useState("all");
   const [search, setSearch] = useState("");
-  const [viewMode, setViewMode] = useState<ViewMode>("card");
+  
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -327,13 +326,7 @@ export default function ContentsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">콘텐츠</h1>
-        <div className="flex items-center gap-2">
-          <div className="flex rounded-lg border border-[#333] overflow-hidden">
-            <button onClick={() => setViewMode("card")} className={`px-3 py-1.5 text-xs border-none cursor-pointer ${viewMode === "card" ? "bg-[#fafafa] text-[#0a0a0a]" : "bg-[#0a0a0a] text-[#888] hover:text-[#fafafa]"}`}>카드</button>
-            <button onClick={() => setViewMode("table")} className={`px-3 py-1.5 text-xs border-none cursor-pointer ${viewMode === "table" ? "bg-[#fafafa] text-[#0a0a0a]" : "bg-[#0a0a0a] text-[#888] hover:text-[#fafafa]"}`}>테이블</button>
-          </div>
-          <Link href="/contents/new" className="px-4 py-2 rounded-lg bg-[#fafafa] text-[#0a0a0a] text-sm font-semibold no-underline hover:bg-[#e0e0e0]">+ 새 콘텐츠</Link>
-        </div>
+        <Link href="/contents/new" className="px-4 py-2 rounded-lg bg-[#fafafa] text-[#0a0a0a] text-sm font-semibold no-underline hover:bg-[#e0e0e0]">+ 새 콘텐츠</Link>
       </div>
 
       {/* Filters */}
@@ -353,35 +346,8 @@ export default function ContentsPage() {
       </div>
 
       {/* Card View */}
-      {viewMode === "card" && (
-        <div className="flex flex-col gap-2">
-          {contents.map((c) => (
-            <div key={c.id} className="flex items-center justify-between p-4 bg-[#141414] border border-[#222] rounded-xl hover:border-[#444] transition-colors">
-              <Link href={`/contents/${c.id}`} className="flex-1 no-underline min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-[15px] text-[#fafafa] font-medium">{c.title}</span>
-                </div>
-                <div className="text-xs text-[#666] mt-1">
-                  {c.category && <span>{c.category}</span>}
-                  {c.subcategory && <span> · {c.subcategory}</span>}
-                  <span> · {new Date(c.created_at).toLocaleDateString("ko-KR")}</span>
-                </div>
-              </Link>
-              <div className="flex items-center gap-2 shrink-0 ml-3">
-                <select value={c.status} onClick={(e) => e.stopPropagation()} onChange={(e) => updateStatus(c.id, e.target.value)} className={`text-xs font-medium px-2 py-1 rounded-lg border border-[#333] bg-[#0a0a0a] outline-none cursor-pointer ${STATUS_COLORS[c.status] || "text-[#888]"}`}>
-                  {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
-                {c.slug && <a href={`/guides/${c.slug}?preview=brxce-preview-2026`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="px-2.5 py-1 rounded-lg border border-[#333] text-xs text-[#888] no-underline hover:text-[#fafafa] hover:border-[#555] transition-colors">👁️</a>}
-              </div>
-            </div>
-          ))}
-          {contents.length === 0 && <p className="text-[#666] text-sm">콘텐츠가 없습니다.</p>}
-        </div>
-      )}
-
       {/* Table View with DnD */}
-      {viewMode === "table" && (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <div className="space-y-8">
             {(category === "all" ? Object.entries(grouped) : [[category, contents]]).map(([cat, items]) => {
               const subs = subGrouped(items as Content[]);
@@ -448,7 +414,6 @@ export default function ContentsPage() {
             )}
           </DragOverlay>
         </DndContext>
-      )}
     </div>
   );
 }
