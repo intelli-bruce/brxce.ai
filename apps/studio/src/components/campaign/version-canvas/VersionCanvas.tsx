@@ -47,7 +47,7 @@ export interface Variant {
   atom_id: string;
   generation: number;
   model: string | null;
-  params: { tone?: string; feedback?: string; merge_note?: string } | null;
+  params: { tone?: string; feedback?: string; merge_note?: string; edit_note?: string } | null;
   output: { body?: string; text?: string } | null;
   is_selected: boolean;
   score: number | null;

@@ -25,6 +25,9 @@ export default function CampaignCanvasPage() {
   const [mediaAssets, setMediaAssets] = useState<MediaAsset[]>([]);
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
   const [selectedSnapshot, setSelectedSnapshot] = useState<Snapshot | null>(null);
+  const [editingBody, setEditingBody] = useState<string | null>(null);
+  const [editNote, setEditNote] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
     // Campaign
@@ -151,6 +154,8 @@ export default function CampaignCanvasPage() {
               const v = variants.find(v => v.id === varId);
               setSelectedVariant(v || null);
               setSelectedSnapshot(null);
+              setEditingBody(null);
+              setEditNote("");
             }}
           />
         </div>
@@ -173,6 +178,34 @@ export default function CampaignCanvasPage() {
             {selectedVariant && (() => {
               const atom = atoms.find(a => a.id === selectedVariant.atom_id);
               const body = selectedVariant.output?.body || selectedVariant.output?.text || "";
+              const isEditing = editingBody !== null;
+              const currentBody = isEditing ? editingBody : body;
+              const hasChanges = isEditing && editingBody !== body;
+
+              const saveAsNewVersion = async () => {
+                if (!hasChanges || !editingBody) return;
+                setSaving(true);
+                const outputKey = selectedVariant.output?.body ? "body" : "text";
+                const { data: newVar, error } = await sb.from("campaign_variants").insert({
+                  atom_id: selectedVariant.atom_id,
+                  generation: selectedVariant.generation + 1,
+                  model: "bruce-manual",
+                  params: { edit_note: editNote || "수동 편집", tone: selectedVariant.params?.tone },
+                  output: { [outputKey]: editingBody },
+                  is_selected: true,
+                  parent_variant_ids: [selectedVariant.id],
+                }).select("id").single();
+
+                if (!error && newVar) {
+                  // Deselect old variant
+                  await sb.from("campaign_variants").update({ is_selected: false }).eq("id", selectedVariant.id);
+                  setEditingBody(null);
+                  setEditNote("");
+                  await load();
+                }
+                setSaving(false);
+              };
+
               return (
                 <div className="p-4 space-y-4">
                   {/* Meta */}
@@ -188,14 +221,63 @@ export default function CampaignCanvasPage() {
                     <div>ID: <span className="font-mono">{selectedVariant.id}</span></div>
                     <div>{new Date(selectedVariant.created_at).toLocaleString("ko-KR")}</div>
                     {selectedVariant.score != null && <div>점수: {"★".repeat(selectedVariant.score)}{"☆".repeat(5 - selectedVariant.score)}</div>}
+                    {selectedVariant.params?.edit_note && <div>수정: {selectedVariant.params.edit_note}</div>}
                   </div>
-                  {/* Full body */}
-                  <div className="bg-[#141414] rounded-lg p-3 border border-[#222]">
-                    <div className="text-[10px] text-[#666] mb-2">{body.length}자</div>
-                    <div className="text-[12px] text-[#e0e0e0] whitespace-pre-wrap leading-relaxed">
-                      {body || "콘텐츠 없음"}
+
+                  {/* Editable body */}
+                  <div className="bg-[#141414] rounded-lg border border-[#222] overflow-hidden">
+                    <div className="flex items-center justify-between px-3 py-1.5 border-b border-[#222]">
+                      <span className="text-[10px] text-[#666]">{currentBody.length}자</span>
+                      {!isEditing ? (
+                        <button
+                          onClick={() => setEditingBody(body)}
+                          className="text-[10px] text-[#FF6B35] bg-transparent border-none cursor-pointer hover:underline"
+                        >
+                          ✏️ 편집
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => { setEditingBody(null); setEditNote(""); }}
+                          className="text-[10px] text-[#666] bg-transparent border-none cursor-pointer hover:text-[#fafafa]"
+                        >
+                          취소
+                        </button>
+                      )}
                     </div>
+                    {isEditing ? (
+                      <textarea
+                        value={editingBody}
+                        onChange={(e) => setEditingBody(e.target.value)}
+                        className="w-full bg-transparent text-[12px] text-[#e0e0e0] p-3 leading-relaxed resize-none outline-none min-h-[200px]"
+                        autoFocus
+                      />
+                    ) : (
+                      <div className="text-[12px] text-[#e0e0e0] whitespace-pre-wrap leading-relaxed p-3">
+                        {body || "콘텐츠 없음"}
+                      </div>
+                    )}
                   </div>
+
+                  {/* Save as new version */}
+                  {hasChanges && (
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        placeholder="수정 메모 (선택)"
+                        value={editNote}
+                        onChange={(e) => setEditNote(e.target.value)}
+                        className="w-full text-[11px] bg-[#1a1a1a] text-[#e0e0e0] border border-[#333] rounded-lg px-3 py-2 outline-none focus:border-[#FF6B35]"
+                      />
+                      <button
+                        onClick={saveAsNewVersion}
+                        disabled={saving}
+                        className="w-full text-xs py-2.5 rounded-lg bg-[#FF6B35] text-white font-semibold cursor-pointer hover:bg-[#FF6B35]/90 disabled:opacity-50"
+                      >
+                        {saving ? "저장 중..." : "새 버전으로 저장"}
+                      </button>
+                    </div>
+                  )}
+
                   {/* Actions */}
                   <div className="flex gap-2">
                     <button
