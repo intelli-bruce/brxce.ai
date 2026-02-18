@@ -218,7 +218,7 @@ export default function CampaignCanvasPage() {
                   </div>
                   <div className="text-[10px] text-[#555] space-y-1">
                     <div>모델: {selectedVariant.model || "—"}</div>
-                    <div>ID: <span className="font-mono">{selectedVariant.id}</span></div>
+                    <div>ID: <span className="font-mono cursor-pointer hover:text-[#FF6B35] transition-colors" onClick={() => { navigator.clipboard.writeText(selectedVariant.id); }}>{selectedVariant.id}</span></div>
                     <div>{new Date(selectedVariant.created_at).toLocaleString("ko-KR")}</div>
                     {selectedVariant.score != null && <div>점수: {"★".repeat(selectedVariant.score)}{"☆".repeat(5 - selectedVariant.score)}</div>}
                     {selectedVariant.params?.edit_note && <div>수정: {selectedVariant.params.edit_note}</div>}
@@ -293,7 +293,7 @@ export default function CampaignCanvasPage() {
               <div className="p-4 space-y-4">
                 <div className="text-[10px] text-[#555] space-y-1">
                   <div>라벨: {selectedSnapshot.label || "—"}</div>
-                  <div>ID: <span className="font-mono">{selectedSnapshot.id}</span></div>
+                  <div>ID: <span className="font-mono cursor-pointer hover:text-[#FF6B35] transition-colors" onClick={() => { navigator.clipboard.writeText(selectedSnapshot.id); }}>{selectedSnapshot.id}</span></div>
                   <div>{new Date(selectedSnapshot.created_at).toLocaleString("ko-KR")}</div>
                 </div>
                 <div className="bg-[#141414] rounded-lg p-3 border border-[#222]">
