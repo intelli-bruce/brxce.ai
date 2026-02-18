@@ -265,18 +265,6 @@ export default function Home() {
           AWC - 에이전틱 워크플로우 클럽
         </a>
 
-        <button
-          onClick={() => {
-            setInquiryDone(false);
-            setEmail("");
-            setInquiryOpen(true);
-          }}
-          className="flex items-center justify-center gap-2.5 w-full py-3.5 px-5 rounded-xl bg-[#1a1a1a] border border-[#333] text-[#fafafa] text-[15px] font-semibold hover:bg-[#252525] hover:border-[#444] hover:-translate-y-0.5 transition-all cursor-pointer mb-3"
-        >
-          <span>✉️</span>
-          에이전틱 워크플로우 도입 문의
-        </button>
-
         {/* Links */}
         <div className="w-full flex flex-col gap-3">
           {/* Section: 에이전틱 워크플로우 */}
@@ -379,6 +367,12 @@ export default function Home() {
             <div className="text-[13px] text-[#888] mb-1">매주 화요일</div>
             <div className="text-[17px] font-bold mb-3">에이전틱 워크플로우 인사이트</div>
             <SubscribeForm />
+            <button
+              onClick={() => { setInquiryDone(false); setEmail(""); setInquiryOpen(true); }}
+              className="mt-4 text-[12px] text-[#555] hover:text-[#999] bg-transparent border-none cursor-pointer transition-colors"
+            >
+              에이전틱 워크플로우 도입 문의 →
+            </button>
           </div>
         </div>
 
