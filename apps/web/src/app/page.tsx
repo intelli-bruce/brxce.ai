@@ -94,7 +94,7 @@ function Modal({
 
 /* ── Quote Carousel ── */
 const quotes = [
-  { text: "AI가 당신의 일자리를 빼앗는 게 아니라, AI를 활용하는 사람이 당신의 일자리를 가져갈 것이다.", author: "Jensen Huang", title: "CEO, NVIDIA", avatar: "/jensen-huang.jpg" },
+  { text: "AI가 당신의 일자리를 빼앗는 게 아니라,\nAI를 활용하는 사람이 당신의 일자리를 가져갈 것이다.", author: "Jensen Huang", title: "CEO, NVIDIA", avatar: "/jensen-huang.jpg" },
 ];
 
 function QuoteCarousel() {
@@ -122,7 +122,7 @@ function QuoteCarousel() {
           style={{ backgroundImage: `url(${quotes[current].avatar})`, filter: "blur(1px) brightness(0.55)", transform: "scale(1.05)" }}
         />
         <div className="relative p-5 min-h-[140px] flex flex-col justify-center">
-          <div className="text-[14px] text-[#e0e0e0] leading-[1.7] text-center italic mb-4 drop-shadow-lg">
+          <div className="text-[14px] text-[#e0e0e0] leading-[1.7] text-center italic mb-4 drop-shadow-lg whitespace-pre-line">
             &ldquo;{quotes[current].text}&rdquo;
           </div>
           <div className="flex items-center justify-center gap-2.5">
@@ -329,7 +329,7 @@ export default function Home() {
             rel="noopener"
             className="flex items-center justify-center gap-2.5 w-full py-4 px-5 rounded-xl bg-[#141414] border border-[#222] text-[#fafafa] text-[15px] font-medium hover:bg-[#1a1a1a] hover:border-[#444] hover:-translate-y-0.5 transition-all no-underline"
           >
-            <span>🚀</span>
+            <Image src="/brxce-logo.png" alt="BRXCE" width={22} height={22} className="rounded" />
             BRXCE — 프로젝트 관리
           </a>
 
@@ -346,7 +346,7 @@ export default function Home() {
             rel="noopener"
             className="flex items-center justify-center gap-2.5 w-full py-4 px-5 rounded-xl bg-[#141414] border border-[#222] text-[#fafafa] text-[15px] font-medium hover:bg-[#1a1a1a] hover:border-[#444] hover:-translate-y-0.5 transition-all no-underline"
           >
-            <span>⚡</span>
+            <Image src="/intelli-logo.png" alt="IntelliEffect" width={22} height={22} className="rounded" />
             인텔리이펙트
           </a>
         </div>

@@ -237,9 +237,35 @@ function buildGraph(
         .filter((m) => m.source_atom_id === atomId && m.asset_type?.startsWith("image"))
         .map((m) => m.storage_url);
 
+      // Check if any variant in this gen was merged — add merge meta node once
+      const hasMerged = genVariants.some((v) => v.params?.merged);
+      let mergeAnchor = prevGenAnchor;
+      if (hasMerged) {
+        const mergeMetaId = `meta-merge-${atomId}-g${gen}`;
+        const mergeNote = genVariants.find((v) => v.params?.merge_note)?.params?.merge_note || "병합";
+        nodes.push({
+          id: mergeMetaId,
+          type: "meta",
+          position: { x: 0, y: 0 },
+          data: {
+            message: `⇄ ${mergeNote}`,
+            type: "edit",
+          } satisfies MetaNodeData,
+        });
+        edges.push({
+          id: `edge-${prevGenAnchor}-${mergeMetaId}`,
+          source: prevGenAnchor,
+          target: mergeMetaId,
+          type: "smoothstep",
+          style: { stroke: "#a855f7", strokeWidth: 2, strokeDasharray: "4" },
+        });
+        mergeAnchor = mergeMetaId;
+      }
+
       genVariants.forEach((v) => {
         const vId = `var-${v.id}`;
         const body = v.output?.body || v.output?.text || "";
+        const sourceAnchor = v.params?.merged ? mergeAnchor : prevGenAnchor;
         nodes.push({
           id: vId,
           type: "variant",
@@ -260,12 +286,12 @@ function buildGraph(
           } satisfies VariantNodeData,
         });
         edges.push({
-          id: `edge-${prevGenAnchor}-${vId}`,
-          source: prevGenAnchor,
+          id: `edge-${sourceAnchor}-${vId}`,
+          source: sourceAnchor,
           target: vId,
           type: "smoothstep",
           style: {
-            stroke: v.is_selected ? "#4ECDC4" : "#555",
+            stroke: v.params?.merged ? "#a855f7" : v.is_selected ? "#4ECDC4" : "#555",
             strokeWidth: v.is_selected ? 2.5 : 1.5,
           },
           animated: v.is_selected,
