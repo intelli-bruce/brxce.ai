@@ -2,6 +2,7 @@
 
 import { memo } from "react";
 import { Handle, Position, type Node } from "@xyflow/react";
+import { SiThreads, SiX, SiLinkedin } from "@icons-pack/react-simple-icons";
 
 export interface VariantNodeData extends Record<string, unknown> {
   variantId: string;
@@ -28,7 +29,7 @@ function ThreadsMockup({ body }: { body: string }) {
     <div className="bg-[#101010] w-full">
       {/* Threads header bar */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-[#222]">
-        <img src="/icons/threads.svg" alt="" className="w-4 h-4 invert opacity-80" />
+        <SiThreads size={14} color="#fafafa" />
         <span className="text-[10px] font-semibold text-[#fafafa]">Threads</span>
       </div>
       <div className="p-3">
@@ -63,7 +64,7 @@ function XMockup({ body }: { body: string }) {
     <div className="bg-black w-full">
       {/* X header bar */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-[#2f3336]">
-        <img src="/icons/x.svg" alt="" className="w-3.5 h-3.5 invert" />
+        <SiX size={14} color="#e7e9ea" />
         <span className="text-[10px] font-semibold text-[#e7e9ea]">Post</span>
       </div>
       <div className="p-3">
@@ -99,7 +100,7 @@ function LinkedInMockup({ body }: { body: string }) {
     <div className="bg-[#1b1f23] w-full">
       {/* LinkedIn header bar */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-[#38434f]">
-        <img src="/icons/linkedin.svg" alt="" className="w-4 h-4" style={{ filter: "brightness(0) invert(0.55) sepia(1) saturate(5) hue-rotate(180deg)" }} />
+        <SiLinkedin size={14} color="#71b7fb" />
         <span className="text-[10px] font-semibold text-[#ffffffe6]">LinkedIn</span>
       </div>
       <div className="p-3">
