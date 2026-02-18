@@ -55,7 +55,7 @@ export default async function GuidesPage({
 
   // Direct fetch to bypass any SSR client issues
   const res = await fetch(
-    `${supabaseUrl}/rest/v1/contents?select=id,title,slug,hook,category,tags,media_urls,status,created_at&status=in.(published,draft,review,ready)&order=created_at.asc`,
+    `${supabaseUrl}/rest/v1/contents?select=id,title,slug,hook,category,subcategory,tags,media_urls,status,sort_order,created_at&status=in.(published,draft,review,ready)&order=sort_order.asc.nullsfirst,created_at.asc`,
     {
       headers: {
         apikey: serviceKey,
@@ -71,15 +71,16 @@ export default async function GuidesPage({
   // Show both "가이드북" and "가이드" category
   const guidebook = guides.filter((g: any) => g.category === "가이드북" || g.category === "가이드");
 
-  // Split guidebook by level tags
-  function byLevel(items: any[], tagMatch: string) {
+  // Split guidebook by subcategory (primary) with tag fallback
+  function byLevel(items: any[], level: { key: string; tagMatch: string; label: string }) {
     return items.filter((g: any) =>
-      g.tags?.some((t: string) => t.toLowerCase().includes(tagMatch))
-    );
+      g.subcategory === level.label.split(" — ")[0] || // match "Lv.1 입문"
+      g.tags?.some((t: string) => t.toLowerCase().includes(level.tagMatch))
+    ).sort((a: any, b: any) => (a.sort_order || 999) - (b.sort_order || 999));
   }
 
   // Guidebook items not matching any level
-  const guidebookLeveled = GUIDEBOOK_LEVELS.flatMap((l) => byLevel(guidebook, l.tagMatch));
+  const guidebookLeveled = GUIDEBOOK_LEVELS.flatMap((l) => byLevel(guidebook, l));
   const guidebookOther = guidebook.filter((g: any) => !guidebookLeveled.includes(g));
 
   return (
@@ -91,7 +92,7 @@ export default async function GuidesPage({
         {/* 📘 가이드북 */}
         <div className="mb-12">
           {GUIDEBOOK_LEVELS.map((level, i) => {
-            const items = byLevel(guidebook, level.tagMatch);
+            const items = byLevel(guidebook, level);
             return (
               <GuideSection
                 key={level.key}
