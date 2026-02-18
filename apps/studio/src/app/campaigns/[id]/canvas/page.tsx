@@ -162,7 +162,7 @@ export default function CampaignCanvasPage() {
 
         {/* Inspector Panel */}
         {(selectedVariant || selectedSnapshot) && (
-          <div className="w-[400px] border-l border-[#222] bg-[#0f0f0f] overflow-y-auto flex-shrink-0">
+          <div className="w-[400px] border-l border-[#222] bg-[#0f0f0f] flex flex-col flex-shrink-0 overflow-hidden">
             <div className="flex items-center justify-between px-4 py-2 border-b border-[#222]">
               <span className="text-xs font-semibold text-[#fafafa]">
                 {selectedVariant ? "🧬 Variant" : "📸 스냅샷"}
@@ -207,7 +207,7 @@ export default function CampaignCanvasPage() {
               };
 
               return (
-                <div className="p-4 space-y-4">
+                <div className="p-4 space-y-4 flex flex-col h-full">
                   {/* Meta */}
                   <div className="flex flex-wrap gap-2 text-[10px]">
                     <span className="px-2 py-0.5 rounded bg-[#FF6B35]/20 text-[#FF6B35] font-bold">G{selectedVariant.generation}</span>
@@ -224,18 +224,11 @@ export default function CampaignCanvasPage() {
                     {selectedVariant.params?.edit_note && <div>수정: {selectedVariant.params.edit_note}</div>}
                   </div>
 
-                  {/* Editable body */}
-                  <div className="bg-[#141414] rounded-lg border border-[#222] overflow-hidden">
-                    <div className="flex items-center justify-between px-3 py-1.5 border-b border-[#222]">
+                  {/* Editable body — click to edit, fills remaining height */}
+                  <div className="bg-[#141414] rounded-lg border border-[#222] overflow-hidden flex-1 flex flex-col min-h-0">
+                    <div className="flex items-center justify-between px-3 py-1.5 border-b border-[#222] flex-shrink-0">
                       <span className="text-[10px] text-[#666]">{currentBody.length}자</span>
-                      {!isEditing ? (
-                        <button
-                          onClick={() => setEditingBody(body)}
-                          className="text-[10px] text-[#FF6B35] bg-transparent border-none cursor-pointer hover:underline"
-                        >
-                          ✏️ 편집
-                        </button>
-                      ) : (
+                      {isEditing && (
                         <button
                           onClick={() => { setEditingBody(null); setEditNote(""); }}
                           className="text-[10px] text-[#666] bg-transparent border-none cursor-pointer hover:text-[#fafafa]"
@@ -248,11 +241,13 @@ export default function CampaignCanvasPage() {
                       <textarea
                         value={editingBody}
                         onChange={(e) => setEditingBody(e.target.value)}
-                        className="w-full bg-transparent text-[12px] text-[#e0e0e0] p-3 leading-relaxed resize-none outline-none min-h-[200px]"
-                        autoFocus
+                        className="w-full flex-1 bg-transparent text-[12px] text-[#e0e0e0] p-3 leading-relaxed resize-none outline-none"
                       />
                     ) : (
-                      <div className="text-[12px] text-[#e0e0e0] whitespace-pre-wrap leading-relaxed p-3">
+                      <div
+                        onClick={() => setEditingBody(body)}
+                        className="text-[12px] text-[#e0e0e0] whitespace-pre-wrap leading-relaxed p-3 flex-1 overflow-y-auto cursor-text hover:bg-[#1a1a1a] transition-colors"
+                      >
                         {body || "콘텐츠 없음"}
                       </div>
                     )}
