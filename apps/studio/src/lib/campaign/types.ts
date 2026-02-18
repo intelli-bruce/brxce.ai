@@ -56,6 +56,9 @@ export interface CampaignAtom {
   // Pillar → Derivatives
   is_pillar: boolean;
   pillar_atom_id: string | null;
+  goal: string | null;
+  target_audience: string | null;
+  strategy: string | null;
 }
 
 export type AtomFormat = 'long_text' | 'medium_text' | 'short_text' | 'carousel' | 'image' | 'video';

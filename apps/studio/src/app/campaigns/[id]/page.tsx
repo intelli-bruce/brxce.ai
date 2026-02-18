@@ -359,9 +359,31 @@ export default function CampaignCockpitPage() {
           </div>
         </div>
 
-        {/* Expanded: variant cards */}
+        {/* Expanded: goal/target/strategy + variant cards */}
         {isExpanded && (
           <div className="mt-3 flex flex-col gap-3">
+            {(atom.goal || atom.target_audience || atom.strategy) && (
+              <div className="grid grid-cols-3 gap-2">
+                {atom.goal && (
+                  <div className="bg-[#111] rounded p-2 border border-[#222]">
+                    <div className="text-[9px] uppercase tracking-wider text-[#FF6B35] mb-0.5">🎯 Goal</div>
+                    <div className="text-[11px] text-[#aaa] leading-relaxed">{atom.goal}</div>
+                  </div>
+                )}
+                {atom.target_audience && (
+                  <div className="bg-[#111] rounded p-2 border border-[#222]">
+                    <div className="text-[9px] uppercase tracking-wider text-[#4ECDC4] mb-0.5">👤 Target</div>
+                    <div className="text-[11px] text-[#aaa] leading-relaxed">{atom.target_audience}</div>
+                  </div>
+                )}
+                {atom.strategy && (
+                  <div className="bg-[#111] rounded p-2 border border-[#222]">
+                    <div className="text-[9px] uppercase tracking-wider text-[#a78bfa] mb-0.5">⚔️ Strategy</div>
+                    <div className="text-[11px] text-[#aaa] leading-relaxed">{atom.strategy}</div>
+                  </div>
+                )}
+              </div>
+            )}
             {atomVariants.length > 0 ? (
               atomVariants.map(v => renderVariantCard(atom, v))
             ) : (
