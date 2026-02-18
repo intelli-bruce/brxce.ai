@@ -44,7 +44,12 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const STATUSES = ["idea", "draft", "fact-check", "ready", "published", "archived"];
-const CATEGORIES = ["all", "가이드북", "실전 활용법", "크리에이터", "tech"];
+const CATEGORIES = ["all", "가이드북", "실전 활용법", "tech"];
+
+const SUBCATEGORY_OPTIONS: Record<string, string[]> = {
+  "가이드북": ["Lv.1 입문", "Lv.2 기본", "Lv.3 중급", "Lv.4 고급"],
+  "실전 활용법": ["개발", "업무 자동화", "지식 관리", "사례", "콘텐츠"],
+};
 
 
 /* ── Sortable Row ── */
@@ -57,6 +62,7 @@ function SortableRow({
   setEditingId,
   saveTitle,
   updateStatus,
+  updateSubcategory,
 }: {
   content: Content;
   index: number;
@@ -66,6 +72,7 @@ function SortableRow({
   setEditingId: (v: string | null) => void;
   saveTitle: (id: string) => void;
   updateStatus: (id: string, s: string) => void;
+  updateSubcategory: (id: string, sub: string | null) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: c.id });
   const style = {
@@ -98,9 +105,17 @@ function SortableRow({
             <Link href={`/contents/${c.id}`} className="text-[#fafafa] no-underline hover:text-[#FF6B35] transition-colors text-sm">
               {c.title}
             </Link>
-            {c.subcategory && (
-              <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#222] text-[#666]">{c.subcategory}</span>
-            )}
+            <select
+              value={c.subcategory || ""}
+              onChange={(e) => updateSubcategory(c.id, e.target.value || null)}
+              className="text-[9px] px-1 py-0.5 rounded bg-[#1a1a1a] border border-transparent hover:border-[#333] text-[#666] outline-none cursor-pointer appearance-none opacity-0 group-hover:opacity-100 transition-opacity"
+              style={{ opacity: c.subcategory ? 1 : undefined }}
+            >
+              <option value="">미분류</option>
+              {(SUBCATEGORY_OPTIONS[c.category || ""] || []).map(s => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
             <button
               onClick={() => { setEditingId(c.id); setEditTitle(c.title); }}
               className="text-[10px] text-[#555] bg-transparent border-none cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
@@ -139,6 +154,7 @@ function SubcategoryGroup({
   setEditingId,
   saveTitle,
   updateStatus,
+  updateSubcategory,
   onMoveUp,
   onMoveDown,
   isFirst,
@@ -152,6 +168,7 @@ function SubcategoryGroup({
   setEditingId: (v: string | null) => void;
   saveTitle: (id: string) => void;
   updateStatus: (id: string, s: string) => void;
+  updateSubcategory: (id: string, sub: string | null) => void;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
   isFirst?: boolean;
@@ -200,6 +217,7 @@ function SubcategoryGroup({
                 setEditingId={setEditingId}
                 saveTitle={saveTitle}
                 updateStatus={updateStatus}
+                updateSubcategory={updateSubcategory}
               />
             ))}
           </tbody>
@@ -238,6 +256,11 @@ export default function ContentsPage() {
   const updateStatus = async (id: string, newStatus: string) => {
     await sb.from("contents").update({ status: newStatus }).eq("id", id);
     setContents((prev) => prev.map((x) => x.id === id ? { ...x, status: newStatus } : x));
+  };
+
+  const updateSubcategory = async (id: string, sub: string | null) => {
+    await sb.from("contents").update({ subcategory: sub }).eq("id", id);
+    setContents((prev) => prev.map((x) => x.id === id ? { ...x, subcategory: sub } : x));
   };
 
   const saveTitle = async (id: string) => {
@@ -443,6 +466,7 @@ export default function ContentsPage() {
                           setEditingId={setEditingId}
                           saveTitle={saveTitle}
                           updateStatus={updateStatus}
+                          updateSubcategory={updateSubcategory}
                           isFirst={idx === 0}
                           isLast={idx === subs.length - 1}
                           onMoveUp={() => moveGroup(cat as string, subs, idx, idx - 1)}
@@ -465,7 +489,7 @@ export default function ContentsPage() {
                         </thead>
                         <tbody>
                           {(items as Content[]).map((c, i) => (
-                            <SortableRow key={c.id} content={c} index={i} editingId={editingId} editTitle={editTitle} setEditTitle={setEditTitle} setEditingId={setEditingId} saveTitle={saveTitle} updateStatus={updateStatus} />
+                            <SortableRow key={c.id} content={c} index={i} editingId={editingId} editTitle={editTitle} setEditTitle={setEditTitle} setEditingId={setEditingId} saveTitle={saveTitle} updateStatus={updateStatus} updateSubcategory={updateSubcategory} />
                           ))}
                         </tbody>
                       </table>
