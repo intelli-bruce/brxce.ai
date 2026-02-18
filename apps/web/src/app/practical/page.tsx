@@ -55,7 +55,7 @@ export default async function PracticalPage({
         apikey: serviceKey,
         Authorization: `Bearer ${serviceKey}`,
       },
-      next: { revalidate: 60 },
+      cache: 'no-store',
     }
   );
   const allGuides = res.ok ? await res.json() : [];

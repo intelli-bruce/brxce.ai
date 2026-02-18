@@ -1,5 +1,5 @@
 {
-  "buildCommand": "TURBO_FORCE=true turbo build --filter=@brxce/web",
+  "buildCommand": "turbo build --filter=@brxce/web",
   "outputDirectory": "apps/web/.next",
   "framework": "nextjs"
 }

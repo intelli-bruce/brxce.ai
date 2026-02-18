@@ -341,7 +341,7 @@ export default function VersionCanvas({
   );
 
   return (
-    <div className="h-full w-full bg-[#0a0a0a] rounded-xl border border-[#222] overflow-hidden">
+    <div className="h-full w-full bg-[#141414] rounded-xl border border-[#222] overflow-hidden">
       <ReactFlow
         nodes={nodes}
         edges={edges}
