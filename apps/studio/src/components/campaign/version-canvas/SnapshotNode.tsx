@@ -58,7 +58,7 @@ function SnapshotNode({ data, selected }: { data: SnapshotNodeData; selected?: b
           </div>
 
           {/* Markdown rendered content - scrollable */}
-          <div className="max-h-[600px] overflow-y-auto pr-1 scrollbar-thin snapshot-markdown">
+          <div className="snapshot-markdown">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{

@@ -39,7 +39,7 @@ function ThreadsMockup({ body }: { body: string }) {
               <span className="text-[12px] font-semibold text-[#fafafa]">brxce.ai</span>
               <span className="text-[10px] text-[#666]">· 방금</span>
             </div>
-            <div className="max-h-[400px] overflow-y-auto pr-1 scrollbar-thin">
+            <div className="">
               <p className="text-[11px] text-[#e0e0e0] whitespace-pre-wrap break-words leading-[1.5]">
                 {body || <span className="text-[#555] italic">콘텐츠 없음</span>}
               </p>
@@ -74,7 +74,7 @@ function XMockup({ body }: { body: string }) {
               <span className="text-[12px] font-bold text-[#e7e9ea]">Bruce Choe</span>
               <span className="text-[11px] text-[#71767b]">@brxce_ai · 방금</span>
             </div>
-            <div className="max-h-[400px] overflow-y-auto pr-1 scrollbar-thin">
+            <div className="">
               <p className="text-[12px] text-[#e7e9ea] whitespace-pre-wrap break-words leading-[1.4]">
                 {body || <span className="text-[#71767b] italic">콘텐츠 없음</span>}
               </p>
@@ -111,7 +111,7 @@ function LinkedInMockup({ body }: { body: string }) {
             <div className="text-[9px] text-[#ffffff66]">방금 · 🌐</div>
           </div>
         </div>
-        <div className="max-h-[400px] overflow-y-auto pr-1 scrollbar-thin">
+        <div className="">
           <p className="text-[11px] text-[#ffffffd9] whitespace-pre-wrap break-words leading-[1.5]">
             {body || <span className="text-[#ffffff66] italic">콘텐츠 없음</span>}
           </p>
@@ -140,7 +140,7 @@ function ChannelMockup({ channel, body }: { channel: string; body: string }) {
       return (
         <div className="bg-[#101010] w-full p-3">
           <div className="text-[10px] text-[#666] mb-1 uppercase font-bold">{channel}</div>
-          <div className="max-h-[400px] overflow-y-auto pr-1 scrollbar-thin">
+          <div className="">
             <p className="text-[11px] text-[#e0e0e0] whitespace-pre-wrap break-words leading-relaxed">
               {body || <span className="text-[#555] italic">콘텐츠 없음</span>}
             </p>
