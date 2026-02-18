@@ -125,16 +125,14 @@ export default function GuideSection({
                 </span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="inline-block px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#222] text-[#666] border border-[#333] shrink-0">
-                      준비중
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-[#1a1a2e] text-[#7c8aff] border border-[#2a2a4a] shrink-0">
+                      🔔 공개 예정
                     </span>
                     <span className="text-[15px] font-medium truncate text-[#888]">{g.title}</span>
                   </div>
                   {g.hook && <p className="text-[13px] text-[#555] mt-0.5 truncate">{g.hook}</p>}
                 </div>
-                <svg className="w-4 h-4 text-[#333] group-hover:text-[#666] shrink-0 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
+                <span className="text-[11px] text-[#555] group-hover:text-[#7c8aff] shrink-0 transition-colors whitespace-nowrap">알림받기 →</span>
               </button>
             );
           })}
