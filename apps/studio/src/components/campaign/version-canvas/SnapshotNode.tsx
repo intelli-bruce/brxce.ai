@@ -67,17 +67,14 @@ function SnapshotNode({ data, selected }: { data: SnapshotNodeData; selected?: b
             </h3>
           )}
 
-          {/* Body excerpt - styled like article content */}
-          <div className="space-y-1.5">
+          {/* Body content - scrollable */}
+          <div className="max-h-[300px] overflow-y-auto space-y-1.5 pr-1 scrollbar-thin">
             {bodyLines.map((line, i) => (
-              <p key={i} className="text-[10px] text-[#999] leading-relaxed line-clamp-2">
+              <p key={i} className="text-[10px] text-[#999] leading-relaxed">
                 {line}
               </p>
             ))}
           </div>
-
-          {/* Fade out */}
-          <div className="mt-2 h-4 bg-gradient-to-b from-transparent to-[#101010]" />
 
           {/* Media thumbnails */}
           {data.mediaUrls && data.mediaUrls.length > 0 && (

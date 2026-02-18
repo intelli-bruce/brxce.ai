@@ -39,9 +39,11 @@ function ThreadsMockup({ body }: { body: string }) {
               <span className="text-[12px] font-semibold text-[#fafafa]">brxce.ai</span>
               <span className="text-[10px] text-[#666]">· 방금</span>
             </div>
-            <p className="text-[11px] text-[#e0e0e0] whitespace-pre-wrap break-words leading-[1.5] line-clamp-[14]">
-              {body || <span className="text-[#555] italic">콘텐츠 없음</span>}
-            </p>
+            <div className="max-h-[400px] overflow-y-auto pr-1 scrollbar-thin">
+              <p className="text-[11px] text-[#e0e0e0] whitespace-pre-wrap break-words leading-[1.5]">
+                {body || <span className="text-[#555] italic">콘텐츠 없음</span>}
+              </p>
+            </div>
             <div className="flex items-center gap-6 mt-3 text-[#666]">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/></svg>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z"/></svg>
@@ -72,9 +74,11 @@ function XMockup({ body }: { body: string }) {
               <span className="text-[12px] font-bold text-[#e7e9ea]">Bruce Choe</span>
               <span className="text-[11px] text-[#71767b]">@brxce_ai · 방금</span>
             </div>
-            <p className="text-[12px] text-[#e7e9ea] whitespace-pre-wrap break-words leading-[1.4] line-clamp-[10]">
-              {body || <span className="text-[#71767b] italic">콘텐츠 없음</span>}
-            </p>
+            <div className="max-h-[400px] overflow-y-auto pr-1 scrollbar-thin">
+              <p className="text-[12px] text-[#e7e9ea] whitespace-pre-wrap break-words leading-[1.4]">
+                {body || <span className="text-[#71767b] italic">콘텐츠 없음</span>}
+              </p>
+            </div>
             {body.length > 280 && <div className="text-[9px] text-red-400 mt-1">⚠️ {body.length}/280자</div>}
             <div className="flex items-center justify-between mt-3 text-[#71767b] px-2">
               <div className="flex items-center gap-1"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z"/></svg><span className="text-[10px]">0</span></div>
@@ -91,8 +95,6 @@ function XMockup({ body }: { body: string }) {
 
 /* ── LinkedIn ── */
 function LinkedInMockup({ body }: { body: string }) {
-  const lines = body.split("\n");
-  const display = lines.length > 8 ? lines.slice(0, 8).join("\n") : body;
   return (
     <div className="bg-[#1b1f23] w-full">
       {/* LinkedIn header bar */}
@@ -109,10 +111,11 @@ function LinkedInMockup({ body }: { body: string }) {
             <div className="text-[9px] text-[#ffffff66]">방금 · 🌐</div>
           </div>
         </div>
-        <p className="text-[11px] text-[#ffffffd9] whitespace-pre-wrap break-words leading-[1.5] line-clamp-[10]">
-          {display || <span className="text-[#ffffff66] italic">콘텐츠 없음</span>}
-          {lines.length > 8 && <span className="text-[#71b7fb] cursor-pointer ml-1">...더 보기</span>}
-        </p>
+        <div className="max-h-[400px] overflow-y-auto pr-1 scrollbar-thin">
+          <p className="text-[11px] text-[#ffffffd9] whitespace-pre-wrap break-words leading-[1.5]">
+            {body || <span className="text-[#ffffff66] italic">콘텐츠 없음</span>}
+          </p>
+        </div>
         <div className="flex items-center justify-around mt-3 pt-2 border-t border-[#38434f] text-[#ffffff99] text-[10px]">
           <span>👍 좋아요</span>
           <span>💬 댓글</span>
@@ -137,9 +140,11 @@ function ChannelMockup({ channel, body }: { channel: string; body: string }) {
       return (
         <div className="bg-[#101010] w-full p-3">
           <div className="text-[10px] text-[#666] mb-1 uppercase font-bold">{channel}</div>
-          <p className="text-[11px] text-[#e0e0e0] whitespace-pre-wrap break-words leading-relaxed line-clamp-8">
-            {body || <span className="text-[#555] italic">콘텐츠 없음</span>}
-          </p>
+          <div className="max-h-[400px] overflow-y-auto pr-1 scrollbar-thin">
+            <p className="text-[11px] text-[#e0e0e0] whitespace-pre-wrap break-words leading-relaxed">
+              {body || <span className="text-[#555] italic">콘텐츠 없음</span>}
+            </p>
+          </div>
         </div>
       );
   }
