@@ -21,7 +21,18 @@ export default function ShowcasePage() {
   const [selections, setSelections] = useState<Selections>({});
   const [activeSection, setActiveSection] = useState("section-title");
   const [previewWidth, setPreviewWidth] = useState<number>(375);
-  const defaultOrder = ["powered-by", "bio", "stats", "section-title", "buttons", "newsletter", "footer"];
+  const defaultOrder = ["stats", "bio", "section-title", "buttons", "newsletter", "footer"];
+
+  // 현재 상용에 배포된 variant 매핑
+  const liveVariants: Selections = {
+    "section-title": "D",
+    "powered-by": "none", // 제거됨
+    bio: "D",
+    stats: "I",
+    buttons: "A",
+    newsletter: "C",
+    footer: "C",
+  };
   const [sectionOrder, setSectionOrder] = useState<string[]>(defaultOrder);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
 
@@ -107,32 +118,18 @@ export default function ShowcasePage() {
         ═══════════════════════════════════════ */}
         <SectionGroup id="section-title" title="섹션 타이틀" desc="에이전틱 워크플로우 섹션 구분선 스타일">
           {sectionTitleVariants.map((v) => (
-            <Variant
-              key={v.id}
-              id={v.id}
-              label={v.label}
-              isLive={v.id === "A"}
-              isSelected={selections["section-title"] === v.id}
-              onSelect={() => select("section-title", v.id)}
-            >
+            <Variant key={v.id} id={v.id} label={v.label} isLive={v.id === liveVariants["section-title"]} isSelected={selections["section-title"] === v.id} onSelect={() => select("section-title", v.id)}>
               {v.render()}
             </Variant>
           ))}
         </SectionGroup>
 
         {/* ═══════════════════════════════════════
-            2. Powered by
+            2. Powered by (현재 상용에서 제거됨)
         ═══════════════════════════════════════ */}
-        <SectionGroup id="powered-by" title="Powered by" desc="OpenClaw × Claude 배지 스타일">
+        <SectionGroup id="powered-by" title="Powered by" desc="OpenClaw × Claude 배지 스타일 (현재 상용에서 제거됨)">
           {poweredByVariants.map((v) => (
-            <Variant
-              key={v.id}
-              id={v.id}
-              label={v.label}
-              isLive={v.id === "A"}
-              isSelected={selections["powered-by"] === v.id}
-              onSelect={() => select("powered-by", v.id)}
-            >
+            <Variant key={v.id} id={v.id} label={v.label} isLive={false} isSelected={selections["powered-by"] === v.id} onSelect={() => select("powered-by", v.id)}>
               {v.render()}
             </Variant>
           ))}
@@ -143,14 +140,7 @@ export default function ShowcasePage() {
         ═══════════════════════════════════════ */}
         <SectionGroup id="bio" title="바이오" desc="프로필 소개 텍스트">
           {bioVariants.map((v) => (
-            <Variant
-              key={v.id}
-              id={v.id}
-              label={v.label}
-              isLive={v.id === "A"}
-              isSelected={selections["bio"] === v.id}
-              onSelect={() => select("bio", v.id)}
-            >
+            <Variant key={v.id} id={v.id} label={v.label} isLive={v.id === liveVariants["bio"]} isSelected={selections["bio"] === v.id} onSelect={() => select("bio", v.id)}>
               {v.render()}
             </Variant>
           ))}
@@ -161,14 +151,7 @@ export default function ShowcasePage() {
         ═══════════════════════════════════════ */}
         <SectionGroup id="stats" title="Stats" desc="숫자 지표 레이아웃">
           {statsVariants.map((v) => (
-            <Variant
-              key={v.id}
-              id={v.id}
-              label={v.label}
-              isLive={v.id === "A"}
-              isSelected={selections["stats"] === v.id}
-              onSelect={() => select("stats", v.id)}
-            >
+            <Variant key={v.id} id={v.id} label={v.label} isLive={v.id === liveVariants["stats"]} isSelected={selections["stats"] === v.id} onSelect={() => select("stats", v.id)}>
               {v.render()}
             </Variant>
           ))}
@@ -179,14 +162,7 @@ export default function ShowcasePage() {
         ═══════════════════════════════════════ */}
         <SectionGroup id="buttons" title="버튼/링크" desc="CTA 버튼 및 링크 카드">
           {buttonVariants.map((v) => (
-            <Variant
-              key={v.id}
-              id={v.id}
-              label={v.label}
-              isLive={v.id === "A"}
-              isSelected={selections["buttons"] === v.id}
-              onSelect={() => select("buttons", v.id)}
-            >
+            <Variant key={v.id} id={v.id} label={v.label} isLive={v.id === liveVariants["buttons"]} isSelected={selections["buttons"] === v.id} onSelect={() => select("buttons", v.id)}>
               {v.render()}
             </Variant>
           ))}
@@ -197,14 +173,7 @@ export default function ShowcasePage() {
         ═══════════════════════════════════════ */}
         <SectionGroup id="newsletter" title="뉴스레터" desc="구독 폼">
           {newsletterVariants.map((v) => (
-            <Variant
-              key={v.id}
-              id={v.id}
-              label={v.label}
-              isLive={v.id === "A"}
-              isSelected={selections["newsletter"] === v.id}
-              onSelect={() => select("newsletter", v.id)}
-            >
+            <Variant key={v.id} id={v.id} label={v.label} isLive={v.id === liveVariants["newsletter"]} isSelected={selections["newsletter"] === v.id} onSelect={() => select("newsletter", v.id)}>
               {v.render()}
             </Variant>
           ))}
@@ -215,14 +184,7 @@ export default function ShowcasePage() {
         ═══════════════════════════════════════ */}
         <SectionGroup id="footer" title="푸터" desc="페이지 하단">
           {footerVariants.map((v) => (
-            <Variant
-              key={v.id}
-              id={v.id}
-              label={v.label}
-              isLive={v.id === "A"}
-              isSelected={selections["footer"] === v.id}
-              onSelect={() => select("footer", v.id)}
-            >
+            <Variant key={v.id} id={v.id} label={v.label} isLive={v.id === liveVariants["footer"]} isSelected={selections["footer"] === v.id} onSelect={() => select("footer", v.id)}>
               {v.render()}
             </Variant>
           ))}
@@ -282,7 +244,7 @@ export default function ShowcasePage() {
                         : "border-[#333] text-[#555]"
                     }`}
                   >
-                    {labels[key]}: {selected || "A (상용)"}
+                    {labels[key]}: {selected || `${liveVariants[key]} (상용)`}
                   </span>
                 );
               })}
@@ -295,7 +257,7 @@ export default function ShowcasePage() {
               <div className="text-[12px] font-mono text-[#888] mb-3 text-center">
                 🟢 현재 상용 {previewWidth ? `(${previewWidth}px)` : ""}
               </div>
-              <FullPagePreview selections={{}} order={defaultOrder} />
+              <FullPagePreview selections={liveVariants} order={defaultOrder} />
             </div>
             <div style={previewWidth ? { width: previewWidth, minWidth: previewWidth } : undefined} className={previewWidth ? "" : "flex-1"}>
               <div className="text-[12px] font-mono text-[#ffa500] mb-3 text-center">

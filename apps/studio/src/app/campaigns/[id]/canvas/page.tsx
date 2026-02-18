@@ -58,7 +58,7 @@ export default function CampaignCanvasPage() {
     if (atomsList.length > 0) {
       const { data: varsData } = await sb
         .from("campaign_variants")
-        .select("id,atom_id,generation,model,params,output,is_selected,score,created_at")
+        .select("id,atom_id,generation,model,params,output,is_selected,score,created_at,parent_variant_ids")
         .in("atom_id", atomsList.map((a) => a.id));
       setVariants((varsData || []) as Variant[]);
     }

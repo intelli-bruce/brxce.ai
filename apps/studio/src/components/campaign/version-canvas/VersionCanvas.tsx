@@ -44,11 +44,12 @@ export interface Variant {
   atom_id: string;
   generation: number;
   model: string | null;
-  params: { tone?: string; feedback?: string; base_variant_id?: string; merged?: boolean; merge_note?: string; merged_from?: string[] } | null;
+  params: { tone?: string; feedback?: string; merge_note?: string } | null;
   output: { body?: string; text?: string } | null;
   is_selected: boolean;
   score: number | null;
   created_at: string;
+  parent_variant_ids: string[];
 }
 
 export interface Atom {
@@ -181,120 +182,79 @@ function buildGraph(
     });
   }
 
-  // 2. Group variants by atom → generation
+  // 2. Variant DAG — parent_variant_ids drives all edges
   const atomMap = new Map(atoms.map((a) => [a.id, a]));
-  const byAtom = new Map<string, Variant[]>();
+  const variantSet = new Set(variants.map((v) => v.id));
+
+  // Pre-compute atom-level media
+  const atomMediaMap = new Map<string, string[]>();
+  for (const a of atoms) {
+    atomMediaMap.set(
+      a.id,
+      mediaAssets
+        .filter((m) => m.source_atom_id === a.id && m.asset_type?.startsWith("image"))
+        .map((m) => m.storage_url),
+    );
+  }
+
+  // Create all variant nodes
   variants.forEach((v) => {
-    if (!byAtom.has(v.atom_id)) byAtom.set(v.atom_id, []);
-    byAtom.get(v.atom_id)!.push(v);
-  });
-
-  // For each atom, branch off "current" node
-  byAtom.forEach((atomVariants, atomId) => {
-    const atom = atomMap.get(atomId);
+    const atom = atomMap.get(v.atom_id);
     if (!atom) return;
+    const vId = `var-${v.id}`;
+    const body = v.output?.body || v.output?.text || "";
+    const isMerged = v.parent_variant_ids.length > 1;
 
-    // Group by generation
-    const byGen = new Map<number, Variant[]>();
-    atomVariants.forEach((v) => {
-      if (!byGen.has(v.generation)) byGen.set(v.generation, []);
-      byGen.get(v.generation)!.push(v);
+    nodes.push({
+      id: vId,
+      type: "variant",
+      position: { x: 0, y: 0 },
+      data: {
+        variantId: v.id,
+        generation: v.generation,
+        model: v.model || "",
+        tone: v.params?.tone || "",
+        isSelected: v.is_selected,
+        body: body,
+        score: v.score,
+        channel: atom.channel,
+        createdAt: v.created_at,
+        mediaUrls: (atomMediaMap.get(v.atom_id) || []).slice(0, 2),
+        merged: isMerged,
+        mergeNote: v.params?.merge_note || "",
+      } satisfies VariantNodeData,
     });
 
-    const gens = [...byGen.keys()].sort();
-    let prevGenAnchor = currentId; // First gen branches from "current"
-
-    gens.forEach((gen) => {
-      const genVariants = byGen.get(gen)!;
-
-      // Meta node for this generation (skip if merged_from — merge edges handle the flow)
-      const hasMergeTarget = genVariants.some((v) => v.params?.merged_from?.length);
-      const firstV = genVariants[0];
-      const feedback = firstV.params?.feedback;
-      if ((feedback || gen > 1) && !hasMergeTarget) {
-        const metaId = `meta-${atomId}-g${gen}`;
-        nodes.push({
-          id: metaId,
-          type: "meta",
-          position: { x: 0, y: 0 },
-          data: {
-            message: feedback || `G${gen} 생성`,
-            type: feedback ? "feedback" : "generate",
-          } satisfies MetaNodeData,
-        });
+    if (v.parent_variant_ids.length > 0) {
+      // Edges from parent variants (supports both 1→1 and N→1 merge)
+      v.parent_variant_ids.forEach((pid) => {
+        const sourceId = variantSet.has(pid) ? `var-${pid}` : currentId;
         edges.push({
-          id: `edge-${prevGenAnchor}-${metaId}`,
-          source: prevGenAnchor,
-          target: metaId,
+          id: `edge-${pid}-${v.id}`,
+          source: sourceId,
+          target: vId,
           type: "smoothstep",
-          style: { stroke: "#666", strokeWidth: 1.5, strokeDasharray: "6" },
+          style: {
+            stroke: isMerged ? "#a855f7" : v.is_selected ? "#4ECDC4" : "#555",
+            strokeWidth: isMerged || v.is_selected ? 2.5 : 1.5,
+          },
+          animated: v.is_selected,
         });
-        prevGenAnchor = metaId;
-      }
-
-      // Variant nodes
-      // Atom-level media
-      const atomMedia = mediaAssets
-        .filter((m) => m.source_atom_id === atomId && m.asset_type?.startsWith("image"))
-        .map((m) => m.storage_url);
-
-      genVariants.forEach((v) => {
-        const vId = `var-${v.id}`;
-        const body = v.output?.body || v.output?.text || "";
-        const hasMergedFrom = v.params?.merged_from && v.params.merged_from.length > 0;
-
-        nodes.push({
-          id: vId,
-          type: "variant",
-          position: { x: 0, y: 0 },
-          data: {
-            variantId: v.id,
-            generation: v.generation,
-            model: v.model || "",
-            tone: v.params?.tone || "",
-            isSelected: v.is_selected,
-            body: body,
-            score: v.score,
-            channel: atom.channel,
-            createdAt: v.created_at,
-            mediaUrls: atomMedia.slice(0, 2),
-            merged: !!hasMergedFrom,
-            mergeNote: v.params?.merge_note || "",
-          } satisfies VariantNodeData,
-        });
-
-        if (hasMergedFrom) {
-          // Edges from each source variant → this merged variant (converging)
-          v.params!.merged_from!.forEach((srcId, idx) => {
-            edges.push({
-              id: `edge-merge-${srcId}-${v.id}`,
-              source: `var-${srcId}`,
-              target: vId,
-              type: "smoothstep",
-              style: { stroke: "#a855f7", strokeWidth: 2 },
-              animated: true,
-            });
-          });
-        } else {
-          // Normal edge from previous anchor
-          edges.push({
-            id: `edge-${prevGenAnchor}-${vId}`,
-            source: prevGenAnchor,
-            target: vId,
-            type: "smoothstep",
-            style: {
-              stroke: v.is_selected ? "#4ECDC4" : "#555",
-              strokeWidth: v.is_selected ? 2.5 : 1.5,
-            },
-            animated: v.is_selected,
-          });
-        }
       });
-
-      // Next gen branches from selected variant (or first) of this gen
-      const selected = genVariants.find((v) => v.is_selected) || genVariants[0];
-      prevGenAnchor = `var-${selected.id}`;
-    });
+    } else {
+      // Root variant — connect from "current" snapshot
+      edges.push({
+        id: `edge-current-${v.id}`,
+        source: currentId,
+        target: vId,
+        type: "smoothstep",
+        style: {
+          stroke: v.is_selected ? "#4ECDC4" : "#555",
+          strokeWidth: v.is_selected ? 2.5 : 1.5,
+        },
+        animated: v.is_selected,
+      });
+    }
   });
 
   return { nodes, edges };
