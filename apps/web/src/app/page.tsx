@@ -92,6 +92,65 @@ function Modal({
   );
 }
 
+/* ── Quote Carousel ── */
+const quotes = [
+  { text: "AI가 당신의 일자리를 빼앗는 게 아니라, AI를 활용하는 사람이 당신의 일자리를 가져갈 것이다.", author: "Jensen Huang", title: "CEO, NVIDIA", avatar: "/jensen-huang.jpg" },
+];
+
+function QuoteCarousel() {
+  const [current, setCurrent] = useState(0);
+  const [isAutoPlay, setIsAutoPlay] = useState(true);
+
+  useEffect(() => {
+    if (!isAutoPlay) return;
+    const timer = setInterval(() => {
+      setCurrent((prev) => (prev + 1) % quotes.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [isAutoPlay]);
+
+  return (
+    <div
+      className="w-full mb-6"
+      onMouseEnter={() => setIsAutoPlay(false)}
+      onMouseLeave={() => setIsAutoPlay(true)}
+    >
+      <div className="overflow-hidden rounded-xl border border-[#222] relative">
+        {/* Background image */}
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${quotes[current].avatar})`, filter: "blur(1px) brightness(0.55)", transform: "scale(1.05)" }}
+        />
+        <div className="relative p-5 min-h-[140px] flex flex-col justify-center">
+          <div className="text-[14px] text-[#e0e0e0] leading-[1.7] text-center italic mb-4 drop-shadow-lg">
+            &ldquo;{quotes[current].text}&rdquo;
+          </div>
+          <div className="flex items-center justify-center gap-2.5">
+            <div>
+              <div className="text-[13px] text-[#fafafa] font-medium leading-tight drop-shadow-lg">{quotes[current].author}</div>
+              <div className="text-[11px] text-[#aaa] leading-tight drop-shadow-lg">{quotes[current].title}</div>
+            </div>
+          </div>
+        </div>
+        {/* Dots (hide if single quote) */}
+        {quotes.length > 1 && (
+          <div className="flex justify-center gap-1.5 pb-4">
+            {quotes.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => { setCurrent(i); setIsAutoPlay(false); }}
+                className={`w-1.5 h-1.5 rounded-full transition-all cursor-pointer border-none ${
+                  i === current ? "bg-[#ffa500] w-4" : "bg-[#333]"
+                }`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ── Main Page ── */
 /* ── Latest Guides Hook ── */
 function useLatestGuides() {
@@ -166,64 +225,8 @@ export default function Home() {
         <h1 className="text-[22px] font-bold mb-1">Bruce Choe</h1>
         <p className="text-sm text-[#888] mb-5">@brxce.ai</p>
 
-        {/* Social Icons */}
-        <div className="flex items-center gap-4 mb-5">
-          {[
-            { href: "https://www.instagram.com/brxce.ai/", icon: <InstagramIcon />, label: "Instagram" },
-            { href: "https://www.threads.com/@brxce.ai", icon: <ThreadsIcon />, label: "Threads" },
-            { href: "https://x.com/brxce_ai", icon: <XIcon />, label: "X" },
-            { href: "https://www.linkedin.com/in/brxce", icon: <LinkedInIcon />, label: "LinkedIn" },
-          ].map((s) => (
-            <a
-              key={s.label}
-              href={s.href}
-              target="_blank"
-              rel="noopener"
-              aria-label={s.label}
-              className="flex items-center justify-center w-10 h-10 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] text-[#888] hover:text-[#fafafa] hover:border-[#444] transition-all hover:-translate-y-0.5"
-            >
-              {s.icon}
-            </a>
-          ))}
-        </div>
-
-        {/* Powered by */}
-        <div className="flex justify-center mb-4">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#141414] border border-[#222] text-[12px] text-[#666]">
-            <span>Powered by</span>
-            <a href="https://openclaw.ai" target="_blank" rel="noopener" className="hover:opacity-80 transition-opacity">
-              <Image src="/openclaw-logo.svg" alt="OpenClaw" width={16} height={16} className="rounded" />
-            </a>
-            <span>×</span>
-            <a href="https://claude.ai" target="_blank" rel="noopener" className="hover:opacity-80 transition-opacity text-[#D97757]">
-              <ClaudeIcon />
-            </a>
-          </div>
-        </div>
-
-        {/* Bio */}
-        <div className="text-center text-sm leading-[1.8] text-[#ccc] mb-6">
-          <span className="text-[#fafafa] font-medium">✦ 에이전틱 워크플로우</span>
-          <br />OpenClaw × ClaudeCode로
-          <br />회사를 굴리는 개발자 CEO
-          <br />
-          <br />수십 개의 AI 에이전트를 직접 빌딩.
-          <br />해본 것만 공유합니다.
-        </div>
-
-        {/* Discord CTA */}
-        <a
-          href="https://discord.gg/fptPWQpdwD"
-          target="_blank"
-          rel="noopener"
-          className="flex items-center justify-center gap-2.5 w-full py-3.5 px-5 rounded-xl bg-[#5865F2] text-white text-[15px] font-semibold hover:bg-[#4752C4] hover:-translate-y-0.5 transition-all mb-6"
-        >
-          <DiscordIcon />
-          디스코드 커뮤니티 참여하기
-        </a>
-
         {/* Stats — Goal Progress */}
-        <div className="w-full mb-7">
+        <div className="w-full mb-6">
           <div className="bg-[#111] border border-[#222] rounded-xl p-5 text-center">
             <div className="text-[12px] text-[#666] mb-0.5">🎯 목표</div>
             <div className="text-[13px] text-[#ccc] font-medium mb-3">에이전틱 워크플로우로 10억 만들기</div>
@@ -239,6 +242,30 @@ export default function Home() {
             </div>
           </div>
         </div>
+
+        {/* Bio */}
+        <div className="text-center text-sm leading-[1.8] text-[#ccc] mb-6">
+          <span className="text-[#fafafa] font-medium">✦ 에이전틱 워크플로우</span>
+          <br />OpenClaw × ClaudeCode로
+          <br />회사를 굴리는 개발자 CEO
+          <br />
+          <br />수십 개의 AI 에이전트를 직접 빌딩.
+          <br />해본 것만 공유합니다.
+        </div>
+
+        {/* Quote Carousel */}
+        <QuoteCarousel />
+
+        {/* Discord CTA */}
+        <a
+          href="https://discord.gg/fptPWQpdwD"
+          target="_blank"
+          rel="noopener"
+          className="flex items-center justify-center gap-2.5 w-full py-3.5 px-5 rounded-xl bg-[#5865F2] text-white text-[15px] font-semibold hover:bg-[#4752C4] hover:-translate-y-0.5 transition-all mb-6"
+        >
+          <DiscordIcon />
+          디스코드 커뮤니티 참여하기
+        </a>
 
         {/* Links */}
         <div className="w-full flex flex-col gap-3">

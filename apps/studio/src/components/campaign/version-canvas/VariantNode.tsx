@@ -14,6 +14,8 @@ export interface VariantNodeData extends Record<string, unknown> {
   channel: string;
   createdAt: string;
   mediaUrls?: string[];
+  merged?: boolean;
+  mergeNote?: string;
 }
 
 export type VariantNodeType = Node<VariantNodeData, "variant">;
@@ -169,6 +171,9 @@ function VariantNode({ data, selected }: { data: VariantNodeData; selected?: boo
             {data.tone && <span className="text-[8px] px-1 py-0.5 rounded bg-[#222] text-[#777]">{data.tone}</span>}
           </div>
           <div className="flex items-center gap-1">
+            {data.merged && (
+              <span className="text-[7px] px-1.5 py-0.5 rounded-full bg-[#a855f7] text-white font-bold" title={data.mergeNote || '병합됨'}>⇄</span>
+            )}
             {data.score != null && (
               <span className="text-[8px] text-yellow-500">{"★".repeat(data.score)}</span>
             )}

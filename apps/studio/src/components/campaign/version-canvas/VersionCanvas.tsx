@@ -44,7 +44,7 @@ export interface Variant {
   atom_id: string;
   generation: number;
   model: string | null;
-  params: { tone?: string; feedback?: string; base_variant_id?: string } | null;
+  params: { tone?: string; feedback?: string; base_variant_id?: string; merged?: boolean; merge_note?: string } | null;
   output: { body?: string; text?: string } | null;
   is_selected: boolean;
   score: number | null;
@@ -255,6 +255,8 @@ function buildGraph(
             channel: atom.channel,
             createdAt: v.created_at,
             mediaUrls: atomMedia.slice(0, 2),
+            merged: !!v.params?.merged,
+            mergeNote: v.params?.merge_note || "",
           } satisfies VariantNodeData,
         });
         edges.push({
