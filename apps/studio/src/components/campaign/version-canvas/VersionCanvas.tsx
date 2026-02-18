@@ -81,7 +81,7 @@ interface VersionCanvasProps {
 
 /* ── Dagre layout ── */
 const NODE_SIZES: Record<string, { w: number; h: number }> = {
-  snapshot: { w: 380, h: 500 },
+  snapshot: { w: 420, h: 700 },
   variant: { w: 340, h: 560 },
   meta: { w: 220, h: 50 },
 };
