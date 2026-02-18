@@ -235,7 +235,7 @@ export default function Home() {
         {/* Stats — Goal Progress */}
         <div className="w-full mb-6">
           <div className="bg-[#111] border border-[#222] rounded-xl p-5 text-center">
-            <div className="text-[12px] text-[#666] mb-0.5">🎯 목표</div>
+            <div className="text-[12px] text-[#666] mb-0.5">🎯 2026 목표</div>
             <div className="text-[13px] text-[#ccc] font-medium mb-3">에이전틱 워크플로우로 10억 만들기</div>
             <div className="text-[11px] text-[#888] mb-0.5">지금까지 순수익</div>
             <div className="text-3xl font-bold bg-gradient-to-r from-[#ff6b6b] to-[#ffa500] bg-clip-text text-transparent mb-3">₩14,505,000</div>
