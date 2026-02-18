@@ -11,6 +11,8 @@ interface Content {
   slug: string;
   status: string;
   category: string | null;
+  subcategory: string | null;
+  sort_order: number;
   goal: string | null;
   target_audience: string | null;
   strategy: string | null;
@@ -43,7 +45,7 @@ export default function ContentsPage() {
   const [editTitle, setEditTitle] = useState("");
 
   const load = useCallback(async () => {
-    let q = sb.from("contents").select("id, title, slug, status, category, goal, target_audience, strategy, created_at").order("created_at", { ascending: false });
+    let q = sb.from("contents").select("id, title, slug, status, category, subcategory, sort_order, goal, target_audience, strategy, created_at").order("sort_order", { ascending: true });
     if (filter !== "all") q = q.eq("status", filter);
     if (category !== "all") q = q.eq("category", category);
     if (search) q = q.ilike("title", `%${search}%`);
@@ -65,12 +67,92 @@ export default function ContentsPage() {
     setEditingId(null);
   };
 
-  // Group by category for table view
+  // Group by category, then subcategory for table view
   const grouped = contents.reduce<Record<string, Content[]>>((acc, c) => {
     const cat = c.category || "미분류";
     (acc[cat] = acc[cat] || []).push(c);
     return acc;
   }, {});
+
+  // Sub-group within a category
+  const subGrouped = (items: Content[]): Record<string, Content[]> => {
+    const result: Record<string, Content[]> = {};
+    for (const c of items) {
+      const sub = c.subcategory || "미분류";
+      (result[sub] = result[sub] || []).push(c);
+    }
+    // Sort each sub-group by sort_order
+    for (const key of Object.keys(result)) {
+      result[key].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+    }
+    return result;
+  };
+
+  const renderTable = (items: Content[]) => (
+    <table className="w-full text-sm border-collapse">
+      <thead>
+        <tr className="border-b border-[#333] text-[#666] text-xs text-left">
+          <th className="py-2 px-3 w-8">#</th>
+          <th className="py-2 px-3">제목</th>
+          <th className="py-2 px-3 w-24">상태</th>
+          <th className="py-2 px-3 w-24">날짜</th>
+          <th className="py-2 px-3 w-10"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {items.map((c, i) => (
+          <tr key={c.id} className="border-b border-[#1a1a1a] hover:bg-[#141414] transition-colors group">
+            <td className="py-2 px-3 text-[#555] text-xs">{i + 1}</td>
+            <td className="py-2 px-3">
+              {editingId === c.id ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") saveTitle(c.id); if (e.key === "Escape") setEditingId(null); }}
+                    className="flex-1 bg-[#0a0a0a] border border-[#555] rounded px-2 py-1 text-sm text-[#fafafa] outline-none focus:border-[#FF6B35]"
+                    autoFocus
+                  />
+                  <button onClick={() => saveTitle(c.id)} className="text-xs text-[#4ECDC4] bg-transparent border-none cursor-pointer">✓</button>
+                  <button onClick={() => setEditingId(null)} className="text-xs text-[#666] bg-transparent border-none cursor-pointer">✗</button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Link href={`/contents/${c.id}`} className="text-[#fafafa] no-underline hover:text-[#FF6B35] transition-colors">
+                    {c.title}
+                  </Link>
+                  <button
+                    onClick={() => { setEditingId(c.id); setEditTitle(c.title); }}
+                    className="text-[10px] text-[#555] bg-transparent border-none cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="제목 수정"
+                  >
+                    ✏️
+                  </button>
+                </div>
+              )}
+            </td>
+            <td className="py-2 px-3">
+              <select
+                value={c.status}
+                onChange={(e) => updateStatus(c.id, e.target.value)}
+                className={`text-[11px] font-medium px-1.5 py-0.5 rounded border border-[#333] bg-[#0a0a0a] outline-none cursor-pointer ${STATUS_COLORS[c.status] || "text-[#888]"}`}
+              >
+                {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </td>
+            <td className="py-2 px-3 text-[11px] text-[#555]">
+              {new Date(c.created_at).toLocaleDateString("ko-KR")}
+            </td>
+            <td className="py-2 px-3">
+              {c.slug && (
+                <a href={`/guides/${c.slug}?preview=brxce-preview-2026`} target="_blank" rel="noopener noreferrer" className="text-xs text-[#666] no-underline hover:text-[#fafafa]" title="미리보기">👁️</a>
+              )}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
 
   return (
     <div>
@@ -165,80 +247,39 @@ export default function ContentsPage() {
 
       {/* Table View */}
       {viewMode === "table" && (
-        <div className="space-y-6">
-          {(category === "all" ? Object.entries(grouped) : [[category, contents]]).map(([cat, items]) => (
-            <div key={cat as string}>
-              {category === "all" && (
-                <h2 className="text-sm font-semibold text-[#FF6B35] mb-2 flex items-center gap-2">
-                  {cat as string}
-                  <span className="text-[10px] text-[#555] font-normal">{(items as Content[]).length}개</span>
-                </h2>
-              )}
-              <table className="w-full text-sm border-collapse">
-                <thead>
-                  <tr className="border-b border-[#333] text-[#666] text-xs text-left">
-                    <th className="py-2 px-3 w-8">#</th>
-                    <th className="py-2 px-3">제목</th>
-                    <th className="py-2 px-3 w-24">상태</th>
-                    <th className="py-2 px-3 w-24">날짜</th>
-                    <th className="py-2 px-3 w-10"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(items as Content[]).map((c, i) => (
-                    <tr key={c.id} className="border-b border-[#1a1a1a] hover:bg-[#141414] transition-colors group">
-                      <td className="py-2 px-3 text-[#555] text-xs">{i + 1}</td>
-                      <td className="py-2 px-3">
-                        {editingId === c.id ? (
-                          <div className="flex items-center gap-2">
-                            <input
-                              value={editTitle}
-                              onChange={(e) => setEditTitle(e.target.value)}
-                              onKeyDown={(e) => { if (e.key === "Enter") saveTitle(c.id); if (e.key === "Escape") setEditingId(null); }}
-                              className="flex-1 bg-[#0a0a0a] border border-[#555] rounded px-2 py-1 text-sm text-[#fafafa] outline-none focus:border-[#FF6B35]"
-                              autoFocus
-                            />
-                            <button onClick={() => saveTitle(c.id)} className="text-xs text-[#4ECDC4] bg-transparent border-none cursor-pointer">✓</button>
-                            <button onClick={() => setEditingId(null)} className="text-xs text-[#666] bg-transparent border-none cursor-pointer">✗</button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <Link href={`/contents/${c.id}`} className="text-[#fafafa] no-underline hover:text-[#FF6B35] transition-colors">
-                              {c.title}
-                            </Link>
-                            <button
-                              onClick={() => { setEditingId(c.id); setEditTitle(c.title); }}
-                              className="text-[10px] text-[#555] bg-transparent border-none cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
-                              title="제목 수정"
-                            >
-                              ✏️
-                            </button>
-                          </div>
-                        )}
-                      </td>
-                      <td className="py-2 px-3">
-                        <select
-                          value={c.status}
-                          onChange={(e) => updateStatus(c.id, e.target.value)}
-                          className={`text-[11px] font-medium px-1.5 py-0.5 rounded border border-[#333] bg-[#0a0a0a] outline-none cursor-pointer ${STATUS_COLORS[c.status] || "text-[#888]"}`}
-                        >
-                          {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                        </select>
-                      </td>
-                      <td className="py-2 px-3 text-[11px] text-[#555]">
-                        {new Date(c.created_at).toLocaleDateString("ko-KR")}
-                      </td>
-                      <td className="py-2 px-3">
-                        {c.slug && (
-                          <a href={`/guides/${c.slug}?preview=brxce-preview-2026`} target="_blank" rel="noopener noreferrer" className="text-xs text-[#666] no-underline hover:text-[#fafafa]" title="미리보기">👁️</a>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ))}
+        <div className="space-y-8">
+          {(category === "all" ? Object.entries(grouped) : [[category, contents]]).map(([cat, items]) => {
+            const subs = subGrouped(items as Content[]);
+            const hasSubs = Object.keys(subs).length > 1 || !subs["미분류"];
+
+            return (
+              <div key={cat as string}>
+                {category === "all" && (
+                  <h2 className="text-sm font-semibold text-[#FF6B35] mb-3 flex items-center gap-2">
+                    {cat as string}
+                    <span className="text-[10px] text-[#555] font-normal">{(items as Content[]).length}개</span>
+                  </h2>
+                )}
+
+                {hasSubs ? (
+                  <div className="space-y-4">
+                    {Object.entries(subs).map(([sub, subItems]) => (
+                      <div key={sub}>
+                        <div className="flex items-center gap-2 mb-1.5 ml-1">
+                          <span className="text-xs font-semibold text-[#4ECDC4]">{sub}</span>
+                          <span className="text-[10px] text-[#555]">{subItems.length}개</span>
+                          <div className="flex-1 border-t border-[#222]" />
+                        </div>
+                        {renderTable(subItems)}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  renderTable(items as Content[])
+                )}
+              </div>
+            );
+          })}
           {contents.length === 0 && <p className="text-[#666] text-sm">콘텐츠가 없습니다.</p>}
         </div>
       )}
