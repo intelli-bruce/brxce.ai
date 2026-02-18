@@ -44,19 +44,15 @@ export default async function PracticalPage({
   } catch {}
   const isPreviewMode = isAdmin || preview === PREVIEW_SECRET;
 
-  const client = isPreviewMode ? createServiceClient() : await createSupabaseServer();
+  const client = createServiceClient();
 
+  // Show all items — unpublished ones will show waitlist dialog on click
   let query = client
     .from("contents")
     .select("id, title, slug, hook, category, tags, media_urls, status, created_at")
     .eq("category", "실전 활용법")
-    .order("created_at", { ascending: true });
-
-  if (isPreviewMode) {
-    query = query.in("status", ["published", "draft", "review", "ready"]);
-  } else {
-    query = query.eq("status", "published");
-  }
+    .order("created_at", { ascending: true })
+    .in("status", ["published", "draft", "review", "ready"]);
 
   const { data: allGuides } = await query;
   const guides = allGuides || [];
@@ -85,12 +81,13 @@ export default async function PracticalPage({
               title={section.label}
               guides={items}
               defaultOpen={i === 0}
+              isPreview={isPreviewMode}
             />
           );
         })}
 
         {other.length > 0 && (
-          <GuideSection title="기타" guides={other} defaultOpen />
+          <GuideSection title="기타" guides={other} defaultOpen isPreview={isPreviewMode} />
         )}
       </main>
     </>

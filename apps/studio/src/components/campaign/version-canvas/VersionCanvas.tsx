@@ -183,8 +183,11 @@ function buildGraph(
   }
 
   // 2. Variant DAG — parent_variant_ids drives all edges
+  // Filter out pillar atom variants (pillar content is managed via Block Editor, not variants)
+  const pillarAtomIds = new Set(atoms.filter((a) => a.is_pillar).map((a) => a.id));
+  const derivativeVariants = variants.filter((v) => !pillarAtomIds.has(v.atom_id));
   const atomMap = new Map(atoms.map((a) => [a.id, a]));
-  const variantSet = new Set(variants.map((v) => v.id));
+  const variantSet = new Set(derivativeVariants.map((v) => v.id));
 
   // Pre-compute atom-level media
   const atomMediaMap = new Map<string, string[]>();
@@ -197,8 +200,8 @@ function buildGraph(
     );
   }
 
-  // Create all variant nodes
-  variants.forEach((v) => {
+  // Create all variant nodes (derivatives only)
+  derivativeVariants.forEach((v) => {
     const atom = atomMap.get(v.atom_id);
     if (!atom) return;
     const vId = `var-${v.id}`;

@@ -48,18 +48,14 @@ export default async function GuidesPage({
   } catch {}
   const isPreviewMode = isAdmin || preview === PREVIEW_SECRET;
 
-  const client = isPreviewMode ? createServiceClient() : await createSupabaseServer();
+  const client = createServiceClient();
 
+  // Show all items — unpublished ones will show waitlist dialog on click
   let query = client
     .from("contents")
     .select("id, title, slug, hook, category, tags, media_urls, status, created_at")
-    .order("created_at", { ascending: true });
-
-  if (isPreviewMode) {
-    query = query.in("status", ["published", "draft", "review", "ready"]);
-  } else {
-    query = query.eq("status", "published");
-  }
+    .order("created_at", { ascending: true })
+    .in("status", ["published", "draft", "review", "ready"]);
 
   const { data: allGuides } = await query;
   const guides = allGuides || [];
@@ -95,12 +91,13 @@ export default async function GuidesPage({
                 title={level.label}
                 guides={items}
                 defaultOpen={i === 0}
+                isPreview={isPreviewMode}
               />
             );
           })}
 
           {guidebookOther.length > 0 && (
-            <GuideSection title="기타" guides={guidebookOther} />
+            <GuideSection title="기타" guides={guidebookOther} isPreview={isPreviewMode} />
           )}
         </div>
 
