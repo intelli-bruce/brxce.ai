@@ -100,14 +100,14 @@ export default function CampaignCanvasPage() {
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-[#0a0a0a] text-[#888] fixed inset-0 z-50">
+      <div className="h-screen flex items-center justify-center bg-[#141414] text-[#888] fixed inset-0 z-50">
         로딩 중...
       </div>
     );
   }
 
   return (
-    <div className="h-screen flex flex-col bg-[#0a0a0a] fixed inset-0 z-50">
+    <div className="h-screen flex flex-col bg-[#141414] fixed inset-0 z-50">
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-[#222] bg-[#0f0f0f]">
         <div className="flex items-center gap-3">
