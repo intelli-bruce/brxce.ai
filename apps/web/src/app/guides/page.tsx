@@ -66,6 +66,7 @@ export default async function GuidesPage({
   );
   const allGuides = res.ok ? await res.json() : [];
   const guides = allGuides || [];
+  const _debug = JSON.stringify({ ok: res.ok, status: res.status, count: guides.length, hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY });
 
   // Show both "가이드북" and "가이드" category
   const guidebook = guides.filter((g: any) => g.category === "가이드북" || g.category === "가이드");
@@ -87,6 +88,8 @@ export default async function GuidesPage({
       <main className="max-w-[700px] mx-auto px-6 py-12">
         <h1 className="text-3xl font-bold mb-1">오픈클로 가이드</h1>
         <p className="text-[#888] mb-10">에이전틱 워크플로우 실전 가이드 모음</p>
+        {/* Debug: remove after fixing */}
+        <pre className="text-[10px] text-[#444] mb-4">{_debug}</pre>
 
         {/* 📘 가이드북 */}
         <div className="mb-12">
