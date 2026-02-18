@@ -50,8 +50,8 @@ export default async function GuidesPage({
 
   // Always use service client to show all items (including unpublished)
   // Unpublished items will show waitlist dialog on click
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "").trim().split("\n")[0].trim();
+  const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim().split("\n")[0].trim();
 
   // Direct fetch to bypass any SSR client issues
   const res = await fetch(

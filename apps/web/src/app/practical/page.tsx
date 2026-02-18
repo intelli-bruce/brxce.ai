@@ -45,8 +45,8 @@ export default async function PracticalPage({
   const isPreviewMode = isAdmin || preview === PREVIEW_SECRET;
 
   // Always use service client to show all items (including unpublished)
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "").trim().split("\n")[0].trim();
+  const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim().split("\n")[0].trim();
 
   const res = await fetch(
     `${supabaseUrl}/rest/v1/contents?select=id,title,slug,hook,category,tags,media_urls,status,created_at&category=eq.${encodeURIComponent("실전 활용법")}&status=in.(published,draft,review,ready)&order=created_at.asc`,
