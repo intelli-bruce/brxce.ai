@@ -60,6 +60,9 @@ export interface Atom {
   channel: string;
   format: string;
   is_pillar: boolean;
+  goal?: string | null;
+  target_audience?: string | null;
+  strategy?: string | null;
 }
 
 export interface MediaAsset {

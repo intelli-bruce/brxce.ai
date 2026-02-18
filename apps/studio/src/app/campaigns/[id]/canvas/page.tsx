@@ -52,7 +52,7 @@ export default function CampaignCanvasPage() {
     // Atoms
     const { data: atomsData } = await sb
       .from("campaign_atoms")
-      .select("id,channel,format,is_pillar")
+      .select("id,channel,format,is_pillar,goal,target_audience,strategy")
       .eq("campaign_id", id);
     const atomsList = (atomsData || []) as Atom[];
     setAtoms(atomsList);
@@ -216,6 +216,30 @@ export default function CampaignCanvasPage() {
                     {selectedVariant.is_selected && <span className="px-2 py-0.5 rounded bg-[#4ECDC4] text-black font-bold">선택됨</span>}
                     {selectedVariant.params?.tone && <span className="px-2 py-0.5 rounded bg-[#222] text-[#888]">{selectedVariant.params.tone}</span>}
                   </div>
+                  {/* Goal / Target / Strategy */}
+                  {atom && (atom.goal || atom.target_audience || atom.strategy) && (
+                    <div className="space-y-1.5">
+                      {atom.goal && (
+                        <div className="flex gap-2 items-start">
+                          <span className="text-[9px] uppercase tracking-wider text-[#FF6B35] w-14 flex-shrink-0 pt-px">🎯 Goal</span>
+                          <span className="text-[11px] text-[#aaa] leading-snug">{atom.goal}</span>
+                        </div>
+                      )}
+                      {atom.target_audience && (
+                        <div className="flex gap-2 items-start">
+                          <span className="text-[9px] uppercase tracking-wider text-[#4ECDC4] w-14 flex-shrink-0 pt-px">👤 Target</span>
+                          <span className="text-[11px] text-[#aaa] leading-snug">{atom.target_audience}</span>
+                        </div>
+                      )}
+                      {atom.strategy && (
+                        <div className="flex gap-2 items-start">
+                          <span className="text-[9px] uppercase tracking-wider text-[#a78bfa] w-14 flex-shrink-0 pt-px">⚔️ Strategy</span>
+                          <span className="text-[11px] text-[#aaa] leading-snug">{atom.strategy}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <div className="text-[10px] text-[#555] space-y-1">
                     <div>모델: {selectedVariant.model || "—"}</div>
                     <div>ID: <span className="font-mono cursor-pointer hover:text-[#FF6B35] transition-colors" onClick={() => { navigator.clipboard.writeText(selectedVariant.id); }}>{selectedVariant.id}</span></div>
