@@ -20,15 +20,18 @@ import dagre from "dagre";
 import SnapshotNode from "./SnapshotNode";
 import VariantNode from "./VariantNode";
 import MetaNode from "./MetaNode";
+import ChannelNode from "./ChannelNode";
 import type { SnapshotNodeData } from "./SnapshotNode";
 import type { VariantNodeData } from "./VariantNode";
 import type { MetaNodeData } from "./MetaNode";
+import type { ChannelNodeData } from "./ChannelNode";
 
 // React 19 compat
 const nodeTypes = {
   snapshot: SnapshotNode,
   variant: VariantNode,
   meta: MetaNode,
+  channel: ChannelNode,
 } as unknown as NodeTypes;
 
 /* ── Types ── */
@@ -84,6 +87,7 @@ const NODE_SIZES: Record<string, { w: number; h: number }> = {
   snapshot: { w: 420, h: 1200 },
   variant: { w: 340, h: 800 },
   meta: { w: 220, h: 50 },
+  channel: { w: 180, h: 100 },
 };
 
 function layoutElements(nodes: Node[], edges: Edge[]) {
@@ -182,8 +186,7 @@ function buildGraph(
     });
   }
 
-  // 2. Variant DAG — parent_variant_ids drives all edges
-  // Filter out pillar atom variants (pillar content is managed via Block Editor, not variants)
+  // 2. Variant DAG — grouped by channel
   const pillarAtomIds = new Set(atoms.filter((a) => a.is_pillar).map((a) => a.id));
   const derivativeVariants = variants.filter((v) => !pillarAtomIds.has(v.atom_id));
   const atomMap = new Map(atoms.map((a) => [a.id, a]));
@@ -200,64 +203,98 @@ function buildGraph(
     );
   }
 
-  // Create all variant nodes (derivatives only)
+  // Group variants by channel
+  const byChannel = new Map<string, Variant[]>();
   derivativeVariants.forEach((v) => {
     const atom = atomMap.get(v.atom_id);
     if (!atom) return;
-    const vId = `var-${v.id}`;
-    const body = v.output?.body || v.output?.text || "";
-    const isMerged = v.parent_variant_ids.length > 1;
+    const ch = atom.channel;
+    if (!byChannel.has(ch)) byChannel.set(ch, []);
+    byChannel.get(ch)!.push(v);
+  });
 
+  // Create channel nodes + variant nodes per channel
+  byChannel.forEach((chVariants, channel) => {
+    const channelNodeId = `channel-${channel}`;
+
+    // Channel logo node
     nodes.push({
-      id: vId,
-      type: "variant",
+      id: channelNodeId,
+      type: "channel",
       position: { x: 0, y: 0 },
       data: {
-        variantId: v.id,
-        generation: v.generation,
-        model: v.model || "",
-        tone: v.params?.tone || "",
-        isSelected: v.is_selected,
-        body: body,
-        score: v.score,
-        channel: atom.channel,
-        createdAt: v.created_at,
-        mediaUrls: (atomMediaMap.get(v.atom_id) || []).slice(0, 2),
-        merged: isMerged,
-        mergeNote: v.params?.merge_note || "",
-      } satisfies VariantNodeData,
+        channel,
+        variantCount: chVariants.length,
+      } satisfies ChannelNodeData,
     });
 
-    if (v.parent_variant_ids.length > 0) {
-      // Edges from parent variants (supports both 1→1 and N→1 merge)
-      v.parent_variant_ids.forEach((pid) => {
-        const sourceId = variantSet.has(pid) ? `var-${pid}` : currentId;
+    // Edge: current → channel node
+    edges.push({
+      id: `edge-current-${channelNodeId}`,
+      source: currentId,
+      target: channelNodeId,
+      type: "smoothstep",
+      style: { stroke: "#555", strokeWidth: 1.5 },
+    });
+
+    // Create variant nodes
+    chVariants.forEach((v) => {
+      const atom = atomMap.get(v.atom_id)!;
+      const vId = `var-${v.id}`;
+      const body = v.output?.body || v.output?.text || "";
+      const isMerged = v.parent_variant_ids.length > 1;
+
+      nodes.push({
+        id: vId,
+        type: "variant",
+        position: { x: 0, y: 0 },
+        data: {
+          variantId: v.id,
+          generation: v.generation,
+          model: v.model || "",
+          tone: v.params?.tone || "",
+          isSelected: v.is_selected,
+          body: body,
+          score: v.score,
+          channel: atom.channel,
+          createdAt: v.created_at,
+          mediaUrls: (atomMediaMap.get(v.atom_id) || []).slice(0, 2),
+          merged: isMerged,
+          mergeNote: v.params?.merge_note || "",
+        } satisfies VariantNodeData,
+      });
+
+      if (v.parent_variant_ids.length > 0) {
+        // Edges from parent variants
+        v.parent_variant_ids.forEach((pid) => {
+          const sourceId = variantSet.has(pid) ? `var-${pid}` : channelNodeId;
+          edges.push({
+            id: `edge-${pid}-${v.id}`,
+            source: sourceId,
+            target: vId,
+            type: "smoothstep",
+            style: {
+              stroke: isMerged ? "#a855f7" : v.is_selected ? "#4ECDC4" : "#555",
+              strokeWidth: isMerged || v.is_selected ? 2.5 : 1.5,
+            },
+            animated: v.is_selected,
+          });
+        });
+      } else {
+        // Root variant — connect from channel node
         edges.push({
-          id: `edge-${pid}-${v.id}`,
-          source: sourceId,
+          id: `edge-${channelNodeId}-${v.id}`,
+          source: channelNodeId,
           target: vId,
           type: "smoothstep",
           style: {
-            stroke: isMerged ? "#a855f7" : v.is_selected ? "#4ECDC4" : "#555",
-            strokeWidth: isMerged || v.is_selected ? 2.5 : 1.5,
+            stroke: v.is_selected ? "#4ECDC4" : "#555",
+            strokeWidth: v.is_selected ? 2.5 : 1.5,
           },
           animated: v.is_selected,
         });
-      });
-    } else {
-      // Root variant — connect from "current" snapshot
-      edges.push({
-        id: `edge-current-${v.id}`,
-        source: currentId,
-        target: vId,
-        type: "smoothstep",
-        style: {
-          stroke: v.is_selected ? "#4ECDC4" : "#555",
-          strokeWidth: v.is_selected ? 2.5 : 1.5,
-        },
-        animated: v.is_selected,
-      });
-    }
+      }
+    });
   });
 
   return { nodes, edges };
