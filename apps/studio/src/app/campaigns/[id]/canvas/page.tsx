@@ -245,28 +245,28 @@ export default function CampaignCanvasPage() {
                       />
                     ) : (
                       <div
-                        onClick={() => setEditingBody(body)}
-                        className="text-[12px] text-[#e0e0e0] whitespace-pre-wrap leading-relaxed p-3 flex-1 overflow-y-auto cursor-text hover:bg-[#1a1a1a] transition-colors"
+                        onDoubleClick={() => setEditingBody(body)}
+                        className="text-[12px] text-[#e0e0e0] whitespace-pre-wrap leading-relaxed p-3 flex-1 overflow-y-auto cursor-default select-none hover:bg-[#1a1a1a] transition-colors"
                       >
                         {body || "콘텐츠 없음"}
                       </div>
                     )}
                   </div>
 
-                  {/* Save as new version */}
-                  {hasChanges && (
-                    <div className="space-y-2">
+                  {/* Edit controls — visible immediately in edit mode */}
+                  {isEditing && (
+                    <div className="space-y-2 flex-shrink-0">
                       <input
                         type="text"
-                        placeholder="수정 메모 (선택)"
+                        placeholder="요구사항 입력 (예: 도입부를 더 짧게)"
                         value={editNote}
                         onChange={(e) => setEditNote(e.target.value)}
-                        className="w-full text-[11px] bg-[#1a1a1a] text-[#e0e0e0] border border-[#333] rounded-lg px-3 py-2 outline-none focus:border-[#FF6B35]"
+                        className="w-full text-[11px] bg-[#1a1a1a] text-[#e0e0e0] border border-[#333] rounded-lg px-3 py-2 outline-none focus:border-[#FF6B35] placeholder:text-[#555]"
                       />
                       <button
                         onClick={saveAsNewVersion}
-                        disabled={saving}
-                        className="w-full text-xs py-2.5 rounded-lg bg-[#FF6B35] text-white font-semibold cursor-pointer hover:bg-[#FF6B35]/90 disabled:opacity-50"
+                        disabled={saving || !hasChanges}
+                        className="w-full text-xs py-2.5 rounded-lg bg-[#FF6B35] text-white font-semibold cursor-pointer hover:bg-[#FF6B35]/90 disabled:opacity-30"
                       >
                         {saving ? "저장 중..." : "새 버전으로 저장"}
                       </button>
