@@ -251,13 +251,12 @@ export default function Home() {
         </div>
 
         {/* Bio */}
-        <div className="text-center text-sm leading-[1.8] text-[#ccc] mb-6">
-          <span className="text-[#fafafa] font-medium">✦ 에이전틱 워크플로우</span>
-          <br />OpenClaw × ClaudeCode로
-          <br />회사를 굴리는 개발자 CEO
-          <br />
-          <br />수십 개의 AI 에이전트를 직접 빌딩.
-          <br />해본 것만 공유합니다.
+        <div className="bg-[#111] border border-[#222] rounded-xl p-5 text-center mb-6">
+          <div className="text-[15px] font-semibold text-[#fafafa] mb-2">✦ 에이전틱 워크플로우</div>
+          <div className="text-[13px] text-[#888] leading-[1.7]">
+            OpenClaw × ClaudeCode로 회사를 굴리는 개발자 CEO.
+            수십 개의 AI 에이전트를 직접 빌딩하며 얻은 실전 인사이트를 공유합니다.
+          </div>
         </div>
 
         {/* Quote Carousel */}

@@ -25,9 +25,9 @@ export default function ShowcasePage() {
 
   // 현재 상용에 배포된 variant 매핑
   const liveVariants: Selections = {
-    "section-title": "D",
+    "section-title": "C",
     "powered-by": "none", // 제거됨
-    bio: "D",
+    bio: "C",
     stats: "I",
     buttons: "A",
     newsletter: "C",
@@ -43,7 +43,7 @@ export default function ShowcasePage() {
     // Load saved selections
     try {
       const saved = localStorage.getItem("showcase-selections");
-      if (saved) setSelections(JSON.parse(saved));
+      setSelections(saved ? JSON.parse(saved) : { ...liveVariants });
       const savedOrder = localStorage.getItem("showcase-section-order");
       if (savedOrder) setSectionOrder(JSON.parse(savedOrder));
     } catch {}
