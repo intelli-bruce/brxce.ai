@@ -94,7 +94,7 @@ function Modal({
 
 /* ── Quote Carousel ── */
 const quotes = [
-  { text: "AI가 당신의 일자리를 빼앗는 게 아니라,\nAI를 활용하는 사람이 당신의 일자리를 가져갈 것이다.", author: "Jensen Huang", title: "CEO, NVIDIA", avatar: "/jensen-huang.jpg" },
+  { text: "AI가 당신의 일자리를 빼앗는 게 아니라,", textHighlight: "AI를 활용하는 사람이 당신의 일자리를 가져갈 것이다.", author: "Jensen Huang", title: "CEO, NVIDIA", avatar: "/jensen-huang.jpg" },
 ];
 
 function QuoteCarousel() {
@@ -122,8 +122,15 @@ function QuoteCarousel() {
           style={{ backgroundImage: `url(${quotes[current].avatar})`, filter: "blur(1px) brightness(0.55)", transform: "scale(1.05)" }}
         />
         <div className="relative p-5 min-h-[140px] flex flex-col justify-center">
-          <div className="text-[14px] text-[#e0e0e0] leading-[1.7] text-center italic mb-4 drop-shadow-lg whitespace-pre-line">
-            &ldquo;{quotes[current].text}&rdquo;
+          <div className="text-[15px] text-[#e8e8e8] leading-[1.8] text-center italic mb-4 drop-shadow-lg">
+            &ldquo;{quotes[current].text}
+            {quotes[current].textHighlight && (
+              <>
+                <br />
+                <span className="text-[#ffa500] font-semibold not-italic">{quotes[current].textHighlight}</span>
+              </>
+            )}
+            &rdquo;
           </div>
           <div className="flex items-center justify-center gap-2.5">
             <div>
@@ -264,15 +271,29 @@ export default function Home() {
           className="flex items-center justify-center gap-2.5 w-full py-3.5 px-5 rounded-xl bg-[#5865F2] text-white text-[15px] font-semibold hover:bg-[#4752C4] hover:-translate-y-0.5 transition-all mb-6"
         >
           <DiscordIcon />
-          디스코드 커뮤니티 참여하기
+          AWC - 에이전틱 워크플로우 클럽
         </a>
+
+        <button
+          onClick={() => {
+            setInquiryDone(false);
+            setEmail("");
+            setInquiryOpen(true);
+          }}
+          className="flex items-center justify-center gap-2.5 w-full py-3.5 px-5 rounded-xl bg-[#1a1a1a] border border-[#333] text-[#fafafa] text-[15px] font-semibold hover:bg-[#252525] hover:border-[#444] hover:-translate-y-0.5 transition-all cursor-pointer mb-6"
+        >
+          <span>✉️</span>
+          에이전틱 워크플로우 도입 문의
+        </button>
 
         {/* Links */}
         <div className="w-full flex flex-col gap-3">
           {/* Section: 에이전틱 워크플로우 */}
-          <div className="flex items-center gap-3 mt-8 mb-1 text-[15px] font-bold text-[#ccc] tracking-wide">
+          <div className="flex items-center gap-3 mt-8 mb-1 text-[15px] font-bold tracking-wide">
             <span className="flex-1 h-px bg-[#333]" />
-            ✦ 에이전틱 워크플로우
+            <span className="bg-gradient-to-r from-[#ff6b6b] to-[#ffa500] bg-clip-text text-transparent">
+              에이전틱 워크플로우
+            </span>
             <span className="flex-1 h-px bg-[#333]" />
           </div>
 
@@ -304,18 +325,6 @@ export default function Home() {
             오픈클로 실전 활용법
           </button>
 
-          <button
-            onClick={() => {
-              setInquiryDone(false);
-              setEmail("");
-              setInquiryOpen(true);
-            }}
-            className="flex items-center justify-center gap-2.5 w-full py-4 px-5 rounded-xl bg-[#fafafa] border border-[#fafafa] text-[#0a0a0a] text-[15px] font-semibold hover:bg-[#e0e0e0] hover:border-[#e0e0e0] hover:-translate-y-0.5 transition-all cursor-pointer"
-          >
-            <span>✉️</span>
-            에이전틱 워크플로우 도입 문의
-          </button>
-
           {/* Section: 서비스 */}
           <div className="flex items-center gap-3 mt-8 mb-1 text-[13px] font-semibold text-[#888] tracking-wide">
             <span className="flex-1 h-px bg-[#333]" />
@@ -329,8 +338,8 @@ export default function Home() {
             rel="noopener"
             className="flex items-center justify-center gap-2.5 w-full py-4 px-5 rounded-xl bg-[#141414] border border-[#222] text-[#fafafa] text-[15px] font-medium hover:bg-[#1a1a1a] hover:border-[#444] hover:-translate-y-0.5 transition-all no-underline"
           >
-            <Image src="/brxce-logo.png" alt="BRXCE" width={22} height={22} className="rounded" />
-            BRXCE — 프로젝트 관리
+            <Image src="/brxce-logo.png" alt="BRXCE" width={22} height={22} className="rounded invert" />
+            BRXCE — 에이전틱 워크플로우 관리 앱
           </a>
 
           {/* Section: SI */}
@@ -346,7 +355,7 @@ export default function Home() {
             rel="noopener"
             className="flex items-center justify-center gap-2.5 w-full py-4 px-5 rounded-xl bg-[#141414] border border-[#222] text-[#fafafa] text-[15px] font-medium hover:bg-[#1a1a1a] hover:border-[#444] hover:-translate-y-0.5 transition-all no-underline"
           >
-            <Image src="/intelli-logo.png" alt="IntelliEffect" width={22} height={22} className="rounded" />
+            <Image src="/intelli-logo.png" alt="IntelliEffect" width={22} height={22} className="rounded invert" />
             인텔리이펙트
           </a>
         </div>

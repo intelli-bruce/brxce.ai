@@ -44,7 +44,7 @@ export interface Variant {
   atom_id: string;
   generation: number;
   model: string | null;
-  params: { tone?: string; feedback?: string; base_variant_id?: string; merged?: boolean; merge_note?: string } | null;
+  params: { tone?: string; feedback?: string; base_variant_id?: string; merged?: boolean; merge_note?: string; merged_from?: string[] } | null;
   output: { body?: string; text?: string } | null;
   is_selected: boolean;
   score: number | null;
@@ -237,35 +237,11 @@ function buildGraph(
         .filter((m) => m.source_atom_id === atomId && m.asset_type?.startsWith("image"))
         .map((m) => m.storage_url);
 
-      // Check if any variant in this gen was merged — add merge meta node once
-      const hasMerged = genVariants.some((v) => v.params?.merged);
-      let mergeAnchor = prevGenAnchor;
-      if (hasMerged) {
-        const mergeMetaId = `meta-merge-${atomId}-g${gen}`;
-        const mergeNote = genVariants.find((v) => v.params?.merge_note)?.params?.merge_note || "병합";
-        nodes.push({
-          id: mergeMetaId,
-          type: "meta",
-          position: { x: 0, y: 0 },
-          data: {
-            message: `⇄ ${mergeNote}`,
-            type: "edit",
-          } satisfies MetaNodeData,
-        });
-        edges.push({
-          id: `edge-${prevGenAnchor}-${mergeMetaId}`,
-          source: prevGenAnchor,
-          target: mergeMetaId,
-          type: "smoothstep",
-          style: { stroke: "#a855f7", strokeWidth: 2, strokeDasharray: "4" },
-        });
-        mergeAnchor = mergeMetaId;
-      }
-
       genVariants.forEach((v) => {
         const vId = `var-${v.id}`;
         const body = v.output?.body || v.output?.text || "";
-        const sourceAnchor = v.params?.merged ? mergeAnchor : prevGenAnchor;
+        const hasMergedFrom = v.params?.merged_from && v.params.merged_from.length > 0;
+
         nodes.push({
           id: vId,
           type: "variant",
@@ -281,21 +257,37 @@ function buildGraph(
             channel: atom.channel,
             createdAt: v.created_at,
             mediaUrls: atomMedia.slice(0, 2),
-            merged: !!v.params?.merged,
+            merged: !!hasMergedFrom,
             mergeNote: v.params?.merge_note || "",
           } satisfies VariantNodeData,
         });
-        edges.push({
-          id: `edge-${sourceAnchor}-${vId}`,
-          source: sourceAnchor,
-          target: vId,
-          type: "smoothstep",
-          style: {
-            stroke: v.params?.merged ? "#a855f7" : v.is_selected ? "#4ECDC4" : "#555",
-            strokeWidth: v.is_selected ? 2.5 : 1.5,
-          },
-          animated: v.is_selected,
-        });
+
+        if (hasMergedFrom) {
+          // Edges from each source variant → this merged variant (converging)
+          v.params!.merged_from!.forEach((srcId, idx) => {
+            edges.push({
+              id: `edge-merge-${srcId}-${v.id}`,
+              source: `var-${srcId}`,
+              target: vId,
+              type: "smoothstep",
+              style: { stroke: "#a855f7", strokeWidth: 2 },
+              animated: true,
+            });
+          });
+        } else {
+          // Normal edge from previous anchor
+          edges.push({
+            id: `edge-${prevGenAnchor}-${vId}`,
+            source: prevGenAnchor,
+            target: vId,
+            type: "smoothstep",
+            style: {
+              stroke: v.is_selected ? "#4ECDC4" : "#555",
+              strokeWidth: v.is_selected ? 2.5 : 1.5,
+            },
+            animated: v.is_selected,
+          });
+        }
       });
 
       // Next gen branches from selected variant (or first) of this gen
