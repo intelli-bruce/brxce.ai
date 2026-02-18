@@ -270,9 +270,22 @@ export default function CampaignCanvasPage() {
                     ) : (
                       <div
                         onDoubleClick={() => setEditingBody(body)}
-                        className="text-[12px] text-[#e0e0e0] whitespace-pre-wrap leading-relaxed p-3 flex-1 overflow-y-auto cursor-default select-none hover:bg-[#1a1a1a] transition-colors"
+                        className="text-[12px] text-[#e0e0e0] leading-relaxed p-3 flex-1 overflow-y-auto cursor-default select-none hover:bg-[#1a1a1a] transition-colors"
                       >
-                        {body || "콘텐츠 없음"}
+                        {body ? (() => {
+                          const segments = body.split(/\n---\n|\n—-—\n/).map((s: string) => s.trim()).filter(Boolean);
+                          if (segments.length > 1 && atom?.channel === "threads") {
+                            return segments.map((seg: string, i: number) => (
+                              <div key={i} className={i > 0 ? "mt-3 pt-3 border-t border-[#333] border-dashed" : ""}>
+                                <div className="text-[9px] text-[#555] mb-1 font-mono">
+                                  {i === 0 ? "본문" : `스레드 #${i + 1}`}
+                                </div>
+                                <div className="whitespace-pre-wrap">{seg}</div>
+                              </div>
+                            ));
+                          }
+                          return <div className="whitespace-pre-wrap">{body}</div>;
+                        })() : "콘텐츠 없음"}
                       </div>
                     )}
                   </div>

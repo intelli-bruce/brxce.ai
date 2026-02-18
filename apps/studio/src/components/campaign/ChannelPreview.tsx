@@ -25,36 +25,63 @@ function CharCount({ current, limit }: { current: number; limit: number }) {
   );
 }
 
+function splitThreadSegments(body: string): string[] {
+  if (!body) return [""];
+  const segments = body.split(/\n---\n|\n—-—\n/).map(s => s.trim()).filter(Boolean);
+  return segments.length > 0 ? segments : [body];
+}
+
 function ThreadsPreview({ body, imageUrl }: { body: string; imageUrl?: string }) {
+  const segments = splitThreadSegments(body);
+  const isThread = segments.length > 1;
+
   return (
-    <div className="bg-[#101010] rounded-xl p-3 w-[320px] border border-[#222]">
-      <div className="flex gap-3">
-        <div className="flex-shrink-0">
-          <div className="w-9 h-9 rounded-full bg-[#333] overflow-hidden">
-            <img src={AVATAR} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-          </div>
+    <div className="bg-[#101010] rounded-xl w-[320px] border border-[#222] overflow-hidden">
+      {isThread && (
+        <div className="px-3 py-1.5 border-b border-[#222] flex items-center justify-between">
+          <span className="text-[10px] text-[#666]">🧵 스레드</span>
+          <span className="text-[10px] text-[#555]">{segments.length}개</span>
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 mb-1">
-            <span className="text-sm font-semibold text-[#fafafa]">brxce.ai</span>
-            <span className="text-xs text-[#666]">· 방금</span>
-          </div>
-          <p className="text-sm text-[#e0e0e0] whitespace-pre-wrap break-words leading-relaxed">
-            {body || <span className="text-[#555] italic">콘텐츠 없음</span>}
-          </p>
-          {imageUrl && (
-            <div className="mt-2 rounded-lg overflow-hidden" style={{ aspectRatio: "4/5", maxHeight: 200 }}>
-              <img src={imageUrl} alt="" className="w-full h-full object-cover" />
+      )}
+      {segments.map((seg, i) => {
+        const isFirst = i === 0;
+        const isLast = i === segments.length - 1;
+        return (
+          <div key={i} className={`p-3 ${!isLast ? "pb-0" : ""}`}>
+            <div className="flex gap-3">
+              <div className="flex flex-col items-center flex-shrink-0">
+                <div className="w-9 h-9 rounded-full bg-[#333] overflow-hidden flex-shrink-0">
+                  <img src={AVATAR} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                </div>
+                {!isLast && <div className="w-[2px] flex-1 bg-[#333] mt-1.5 min-h-[8px]" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="text-sm font-semibold text-[#fafafa]">brxce.ai</span>
+                  {isFirst && <span className="text-xs text-[#666]">· 방금</span>}
+                  {!isFirst && <span className="text-[10px] text-[#555] font-mono">#{i + 1}</span>}
+                </div>
+                <p className="text-sm text-[#e0e0e0] whitespace-pre-wrap break-words leading-relaxed">
+                  {seg}
+                </p>
+                {isFirst && imageUrl && (
+                  <div className="mt-2 rounded-lg overflow-hidden" style={{ aspectRatio: "4/5", maxHeight: 200 }}>
+                    <img src={imageUrl} alt="" className="w-full h-full object-cover" />
+                  </div>
+                )}
+                {isLast && (
+                  <div className="flex items-center gap-6 mt-3 text-[#666]">
+                    <span className="text-base cursor-pointer hover:text-red-400">♡</span>
+                    <span className="text-base cursor-pointer hover:text-[#aaa]">💬</span>
+                    <span className="text-base cursor-pointer hover:text-[#aaa]">🔁</span>
+                    <span className="text-base cursor-pointer hover:text-[#aaa]">✈</span>
+                  </div>
+                )}
+              </div>
             </div>
-          )}
-          <div className="flex items-center gap-6 mt-3 text-[#666]">
-            <span className="text-base cursor-pointer hover:text-red-400">♡</span>
-            <span className="text-base cursor-pointer hover:text-[#aaa]">💬</span>
-            <span className="text-base cursor-pointer hover:text-[#aaa]">🔁</span>
-            <span className="text-base cursor-pointer hover:text-[#aaa]">✈</span>
           </div>
-        </div>
-      </div>
+        );
+      })}
     </div>
   );
 }
