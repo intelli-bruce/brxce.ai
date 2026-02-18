@@ -44,9 +44,14 @@ export default async function PracticalPage({
   } catch {}
   const isPreviewMode = isAdmin || preview === PREVIEW_SECRET;
 
-  const client = createServiceClient();
+  // Use service client to show all items (including unpublished)
+  let client;
+  try {
+    client = createServiceClient();
+  } catch {
+    client = await createSupabaseServer();
+  }
 
-  // Show all items — unpublished ones will show waitlist dialog on click
   let query = client
     .from("contents")
     .select("id, title, slug, hook, category, tags, media_urls, status, created_at")
