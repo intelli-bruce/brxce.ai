@@ -139,6 +139,10 @@ function SubcategoryGroup({
   setEditingId,
   saveTitle,
   updateStatus,
+  onMoveUp,
+  onMoveDown,
+  isFirst,
+  isLast,
 }: {
   sub: string;
   items: Content[];
@@ -148,10 +152,26 @@ function SubcategoryGroup({
   setEditingId: (v: string | null) => void;
   saveTitle: (id: string) => void;
   updateStatus: (id: string, s: string) => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  isFirst?: boolean;
+  isLast?: boolean;
 }) {
   return (
     <div>
       <div className="flex items-center gap-2 mb-1.5 ml-1">
+        <div className="flex items-center gap-0.5">
+          <button
+            onClick={onMoveUp}
+            disabled={isFirst}
+            className={`text-[10px] bg-transparent border-none cursor-pointer px-0.5 ${isFirst ? "text-[#333]" : "text-[#666] hover:text-[#fafafa]"}`}
+          >▲</button>
+          <button
+            onClick={onMoveDown}
+            disabled={isLast}
+            className={`text-[10px] bg-transparent border-none cursor-pointer px-0.5 ${isLast ? "text-[#333]" : "text-[#666] hover:text-[#fafafa]"}`}
+          >▼</button>
+        </div>
         <span className="text-xs font-semibold text-[#4ECDC4]">{sub}</span>
         <span className="text-[10px] text-[#555]">{items.length}개</span>
         <div className="flex-1 border-t border-[#222]" />
@@ -200,6 +220,7 @@ export default function ContentsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [groupOrder, setGroupOrder] = useState<Record<string, string[]>>({});
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -233,7 +254,7 @@ export default function ContentsPage() {
     return acc;
   }, {});
 
-  const subGrouped = (items: Content[]): Record<string, Content[]> => {
+  const subGrouped = (items: Content[], cat: string): [string, Content[]][] => {
     const result: Record<string, Content[]> = {};
     for (const c of items) {
       const sub = c.subcategory || "미분류";
@@ -242,7 +263,55 @@ export default function ContentsPage() {
     for (const key of Object.keys(result)) {
       result[key].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
     }
-    return result;
+    // Apply saved group order
+    const order = groupOrder[cat];
+    if (order) {
+      const ordered: [string, Content[]][] = [];
+      for (const sub of order) {
+        if (result[sub]) ordered.push([sub, result[sub]]);
+      }
+      // Add any new groups not in saved order
+      for (const [sub, items] of Object.entries(result)) {
+        if (!order.includes(sub)) ordered.push([sub, items]);
+      }
+      return ordered;
+    }
+    return Object.entries(result);
+  };
+
+  const moveGroup = async (cat: string, subEntries: [string, Content[]][], fromIdx: number, toIdx: number) => {
+    const newEntries = [...subEntries];
+    const [moved] = newEntries.splice(fromIdx, 1);
+    newEntries.splice(toIdx, 0, moved);
+
+    // Save group order
+    const newOrder = newEntries.map(([sub]) => sub);
+    setGroupOrder(prev => ({ ...prev, [cat]: newOrder }));
+
+    // Reassign sort_order: group1 items get 100-199, group2 get 200-299, etc.
+    const updates: PromiseLike<unknown>[] = [];
+    for (let g = 0; g < newEntries.length; g++) {
+      const [, groupItems] = newEntries[g];
+      for (let i = 0; i < groupItems.length; i++) {
+        const newSort = (g + 1) * 100 + i + 1;
+        updates.push(sb.from("contents").update({ sort_order: newSort }).eq("id", groupItems[i].id));
+      }
+    }
+
+    // Optimistic update
+    setContents(prev => {
+      const updated = [...prev];
+      for (let g = 0; g < newEntries.length; g++) {
+        const [, groupItems] = newEntries[g];
+        for (let i = 0; i < groupItems.length; i++) {
+          const idx = updated.findIndex(c => c.id === groupItems[i].id);
+          if (idx >= 0) updated[idx] = { ...updated[idx], sort_order: (g + 1) * 100 + i + 1 };
+        }
+      }
+      return updated;
+    });
+
+    await Promise.all(updates);
   };
 
   // Find which subcategory a content belongs to
@@ -282,7 +351,7 @@ export default function ContentsPage() {
     const catChanged = activeItem.category !== targetCat;
 
     // Batch update sort_order (and subcategory/category if moved)
-    const updates: Promise<unknown>[] = [];
+    const updates: PromiseLike<unknown>[] = [];
     for (let i = 0; i < newList.length; i++) {
       const item = newList[i];
       const patch: Record<string, unknown> = { sort_order: i + 1 };
@@ -350,8 +419,8 @@ export default function ContentsPage() {
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <div className="space-y-8">
             {(category === "all" ? Object.entries(grouped) : [[category, contents]]).map(([cat, items]) => {
-              const subs = subGrouped(items as Content[]);
-              const hasSubs = Object.keys(subs).length > 1 || !subs["미분류"];
+              const subs = subGrouped(items as Content[], cat as string);
+              const hasSubs = subs.length > 1 || (subs.length === 1 && subs[0][0] !== "미분류");
 
               return (
                 <div key={cat as string}>
@@ -363,7 +432,7 @@ export default function ContentsPage() {
                   )}
                   {hasSubs ? (
                     <div className="space-y-4">
-                      {Object.entries(subs).map(([sub, subItems]) => (
+                      {subs.map(([sub, subItems], idx) => (
                         <SubcategoryGroup
                           key={sub}
                           sub={sub}
@@ -374,6 +443,10 @@ export default function ContentsPage() {
                           setEditingId={setEditingId}
                           saveTitle={saveTitle}
                           updateStatus={updateStatus}
+                          isFirst={idx === 0}
+                          isLast={idx === subs.length - 1}
+                          onMoveUp={() => moveGroup(cat as string, subs, idx, idx - 1)}
+                          onMoveDown={() => moveGroup(cat as string, subs, idx, idx + 1)}
                         />
                       ))}
                     </div>
