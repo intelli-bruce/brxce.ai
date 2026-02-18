@@ -16,6 +16,9 @@ export interface Campaign {
   series_order: number | null;
   source_content_id: string | null;
   source_idea_id: string | null;
+  goal: string | null;
+  target_audience: string | null;
+  strategy: string | null;
   style_notes: string | null;
   total_cost_tokens: number;
   total_cost_usd: number;

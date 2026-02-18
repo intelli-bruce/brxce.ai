@@ -442,6 +442,29 @@ export default function CampaignCockpitPage() {
             <span className="text-xs text-[#888]">💰 {campaign.total_cost_tokens.toLocaleString()} tok · ${campaign.total_cost_usd.toFixed(2)}</span>
           )}
         </div>
+        {/* Goal / Target / Strategy */}
+        {(campaign.goal || campaign.target_audience || campaign.strategy) && (
+          <div className="mt-3 grid grid-cols-3 gap-3 max-w-3xl">
+            {campaign.goal && (
+              <div className="bg-[#1a1a1a] rounded-lg p-3 border border-[#333]">
+                <div className="text-[10px] uppercase tracking-wider text-[#FF6B35] mb-1">🎯 Goal</div>
+                <div className="text-xs text-[#ccc] leading-relaxed">{campaign.goal}</div>
+              </div>
+            )}
+            {campaign.target_audience && (
+              <div className="bg-[#1a1a1a] rounded-lg p-3 border border-[#333]">
+                <div className="text-[10px] uppercase tracking-wider text-[#4ECDC4] mb-1">👤 Target</div>
+                <div className="text-xs text-[#ccc] leading-relaxed">{campaign.target_audience}</div>
+              </div>
+            )}
+            {campaign.strategy && (
+              <div className="bg-[#1a1a1a] rounded-lg p-3 border border-[#333]">
+                <div className="text-[10px] uppercase tracking-wider text-[#a78bfa] mb-1">⚔️ Strategy</div>
+                <div className="text-xs text-[#ccc] leading-relaxed">{campaign.strategy}</div>
+              </div>
+            )}
+          </div>
+        )}
         {campaign.topic && (
           <div className="text-sm text-[#888] mt-2">주제: {campaign.topic}</div>
         )}
