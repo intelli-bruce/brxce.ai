@@ -169,9 +169,6 @@ function VariantNode({ data, selected }: { data: VariantNodeData; selected?: boo
         {/* Generation + meta strip */}
         <div className="flex items-center justify-between px-2.5 py-1 bg-[#0a0a0a]">
           <div className="flex items-center gap-1.5">
-            <span className="text-[8px] px-1.5 py-0.5 rounded bg-[#FF6B35]/20 text-[#FF6B35] font-bold">
-              G{data.generation}
-            </span>
             <span className="text-[8px] text-[#555] font-mono">{data.variantId.slice(0, 8)}</span>
             {data.tone && <span className="text-[8px] px-1 py-0.5 rounded bg-[#222] text-[#777]">{data.tone}</span>}
           </div>

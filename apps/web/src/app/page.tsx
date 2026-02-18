@@ -186,9 +186,7 @@ function OAuthHandler() {
 }
 
 export default function Home() {
-  const [waitlistOpen, setWaitlistOpen] = useState(false);
-  const [waitlistProduct, setWaitlistProduct] = useState("");
-  const [waitlistDone, setWaitlistDone] = useState(false);
+  // waitlist removed — moved to GuideSection
   const [inquiryOpen, setInquiryOpen] = useState(false);
   const [inquiryDone, setInquiryDone] = useState(false);
   const [email, setEmail] = useState("");
@@ -197,14 +195,7 @@ export default function Home() {
   const isAdmin = useIsAdmin();
   const router = useRouter();
 
-  const waitlistDescs: Record<string, string> = {
-    "오픈클로 가이드북":
-      "OpenClaw × ClaudeCode로 AI 에이전트를 직접 세팅하는 실전 가이드.\n\n✓ 첫 에이전트 30분 만에 돌리기\n✓ 실제 업무 자동화 워크플로우 3가지\n✓ 삽질 줄이는 설정 팁 & 트러블슈팅\n\n이메일을 남겨주시면 오픈 즉시 보내드립니다.",
-    "오픈클로 실전 활용법":
-      "14개 AI 에이전트로 회사를 운영하는 실제 워크플로우를 공개합니다.\n\n✓ 에이전트 역할 분담 설계법\n✓ 실제 비용 & ROI 분석\n✓ 흔한 실패 패턴과 해결법\n\n이메일을 남겨주시면 오픈 즉시 보내드립니다.",
-  };
-
-  async function submitForm(type: "waitlist" | "inquiry") {
+  async function submitForm(type: "inquiry") {
     if (!email || !email.includes("@")) return;
     setSubmitting(true);
     try {
@@ -212,13 +203,12 @@ export default function Home() {
       await sb.from("submissions").insert({
         email,
         type,
-        product: type === "waitlist" ? waitlistProduct : null,
+        product: null,
       });
     } catch {}
     setSubmitting(false);
     setEmail("");
-    if (type === "waitlist") setWaitlistDone(true);
-    else setInquiryDone(true);
+    setInquiryDone(true);
   }
 
   return (
@@ -296,33 +286,21 @@ export default function Home() {
             <span className="flex-1 h-px bg-[#333]" />
           </div>
 
-          <button
-            onClick={() => {
-              if (isAdmin) { router.push("/guides?preview=brxce-preview-2026"); return; }
-              setWaitlistProduct("오픈클로 가이드북");
-              setWaitlistDone(false);
-              setEmail("");
-              setWaitlistOpen(true);
-            }}
-            className="flex items-center justify-center gap-2.5 w-full py-4 px-5 rounded-xl bg-[#141414] border border-[#222] text-[#fafafa] text-[15px] font-medium hover:bg-[#1a1a1a] hover:border-[#444] hover:-translate-y-0.5 transition-all cursor-pointer"
+          <Link
+            href="/guides"
+            className="flex items-center justify-center gap-2.5 w-full py-4 px-5 rounded-xl bg-[#141414] border border-[#222] text-[#fafafa] text-[15px] font-medium hover:bg-[#1a1a1a] hover:border-[#444] hover:-translate-y-0.5 transition-all no-underline"
           >
             <Image src="/openclaw-logo.svg" alt="" width={22} height={22} className="rounded" />
             오픈클로 가이드북
-          </button>
+          </Link>
 
-          <button
-            onClick={() => {
-              if (isAdmin) { router.push("/practical"); return; }
-              setWaitlistProduct("오픈클로 실전 활용법");
-              setWaitlistDone(false);
-              setEmail("");
-              setWaitlistOpen(true);
-            }}
-            className="flex items-center justify-center gap-2.5 w-full py-4 px-5 rounded-xl bg-[#141414] border border-[#222] text-[#fafafa] text-[15px] font-medium hover:bg-[#1a1a1a] hover:border-[#444] hover:-translate-y-0.5 transition-all cursor-pointer"
+          <Link
+            href="/practical"
+            className="flex items-center justify-center gap-2.5 w-full py-4 px-5 rounded-xl bg-[#141414] border border-[#222] text-[#fafafa] text-[15px] font-medium hover:bg-[#1a1a1a] hover:border-[#444] hover:-translate-y-0.5 transition-all no-underline"
           >
             <Image src="/openclaw-logo.svg" alt="" width={22} height={22} className="rounded" />
             오픈클로 실전 활용법
-          </button>
+          </Link>
 
           {/* Section: 서비스 */}
           <div className="flex items-center gap-3 mt-8 mb-1 text-[13px] font-semibold text-[#888] tracking-wide">
@@ -412,50 +390,6 @@ export default function Home() {
           <div>© 2026 Bruce Choe · bruce@brxce.ai</div>
         </div>
       </div>
-
-      {/* Waitlist Modal */}
-      <Modal open={waitlistOpen} onClose={() => setWaitlistOpen(false)}>
-        {!waitlistDone ? (
-          <>
-            <div className="text-4xl mb-3">🦞</div>
-            <h2 className="text-lg font-bold mb-2">{waitlistProduct} — 오픈 예정</h2>
-            <p className="text-sm text-[#999] leading-relaxed mb-6 whitespace-pre-line">
-              {waitlistDescs[waitlistProduct] || "곧 공개됩니다."}
-            </p>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && submitForm("waitlist")}
-              placeholder="이메일 주소를 입력하세요"
-              className="w-full p-3.5 rounded-[10px] border border-[#333] bg-[#0a0a0a] text-[#fafafa] text-sm outline-none focus:border-[#555] mb-3"
-            />
-            <button
-              onClick={() => submitForm("waitlist")}
-              disabled={submitting}
-              className="w-full p-3.5 rounded-[10px] bg-[#fafafa] text-[#0a0a0a] text-[15px] font-semibold cursor-pointer hover:bg-[#e0e0e0] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {submitting ? "등록 중..." : "대기 등록"}
-            </button>
-            <button onClick={() => setWaitlistOpen(false)} className="mt-4 text-[13px] text-[#666] hover:text-[#999] bg-transparent border-none cursor-pointer">
-              닫기
-            </button>
-          </>
-        ) : (
-          <>
-            <div className="text-4xl mb-3">✅</div>
-            <h2 className="text-lg font-bold mb-2">등록 완료!</h2>
-            <p className="text-sm text-[#999] leading-relaxed mb-4">
-              오픈 시 가장 먼저 알려드리겠습니다.
-              <br />
-              감사합니다 🦞
-            </p>
-            <button onClick={() => setWaitlistOpen(false)} className="mt-2 text-[13px] text-[#666] hover:text-[#999] bg-transparent border-none cursor-pointer">
-              닫기
-            </button>
-          </>
-        )}
-      </Modal>
 
       {/* Inquiry Modal */}
       <Modal open={inquiryOpen} onClose={() => setInquiryOpen(false)}>
