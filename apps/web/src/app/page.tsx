@@ -22,18 +22,20 @@ function useHandleOAuthCode() {
   }, [searchParams, router]);
 }
 
-function useIsAdmin() {
+function useAuth() {
   const [isAdmin, setIsAdmin] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   useEffect(() => {
     const sb = createSupabaseBrowser();
     sb.auth.getUser().then(({ data: { user } }) => {
       if (!user) return;
+      setUserEmail(user.email || null);
       sb.from("profiles").select("role").eq("id", user.id).single().then(({ data }) => {
         if (data?.role === "admin") setIsAdmin(true);
       });
     });
   }, []);
-  return isAdmin;
+  return { isAdmin, userEmail };
 }
 
 /* ── Social SVG Icons ── */
@@ -192,7 +194,7 @@ export default function Home() {
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const latestGuides = useLatestGuides();
-  const isAdmin = useIsAdmin();
+  const { isAdmin, userEmail } = useAuth();
   const router = useRouter();
 
   async function submitForm(type: "inquiry") {
@@ -388,6 +390,11 @@ export default function Home() {
             <button onClick={() => { setInquiryDone(false); setEmail(""); setInquiryOpen(true); }} className="hover:text-[#999] bg-transparent border-none text-[#555] text-xs cursor-pointer transition-colors">문의</button>
           </div>
           <div>© 2026 Bruce Choe · bruce@brxce.ai</div>
+          {isAdmin && (
+            <div className="mt-1 text-[10px] text-[#444]">
+              ✦ {userEmail} · admin
+            </div>
+          )}
         </div>
       </div>
 
