@@ -207,10 +207,11 @@ function buildGraph(
     gens.forEach((gen) => {
       const genVariants = byGen.get(gen)!;
 
-      // Meta node for this generation
+      // Meta node for this generation (skip if merged_from — merge edges handle the flow)
+      const hasMergeTarget = genVariants.some((v) => v.params?.merged_from?.length);
       const firstV = genVariants[0];
       const feedback = firstV.params?.feedback;
-      if (feedback || gen > 1) {
+      if ((feedback || gen > 1) && !hasMergeTarget) {
         const metaId = `meta-${atomId}-g${gen}`;
         nodes.push({
           id: metaId,

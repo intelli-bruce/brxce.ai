@@ -268,7 +268,7 @@ export default function Home() {
           href="https://discord.gg/fptPWQpdwD"
           target="_blank"
           rel="noopener"
-          className="flex items-center justify-center gap-2.5 w-full py-3.5 px-5 rounded-xl bg-[#5865F2] text-white text-[15px] font-semibold hover:bg-[#4752C4] hover:-translate-y-0.5 transition-all mb-6"
+          className="flex items-center justify-center gap-2.5 w-full py-3.5 px-5 rounded-xl bg-[#5865F2] text-white text-[15px] font-semibold hover:bg-[#4752C4] hover:-translate-y-0.5 transition-all mb-2"
         >
           <DiscordIcon />
           AWC - 에이전틱 워크플로우 클럽
@@ -280,7 +280,7 @@ export default function Home() {
             setEmail("");
             setInquiryOpen(true);
           }}
-          className="flex items-center justify-center gap-2.5 w-full py-3.5 px-5 rounded-xl bg-[#1a1a1a] border border-[#333] text-[#fafafa] text-[15px] font-semibold hover:bg-[#252525] hover:border-[#444] hover:-translate-y-0.5 transition-all cursor-pointer mb-6"
+          className="flex items-center justify-center gap-2.5 w-full py-3.5 px-5 rounded-xl bg-[#1a1a1a] border border-[#333] text-[#fafafa] text-[15px] font-semibold hover:bg-[#252525] hover:border-[#444] hover:-translate-y-0.5 transition-all cursor-pointer mb-3"
         >
           <span>✉️</span>
           에이전틱 워크플로우 도입 문의

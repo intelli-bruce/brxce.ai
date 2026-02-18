@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import Image from "next/image";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -20,6 +21,9 @@ export default function ShowcasePage() {
   const [selections, setSelections] = useState<Selections>({});
   const [activeSection, setActiveSection] = useState("section-title");
   const [previewWidth, setPreviewWidth] = useState<number>(375);
+  const defaultOrder = ["powered-by", "bio", "stats", "section-title", "buttons", "newsletter", "footer"];
+  const [sectionOrder, setSectionOrder] = useState<string[]>(defaultOrder);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
 
   useEffect(() => {
     if (process.env.NODE_ENV !== "development") {
@@ -29,6 +33,8 @@ export default function ShowcasePage() {
     try {
       const saved = localStorage.getItem("showcase-selections");
       if (saved) setSelections(JSON.parse(saved));
+      const savedOrder = localStorage.getItem("showcase-section-order");
+      if (savedOrder) setSectionOrder(JSON.parse(savedOrder));
     } catch {}
   }, [router]);
 
@@ -64,7 +70,9 @@ export default function ShowcasePage() {
             <button
               onClick={() => {
                 setSelections({});
+                setSectionOrder(defaultOrder);
                 localStorage.removeItem("showcase-selections");
+                localStorage.removeItem("showcase-section-order");
               }}
               className="ml-auto text-[11px] text-[#666] hover:text-[#999] bg-transparent border border-[#333] px-2 py-1 rounded cursor-pointer shrink-0"
             >
@@ -287,13 +295,21 @@ export default function ShowcasePage() {
               <div className="text-[12px] font-mono text-[#888] mb-3 text-center">
                 🟢 현재 상용 {previewWidth ? `(${previewWidth}px)` : ""}
               </div>
-              <FullPagePreview selections={{}} />
+              <FullPagePreview selections={{}} order={defaultOrder} />
             </div>
             <div style={previewWidth ? { width: previewWidth, minWidth: previewWidth } : undefined} className={previewWidth ? "" : "flex-1"}>
               <div className="text-[12px] font-mono text-[#ffa500] mb-3 text-center">
                 🟡 선택 조합 {previewWidth ? `(${previewWidth}px)` : ""}
               </div>
-              <FullPagePreview selections={selections} />
+              <FullPagePreview
+                selections={selections}
+                order={sectionOrder}
+                draggable
+                onReorder={(newOrder) => {
+                  setSectionOrder(newOrder);
+                  localStorage.setItem("showcase-section-order", JSON.stringify(newOrder));
+                }}
+              />
             </div>
           </div>
         </section>
@@ -306,46 +322,84 @@ export default function ShowcasePage() {
 /* ══════════════════════════════════════════════════
    Full Page Preview Component
 ══════════════════════════════════════════════════ */
-function FullPagePreview({ selections }: { selections: Selections }) {
-  const st = findVariant(sectionTitleVariants, selections["section-title"]);
-  const pw = findVariant(poweredByVariants, selections["powered-by"]);
-  const bio = findVariant(bioVariants, selections["bio"]);
-  const stats = findVariant(statsVariants, selections["stats"]);
-  const btn = findVariant(buttonVariants, selections["buttons"]);
-  const nl = findVariant(newsletterVariants, selections["newsletter"]);
-  const ft = findVariant(footerVariants, selections["footer"]);
+function FullPagePreview({
+  selections,
+  order,
+  draggable,
+  onReorder,
+}: {
+  selections: Selections;
+  order: string[];
+  draggable?: boolean;
+  onReorder?: (order: string[]) => void;
+}) {
+  const [dragOver, setDragOver] = useState<number | null>(null);
+  const dragItem = React.useRef<number | null>(null);
+
+  const variantMap: Record<string, { label: string; render: () => React.ReactNode }> = {
+    "powered-by": { label: "Powered by", render: findVariant(poweredByVariants, selections["powered-by"]).render },
+    bio: { label: "바이오", render: findVariant(bioVariants, selections["bio"]).render },
+    stats: { label: "Stats", render: findVariant(statsVariants, selections["stats"]).render },
+    "section-title": { label: "타이틀", render: findVariant(sectionTitleVariants, selections["section-title"]).render },
+    buttons: { label: "버튼", render: findVariant(buttonVariants, selections["buttons"]).render },
+    newsletter: { label: "뉴스레터", render: findVariant(newsletterVariants, selections["newsletter"]).render },
+    footer: { label: "푸터", render: findVariant(footerVariants, selections["footer"]).render },
+  };
+
+  const handleDragStart = (idx: number) => {
+    dragItem.current = idx;
+  };
+
+  const handleDragOver = (e: React.DragEvent, idx: number) => {
+    e.preventDefault();
+    setDragOver(idx);
+  };
+
+  const handleDrop = (idx: number) => {
+    const from = dragItem.current;
+    if (from === null || from === idx) { setDragOver(null); return; }
+    const newOrder = [...order];
+    const [moved] = newOrder.splice(from, 1);
+    newOrder.splice(idx, 0, moved);
+    onReorder?.(newOrder);
+    dragItem.current = null;
+    setDragOver(null);
+  };
 
   return (
-    <div className="border border-[#222] rounded-2xl bg-[#0a0a0a] p-5 flex flex-col items-center gap-5 text-[0.85em]">
-      {/* Profile */}
+    <div className="border border-[#222] rounded-2xl bg-[#0a0a0a] p-5 flex flex-col items-center gap-3 text-[0.85em]">
+      {/* Profile (fixed) */}
       <div className="w-14 h-14 rounded-full border-2 border-[#333] overflow-hidden bg-gradient-to-br from-[#1a1a2e] to-[#16213e]">
         <Image src="/profile.jpg" alt="Bruce Choe" width={56} height={56} className="w-full h-full object-cover" />
       </div>
-      <div className="text-center">
+      <div className="text-center mb-2">
         <div className="text-[16px] font-bold">Bruce Choe</div>
         <div className="text-[12px] text-[#888]">@brxce.ai</div>
       </div>
 
-      {/* Powered by */}
-      <div className="w-full">{pw.render()}</div>
-
-      {/* Bio */}
-      <div className="w-full">{bio.render()}</div>
-
-      {/* Stats */}
-      <div className="w-full">{stats.render()}</div>
-
-      {/* Section title */}
-      <div className="w-full">{st.render()}</div>
-
-      {/* Buttons */}
-      <div className="w-full">{btn.render()}</div>
-
-      {/* Newsletter */}
-      <div className="w-full mt-2">{nl.render()}</div>
-
-      {/* Footer */}
-      <div className="w-full mt-2">{ft.render()}</div>
+      {/* Draggable sections */}
+      {order.map((key, idx) => {
+        const v = variantMap[key];
+        if (!v) return null;
+        return (
+          <div
+            key={key}
+            draggable={draggable}
+            onDragStart={() => handleDragStart(idx)}
+            onDragOver={(e) => handleDragOver(e, idx)}
+            onDragEnd={() => setDragOver(null)}
+            onDrop={() => handleDrop(idx)}
+            className={`w-full transition-all ${draggable ? "cursor-grab active:cursor-grabbing" : ""} ${
+              dragOver === idx ? "border-t-2 border-[#ffa500] pt-1" : ""
+            }`}
+          >
+            {draggable && (
+              <div className="text-[9px] text-[#555] text-center mb-1 select-none">⠿ {v.label}</div>
+            )}
+            {v.render()}
+          </div>
+        );
+      })}
     </div>
   );
 }
