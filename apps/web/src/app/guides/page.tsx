@@ -48,22 +48,23 @@ export default async function GuidesPage({
   } catch {}
   const isPreviewMode = isAdmin || preview === PREVIEW_SECRET;
 
-  // Use service client to show all items (including unpublished)
+  // Always use service client to show all items (including unpublished)
   // Unpublished items will show waitlist dialog on click
-  let client;
-  try {
-    client = createServiceClient();
-  } catch {
-    client = await createSupabaseServer();
-  }
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 
-  let query = client
-    .from("contents")
-    .select("id, title, slug, hook, category, tags, media_urls, status, created_at")
-    .order("created_at", { ascending: true })
-    .in("status", ["published", "draft", "review", "ready"]);
-
-  const { data: allGuides } = await query;
+  // Direct fetch to bypass any SSR client issues
+  const res = await fetch(
+    `${supabaseUrl}/rest/v1/contents?select=id,title,slug,hook,category,tags,media_urls,status,created_at&status=in.(published,draft,review,ready)&order=created_at.asc`,
+    {
+      headers: {
+        apikey: serviceKey,
+        Authorization: `Bearer ${serviceKey}`,
+      },
+      next: { revalidate: 60 },
+    }
+  );
+  const allGuides = res.ok ? await res.json() : [];
   const guides = allGuides || [];
 
   // Show both "가이드북" and "가이드" category

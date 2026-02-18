@@ -44,22 +44,21 @@ export default async function PracticalPage({
   } catch {}
   const isPreviewMode = isAdmin || preview === PREVIEW_SECRET;
 
-  // Use service client to show all items (including unpublished)
-  let client;
-  try {
-    client = createServiceClient();
-  } catch {
-    client = await createSupabaseServer();
-  }
+  // Always use service client to show all items (including unpublished)
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 
-  let query = client
-    .from("contents")
-    .select("id, title, slug, hook, category, tags, media_urls, status, created_at")
-    .eq("category", "실전 활용법")
-    .order("created_at", { ascending: true })
-    .in("status", ["published", "draft", "review", "ready"]);
-
-  const { data: allGuides } = await query;
+  const res = await fetch(
+    `${supabaseUrl}/rest/v1/contents?select=id,title,slug,hook,category,tags,media_urls,status,created_at&category=eq.${encodeURIComponent("실전 활용법")}&status=in.(published,draft,review,ready)&order=created_at.asc`,
+    {
+      headers: {
+        apikey: serviceKey,
+        Authorization: `Bearer ${serviceKey}`,
+      },
+      next: { revalidate: 60 },
+    }
+  );
+  const allGuides = res.ok ? await res.json() : [];
   const guides = allGuides || [];
 
   function bySection(items: any[], tagMatch: string) {
