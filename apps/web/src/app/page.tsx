@@ -246,7 +246,7 @@ export default function Home() {
         <div className="bg-[#111] border border-[#222] rounded-xl p-5 text-center mb-6">
           <div className="text-[15px] font-semibold text-[#fafafa] mb-2">✦ 에이전틱 워크플로우</div>
           <div className="text-[13px] text-[#888] leading-[1.7]">
-            OpenClaw × ClaudeCode로 회사를 굴리는 개발자 CEO.
+            OpenClaw × ClaudeCode로 회사를 굴리는 개발자 CEO.<br />
             수십 개의 AI 에이전트를 직접 빌딩하며 얻은 실전 인사이트를 공유합니다.
           </div>
         </div>
