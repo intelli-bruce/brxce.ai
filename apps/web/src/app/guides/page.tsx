@@ -7,11 +7,11 @@ import type { Metadata } from "next";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "오픈클로 가이드 — brxce.ai",
-  description: "오픈클로(OpenClaw) 에이전틱 워크플로우 실전 가이드 모음. OpenClaw × ClaudeCode로 AI 에이전트를 직접 세팅하는 방법을 공유합니다.",
+  title: "에이전틱 워크플로우 실전 가이드 — brxce.ai",
+  description: "에이전틱 워크플로우를 직접 구축하고 운영하는 실전 가이드. AI 에이전트 세팅부터 회사 운영까지.",
   openGraph: {
-    title: "오픈클로 가이드 — brxce.ai",
-    description: "오픈클로 에이전틱 워크플로우 실전 가이드 모음",
+    title: "에이전틱 워크플로우 실전 가이드 — brxce.ai",
+    description: "에이전틱 워크플로우를 직접 구축하고 운영하는 실전 가이드. AI 에이전트 세팅부터 회사 운영까지.",
     type: "website",
     url: "https://brxce.ai/guides",
     locale: "ko_KR",
