@@ -24,6 +24,7 @@ const navItems: NavItem[] = [
   { type: "link", href: "/studio", label: "스튜디오", icon: "🎬" },
   { type: "link", href: "/studio/templates", label: "템플릿: 이미지", icon: "🖼️", indent: true },
   { type: "link", href: "/studio/templates?tab=video", label: "템플릿: 영상", icon: "🎥", indent: true },
+  { type: "link", href: "/studio/references", label: "레퍼런스", icon: "📚", indent: true },
   { type: "link", href: "/media", label: "미디어 라이브러리", icon: "📁" },
 
   // ── 캠페인 ──
@@ -33,6 +34,9 @@ const navItems: NavItem[] = [
   { type: "link", href: "/campaigns/series", label: "시리즈", icon: "📚", indent: true },
   { type: "link", href: "/analytics", label: "성과", icon: "📈" },
   { type: "link", href: "/style-profiles", label: "스타일 프로필", icon: "🎭" },
+
+  { type: "section", label: "전략" },
+  { type: "link", href: "/studio/funnel", label: "퍼널 맵", icon: "🗺️" },
 ];
 
 interface SidebarProps {

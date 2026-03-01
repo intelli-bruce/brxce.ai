@@ -289,7 +289,7 @@ export default function Home() {
             className="flex items-center justify-center gap-2.5 w-full py-4 px-5 rounded-xl bg-[#141414] border border-[#222] text-[#fafafa] text-[15px] font-medium hover:bg-[#1a1a1a] hover:border-[#444] hover:-translate-y-0.5 transition-all no-underline"
           >
             <Image src="/openclaw-logo.svg" alt="" width={22} height={22} className="rounded" />
-            오픈클로 실전 활용법
+            에이전틱 워크플로우 모음
           </Link>
 
           {/* Section: 서비스 */}

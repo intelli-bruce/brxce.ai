@@ -7,10 +7,10 @@ import type { Metadata } from "next";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "오픈클로 실전 활용법 — brxce.ai",
+  title: "에이전틱 워크플로우 모음 — brxce.ai",
   description: "오픈클로(OpenClaw) 에이전틱 워크플로우 실전 활용 사례. 개발, 업무 자동화, 콘텐츠 제작까지.",
   openGraph: {
-    title: "오픈클로 실전 활용법 — brxce.ai",
+    title: "에이전틱 워크플로우 모음 — brxce.ai",
     description: "에이전틱 워크플로우 실전 활용 사례",
     type: "website",
     url: "https://brxce.ai/practical",
@@ -74,7 +74,7 @@ export default async function PracticalPage({
     <>
       <GuideHeader />
       <main className="max-w-[700px] mx-auto px-6 py-12">
-        <h1 className="text-3xl font-bold mb-1">오픈클로 실전 활용법</h1>
+        <h1 className="text-3xl font-bold mb-1">에이전틱 워크플로우 모음</h1>
         <p className="text-[#888] mb-10">사례별 에이전틱 워크플로우 활용 방법</p>
 
         {SECTIONS.map((section, i) => {

@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import Sidebar from "./Sidebar";
 
-const PUBLIC_PATHS = ["/auth/login", "/auth/signup", "/auth/callback"];
+const PUBLIC_PATHS = ["/auth/login", "/auth/signup", "/auth/callback", "/render"];
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);

@@ -12,3 +12,17 @@
 [debug] [2026-02-16T01:28:04.853Z] > authorizing via signed-in user (bruce@wespion.com)
 [debug] [2026-02-16T01:28:04.853Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
 [debug] [2026-02-16T01:28:04.853Z] > authorizing via signed-in user (bruce@wespion.com)
+[debug] [2026-02-18T12:30:23.508Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-18T12:30:23.509Z] > authorizing via signed-in user (bruce@wespion.com)
+[debug] [2026-02-18T12:30:23.509Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-18T12:30:23.509Z] > authorizing via signed-in user (bruce@wespion.com)
+[debug] [2026-02-18T12:30:23.516Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-18T12:30:23.516Z] > authorizing via signed-in user (bruce@wespion.com)
+[debug] [2026-02-18T12:30:23.543Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-18T12:30:23.543Z] > authorizing via signed-in user (bruce@wespion.com)
+[debug] [2026-02-18T12:30:23.544Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-18T12:30:23.544Z] > authorizing via signed-in user (bruce@wespion.com)
+[debug] [2026-02-18T12:30:23.544Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-18T12:30:23.544Z] > authorizing via signed-in user (bruce@wespion.com)
+[debug] [2026-02-18T12:30:23.545Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-02-18T12:30:23.545Z] > authorizing via signed-in user (bruce@wespion.com)

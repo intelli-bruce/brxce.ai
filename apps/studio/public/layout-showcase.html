@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>캐러셀 레이아웃 패턴 — 골라주세요</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Noto+Sans+KR:wght@400;600;700;900&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Noto Sans KR','Inter',sans-serif; background:#0a0a0a; color:#e5e5e5; }
+
+  .page-header { padding:40px 48px 32px; border-bottom:1px solid rgba(255,255,255,0.06); }
+  .page-header h1 { font-size:28px; font-weight:900; margin-bottom:8px; }
+  .page-header p { font-size:14px; color:rgba(255,255,255,0.4); line-height:1.6; }
+
+  .category { padding:32px 48px; }
+  .cat-title { font-size:20px; font-weight:800; margin-bottom:6px; display:flex; align-items:center; gap:10px; }
+  .cat-desc { font-size:13px; color:rgba(255,255,255,0.35); margin-bottom:24px; }
+  .cat-tag { padding:3px 10px; border-radius:6px; font-size:11px; font-weight:600; }
+  .tag-cover { background:rgba(255,107,53,0.15); color:#ff6b35; }
+  .tag-s2 { background:rgba(100,200,255,0.12); color:#64c8ff; }
+  .tag-body { background:rgba(139,92,246,0.12); color:#a78bfa; }
+  .tag-cta { background:rgba(74,222,128,0.12); color:#4ade80; }
+
+  .grid { display:flex; gap:24px; overflow-x:auto; padding-bottom:16px; }
+  .grid::-webkit-scrollbar { height:4px; }
+  .grid::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.1); border-radius:2px; }
+
+  .slide-card { min-width:216px; max-width:216px; border-radius:14px; overflow:hidden; border:2px solid rgba(255,255,255,0.06); background:#0d0d0d; transition:all 0.3s; position:relative; }
+  .slide-card:hover { border-color:rgba(255,107,53,0.4); transform:translateY(-3px); }
+  .slide-img { width:216px; height:270px; display:block; }
+  .slide-meta { padding:14px 16px; border-top:1px solid rgba(255,255,255,0.06); }
+  .slide-name { font-size:14px; font-weight:700; margin-bottom:3px; }
+  .slide-usage { font-size:11px; color:rgba(255,255,255,0.3); }
+
+  .divider { height:1px; background:rgba(255,255,255,0.04); margin:0 48px; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>캐러셀 레이아웃 패턴</h1>
+  <p>각 패턴의 실제 렌더링 결과를 보고 괜찮은 것 / 아닌 것을 골라주세요. 선택한 패턴만 bruce-studio 템플릿으로 만듭니다.</p>
+</div>
+
+<!-- 커버 -->
+<div class="category">
+  <div class="cat-title"><span class="cat-tag tag-cover">커버</span> Slide 1 — 스크롤 멈추기</div>
+  <div class="cat-desc">첫 슬라이드. 2초 안에 "이건 나한테 해당되나?" + "스와이프하면 뭘 얻지?" 답해야 함</div>
+  <div class="grid" id="grid-cover"></div>
+</div>
+<div class="divider"></div>
+
+<!-- Slide 2 -->
+<div class="category">
+  <div class="cat-title"><span class="cat-tag tag-s2">Slide 2</span> 신뢰 + 로드맵</div>
+  <div class="cat-desc">회의감 줄이고 "계속 볼 이유"를 만드는 슬라이드</div>
+  <div class="grid" id="grid-s2"></div>
+</div>
+<div class="divider"></div>
+
+<!-- 본문 -->
+<div class="category">
+  <div class="cat-title"><span class="cat-tag tag-body">본문</span> Slides 3~N — 계속 스와이프</div>
+  <div class="cat-desc">슬라이드당 포인트 1개. 플래시카드처럼. 시각적 리듬 유지</div>
+  <div class="grid" id="grid-body"></div>
+</div>
+<div class="divider"></div>
+
+<!-- CTA -->
+<div class="category">
+  <div class="cat-title"><span class="cat-tag tag-cta">CTA</span> 마지막 슬라이드</div>
+  <div class="cat-desc">행동 유도. 저장/공유/팔로우/DM/링크 중 1가지에 집중</div>
+  <div class="grid" id="grid-cta"></div>
+</div>
+
+<div style="height:60px;"></div>
+
+<canvas id="c" width="1080" height="1350" style="display:none;"></canvas>
+
+<script>
+const C = document.getElementById('c');
+const ctx = C.getContext('2d');
+const W = 1080, H = 1350;
+
+function clear() { ctx.fillStyle='#0a0a0a'; ctx.fillRect(0,0,W,H); }
+function accentTop() { const g=ctx.createLinearGradient(W*.1,0,W*.9,0); g.addColorStop(0,'#ff4d4d'); g.addColorStop(1,'#ff8c00'); ctx.fillStyle=g; ctx.fillRect(W*.1,0,W*.8,4); }
+function accentBottom() { const g=ctx.createLinearGradient(0,0,W,0); g.addColorStop(0,'#ff4d4d'); g.addColorStop(.5,'#ff8c00'); g.addColorStop(1,'#ff4d4d'); ctx.fillStyle=g; ctx.fillRect(0,H-4,W,4); }
+function brand() { ctx.fillStyle='rgba(255,255,255,0.2)'; ctx.font='700 28px Inter'; ctx.textAlign='left'; ctx.fillText('BRXCE.AI',80,90); }
+function avatar() { ctx.beginPath(); ctx.arc(W-100,H-80,20,0,Math.PI*2); ctx.fillStyle='#222'; ctx.fill(); ctx.strokeStyle='rgba(255,255,255,0.1)'; ctx.lineWidth=2; ctx.stroke(); }
+
+const patterns = {
+  // === COVERS ===
+  'cover-bigtext': { name:'BigText', usage:'임팩트형 · 8~10단어 · 좌정렬', draw() {
+    clear();brand();accentTop();accentBottom();avatar();
+    ctx.fillStyle='#f5f5f5';ctx.font='900 96px "Noto Sans KR"';ctx.textAlign='left';
+    ctx.fillText('회사에 출근하는',80,500);ctx.fillText('사람은',80,610);ctx.fillText('나 하나다.',80,720);
+    ctx.fillStyle='rgba(255,255,255,0.4)';ctx.font='400 42px "Noto Sans KR"';ctx.fillText('그런데 일은 돌아간다.',80,800);
+  }},
+  'cover-centered': { name:'Centered', usage:'가이드형 · 중앙 정렬 · 악센트 라인', draw() {
+    clear();brand();accentTop();accentBottom();avatar();
+    ctx.textAlign='center';ctx.fillStyle='#f5f5f5';ctx.font='900 80px "Noto Sans KR"';
+    ctx.fillText('에이전틱',W/2,520);ctx.fillText('워크플로우',W/2,620);ctx.fillText('5단계',W/2,720);
+    ctx.fillStyle='rgba(255,255,255,0.4)';ctx.font='400 36px "Noto Sans KR"';ctx.fillText('AI가 일하게 만드는 법',W/2,790);
+    ctx.fillStyle='#ff6b35';ctx.fillRect(W/2-30,820,60,4);ctx.textAlign='left';
+  }},
+  'cover-number': { name:'Number', usage:'리스트형 · 숫자 강조 · 중앙', draw() {
+    clear();brand();accentTop();accentBottom();avatar();
+    ctx.textAlign='center';ctx.fillStyle='#ff6b35';ctx.font='900 200px Inter';ctx.fillText('7',W/2,560);
+    ctx.fillStyle='#f5f5f5';ctx.font='900 64px "Noto Sans KR"';ctx.fillText('가지 신호',W/2,660);
+    ctx.fillStyle='rgba(255,255,255,0.4)';ctx.font='400 34px "Noto Sans KR"';
+    ctx.fillText('당신의 AI 활용이',W/2,730);ctx.fillText('아직 초보라는 증거',W/2,775);ctx.textAlign='left';
+  }},
+  'cover-question': { name:'Question', usage:'도발형 · 질문 + 찌르기', draw() {
+    clear();brand();accentTop();accentBottom();avatar();
+    ctx.fillStyle='#f5f5f5';ctx.font='900 88px "Noto Sans KR"';ctx.textAlign='left';
+    ctx.fillText('AI 쓴다 =',80,520);ctx.fillStyle='#ff6b35';ctx.fillText('챗GPT 쓴다?',80,630);
+    ctx.fillStyle='rgba(255,255,255,0.35)';ctx.font='400 42px "Noto Sans KR"';ctx.fillText('아직 거기야?',80,720);
+  }},
+  'cover-incomplete': { name:'Incomplete', usage:'미완성 유도형 · 스와이프 트리거', draw() {
+    clear();brand();accentTop();accentBottom();avatar();
+    ctx.textAlign='center';ctx.fillStyle='rgba(255,255,255,0.15)';ctx.font='700 32px Inter';ctx.fillText('#1 of 7',W/2,440);
+    ctx.fillStyle='#f5f5f5';ctx.font='900 72px "Noto Sans KR"';ctx.fillText('자동화 했다고?',W/2,560);
+    ctx.fillStyle='rgba(255,255,255,0.35)';ctx.font='400 40px "Noto Sans KR"';ctx.fillText('그건 1단계도 아니다',W/2,640);
+    ctx.fillStyle='rgba(255,255,255,0.12)';ctx.font='400 28px "Noto Sans KR"';ctx.fillText('→ 스와이프',W/2,740);ctx.textAlign='left';
+  }},
+  // === SLIDE 2 ===
+  's2-whyitmatters': { name:'WhyItMatters', usage:'맥락 설정 · 문제 인식', draw() {
+    clear();brand();accentBottom();
+    ctx.fillStyle='#f5f5f5';ctx.font='800 56px "Noto Sans KR"';ctx.textAlign='left';
+    ctx.fillText('대부분의 사람들은',80,400);ctx.fillStyle='#ff6b35';ctx.fillText('AI를 챗봇으로만',80,470);
+    ctx.fillStyle='#f5f5f5';ctx.fillText('쓴다.',80,540);
+    ctx.fillStyle='rgba(255,255,255,0.5)';ctx.font='400 34px "Noto Sans KR"';
+    ['질문하고, 답변 받고, 복붙한다.','그게 전부라고 생각한다.','','하지만 진짜 게임은'].forEach((l,i)=>ctx.fillText(l,80,640+i*50));
+    ctx.fillStyle='#fff';ctx.font='700 34px "Noto Sans KR"';ctx.fillText('거기서부터 시작이다.',80,890);
+  }},
+  's2-roadmap': { name:'Roadmap', usage:'구조 미리보기 · 기대감', draw() {
+    clear();brand();accentBottom();
+    ctx.fillStyle='rgba(255,255,255,0.5)';ctx.font='700 36px "Noto Sans KR"';ctx.textAlign='left';ctx.fillText('이 캐러셀에서 다루는 것 👇',80,380);
+    ['문제: 왜 대부분 실패하는가','해결: 에이전틱 워크플로우란','실전: 5단계 구축법'].forEach((item,i)=>{
+      const y=480+i*120;ctx.fillStyle='rgba(255,107,53,0.15)';ctx.beginPath();ctx.roundRect(80,y-30,56,56,12);ctx.fill();
+      ctx.fillStyle='#ff6b35';ctx.font='800 28px Inter';ctx.textAlign='center';ctx.fillText(''+(i+1),108,y+8);ctx.textAlign='left';
+      ctx.fillStyle='#f5f5f5';ctx.font='400 34px "Noto Sans KR"';ctx.fillText(item,160,y+8);
+    });
+  }},
+  's2-proof': { name:'Proof', usage:'숫자 증거 · 신뢰 구축', draw() {
+    clear();brand();accentBottom();ctx.textAlign='center';
+    ctx.fillStyle='#ff6b35';ctx.font='900 160px Inter';ctx.fillText('14',W/2,520);
+    ctx.fillStyle='#f5f5f5';ctx.font='700 48px "Noto Sans KR"';ctx.fillText('개의 AI 에이전트',W/2,600);
+    ctx.fillStyle='rgba(255,255,255,0.4)';ctx.font='400 32px "Noto Sans KR"';
+    ctx.fillText('개발, 마케팅, 세무, 법무, 비서',W/2,680);ctx.fillText('24시간 운영. 월급 없음.',W/2,725);
+    ctx.fillText('1인 법인을 이렇게 운영한다.',W/2,770);ctx.textAlign='left';
+  }},
+  's2-selfqualify': { name:'SelfQualify', usage:'타겟 필터 · "이건 내 얘기" 유도', draw() {
+    clear();brand();accentBottom();ctx.textAlign='left';
+    ctx.fillStyle='rgba(255,255,255,0.5)';ctx.font='700 38px "Noto Sans KR"';ctx.fillText('이런 분이라면 👇',80,380);
+    ctx.fillStyle='#f5f5f5';ctx.font='400 34px "Noto Sans KR"';
+    ['✅  AI 도구는 쓰는데 효과를 못 느낀다','✅  자동화를 했지만 여전히 바쁘다','✅  1인 또는 소규모 팀을 운영한다','✅  시스템을 만들고 싶은데 방법을 모른다'].forEach((c,i)=>ctx.fillText(c,80,490+i*70));
+    ctx.fillStyle='#ff6b35';ctx.font='700 36px "Noto Sans KR"';ctx.fillText('→ 이 글은 당신을 위한 것',80,800);
+  }},
+  // === BODY ===
+  'body-onepoint': { name:'OnePoint', usage:'단일 포인트 · 스토리텔링', draw() {
+    clear();brand();accentBottom();ctx.textAlign='left';
+    ctx.fillStyle='#f5f5f5';ctx.font='800 60px "Noto Sans KR"';
+    ctx.fillText('새벽 3시,',80,420);ctx.fillText('세무처리가',80,495);ctx.fillText('끝나 있었다.',80,570);
+    ctx.fillStyle='rgba(255,255,255,0.5)';ctx.font='400 34px "Noto Sans KR"';
+    ctx.fillText('마케팅 콘텐츠도 올라갔고,',80,670);ctx.fillText('개발 PR도 머지됐고,',80,715);ctx.fillText('캘린더도 정리돼 있었다.',80,760);
+    ctx.fillStyle='#ff6b35';ctx.font='700 38px "Noto Sans KR"';ctx.fillText('전부 AI가 했다.',80,840);
+  }},
+  'body-listitems': { name:'ListItems', usage:'리스트형 · 제목 + 항목들', draw() {
+    clear();brand();accentBottom();ctx.textAlign='left';
+    ctx.fillStyle='#f5f5f5';ctx.font='800 52px "Noto Sans KR"';ctx.fillText('내 회사의 AI 팀',80,380);
+    ['개발 에이전트 — 코드, PR, 배포','마케팅 에이전트 — 콘텐츠 기획·제작','재무 에이전트 — 세무, 회계','비서 에이전트 — 일정, 이메일','리서치 에이전트 — 조사, 분석'].forEach((item,i)=>{
+      const y=490+i*70;ctx.fillStyle='#ff6b35';ctx.font='700 34px "Noto Sans KR"';ctx.fillText('→',80,y);
+      ctx.fillStyle='rgba(255,255,255,0.8)';ctx.font='400 32px "Noto Sans KR"';ctx.fillText(item,130,y);
+    });
+    ctx.fillStyle='rgba(255,255,255,0.2)';ctx.font='400 26px "Noto Sans KR"';ctx.fillText('24시간 운영. 월급 없음. 퇴사 없음.',80,870);
+  }},
+  'body-comparebox': { name:'CompareBox', usage:'비교형 · Before/After 박스', draw() {
+    clear();brand();accentBottom();ctx.textAlign='left';
+    ctx.strokeStyle='rgba(255,77,77,0.3)';ctx.lineWidth=2;ctx.fillStyle='rgba(255,77,77,0.05)';
+    ctx.beginPath();ctx.roundRect(60,280,W-120,280,20);ctx.fill();ctx.stroke();
+    ctx.fillStyle='#ff4d4d';ctx.font='700 24px Inter';ctx.fillText('❌  대부분의 AI 활용',100,340);
+    ctx.fillStyle='rgba(255,255,255,0.6)';ctx.font='400 32px "Noto Sans KR"';
+    ctx.fillText('챗GPT에 물어본다',100,400);ctx.fillText('답변 복붙한다',100,445);ctx.fillText('"AI 쓰고 있다"고 말한다',100,490);
+    ctx.strokeStyle='rgba(255,107,53,0.4)';ctx.fillStyle='rgba(255,107,53,0.05)';
+    ctx.beginPath();ctx.roundRect(60,600,W-120,280,20);ctx.fill();ctx.stroke();
+    ctx.fillStyle='#ff6b35';ctx.font='700 24px Inter';ctx.fillText('✦  에이전틱 워크플로우',100,660);
+    ctx.fillStyle='rgba(255,255,255,0.6)';ctx.font='400 32px "Noto Sans KR"';
+    ctx.fillText('시스템을 설계한다',100,720);ctx.fillText('AI가 알아서 실행한다',100,765);ctx.fillText('나는 의사결정만 한다',100,810);
+  }},
+  'body-stepnumber': { name:'StepNumber', usage:'단계형 · 넘버링 + 설명', draw() {
+    clear();brand();accentBottom();ctx.textAlign='center';
+    ctx.fillStyle='#ff6b35';ctx.font='900 140px Inter';ctx.fillText('03',W/2,500);
+    ctx.fillStyle='#f5f5f5';ctx.font='800 52px "Noto Sans KR"';ctx.fillText('에이전트에게',W/2,600);ctx.fillText('역할을 부여한다',W/2,665);
+    ctx.fillStyle='rgba(255,255,255,0.4)';ctx.font='400 32px "Noto Sans KR"';
+    ctx.fillText('"마케팅 담당"이 아니라',W/2,750);ctx.fillText('"매주 월요일 Threads 3개 발행"',W/2,795);ctx.fillText('구체적 미션을 준다.',W/2,840);ctx.textAlign='left';
+  }},
+  'body-quotehighlight': { name:'QuoteHighlight', usage:'강조형 · 핵심 문장 1개', draw() {
+    clear();brand();accentBottom();ctx.textAlign='center';
+    ctx.fillStyle='rgba(255,255,255,0.06)';ctx.font='400 200px Georgia';ctx.fillText('"',W/2,480);
+    ctx.fillStyle='#f5f5f5';ctx.font='700 52px "Noto Sans KR"';ctx.fillText('나는 시스템을 만들고,',W/2,620);ctx.fillText('시스템이 일한다.',W/2,690);
+    ctx.fillStyle='#ff6b35';ctx.fillRect(W/2-30,740,60,4);ctx.textAlign='left';
+  }},
+  'body-mythfact': { name:'MythFact', usage:'반박형 · 취소선 + 정답', draw() {
+    clear();brand();accentBottom();ctx.textAlign='left';
+    ctx.fillStyle='#ff4d4d';ctx.font='700 26px Inter';ctx.fillText('MYTH',80,400);
+    ctx.fillStyle='rgba(255,255,255,0.4)';ctx.font='600 40px "Noto Sans KR"';
+    const mt='AI 에이전트는 개발자만 쓸 수 있다';ctx.fillText(mt,80,470);
+    const tw=ctx.measureText(mt).width;ctx.strokeStyle='rgba(255,255,255,0.3)';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(80,460);ctx.lineTo(80+tw,460);ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,0.06)';ctx.fillRect(60,540,W-120,2);
+    ctx.fillStyle='#ff6b35';ctx.font='700 26px Inter';ctx.fillText('FACT',80,620);
+    ctx.fillStyle='#fff';ctx.font='700 42px "Noto Sans KR"';ctx.fillText('시스템 설계 능력만 있으면',80,700);ctx.fillText('누구나 구축할 수 있다',80,760);
+  }},
+  // === CTA ===
+  'cta-link': { name:'LinkCTA', usage:'링크 유도 · 프로필 방문', draw() {
+    clear();brand();accentTop();accentBottom();avatar();ctx.textAlign='center';
+    ctx.fillStyle='#f5f5f5';ctx.font='900 56px "Noto Sans KR"';
+    ctx.fillText('에이전틱 워크플로우,',W/2,500);ctx.fillText('어떻게 구축하는지',W/2,575);ctx.fillText('공유합니다.',W/2,650);
+    ctx.strokeStyle='rgba(255,255,255,0.25)';ctx.lineWidth=3;ctx.beginPath();ctx.roundRect(W/2-150,700,300,60,30);ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,0.6)';ctx.font='600 28px Inter';ctx.fillText('brxce.ai/guide',W/2,740);
+    ctx.fillStyle='rgba(255,255,255,0.2)';ctx.font='600 24px Inter';ctx.fillText('@brxce.ai',W/2,820);ctx.textAlign='left';
+  }},
+  'cta-dm': { name:'DMCTA', usage:'DM 유도 · 댓글 폭발', draw() {
+    clear();brand();accentTop();accentBottom();avatar();ctx.textAlign='center';
+    ctx.fillStyle='#f5f5f5';ctx.font='900 56px "Noto Sans KR"';ctx.fillText('구축 가이드',W/2,480);ctx.fillText('받고 싶으면',W/2,555);
+    ctx.fillStyle='#ff6b35';ctx.font='700 44px "Noto Sans KR"';ctx.fillText('DM으로 "가이드" 보내주세요',W/2,660);
+    ctx.fillStyle='rgba(255,255,255,0.3)';ctx.font='400 30px "Noto Sans KR"';
+    ctx.fillText('에이전틱 워크플로우',W/2,750);ctx.fillText('구축 체크리스트를 보내드립니다',W/2,795);ctx.textAlign='left';
+  }},
+  'cta-saveshare': { name:'SaveShareCTA', usage:'저장+공유 유도 · 알고리즘 부스트', draw() {
+    clear();brand();accentTop();accentBottom();avatar();ctx.textAlign='center';
+    ctx.fillStyle='#f5f5f5';ctx.font='900 60px "Noto Sans KR"';ctx.fillText('도움이 됐다면',W/2,480);
+    ctx.font='400 80px "Noto Sans KR"';ctx.fillText('🔖          📤',W/2,620);
+    ctx.fillStyle='rgba(255,255,255,0.4)';ctx.font='400 28px "Noto Sans KR"';ctx.fillText('저장              공유',W/2,670);
+    ctx.fillStyle='rgba(255,255,255,0.3)';ctx.font='400 30px "Noto Sans KR"';
+    ctx.fillText('이런 콘텐츠가 필요한',W/2,760);ctx.fillText('친구에게 보내주세요',W/2,805);ctx.textAlign='left';
+  }},
+  'cta-follow': { name:'FollowCTA', usage:'팔로우 유도 · 시리즈 약속', draw() {
+    clear();brand();accentTop();accentBottom();avatar();ctx.textAlign='center';
+    ctx.fillStyle='#f5f5f5';ctx.font='800 46px "Noto Sans KR"';
+    ctx.fillText('매주 에이전틱 워크플로우',W/2,480);ctx.fillText('실전 가이드를 공유합니다',W/2,545);
+    ctx.fillStyle='#ff6b35';ctx.beginPath();ctx.roundRect(W/2-120,600,240,60,30);ctx.fill();
+    ctx.fillStyle='#fff';ctx.font='700 28px "Noto Sans KR"';ctx.fillText('팔로우',W/2,640);
+    ctx.fillStyle='rgba(255,255,255,0.2)';ctx.font='600 24px Inter';ctx.fillText('@brxce.ai',W/2,720);ctx.textAlign='left';
+  }}
+};
+
+function renderCard(id, gridId) {
+  const p = patterns[id];
+  p.draw();
+  const url = C.toDataURL('image/png');
+  const card = document.createElement('div');
+  card.className = 'slide-card';
+  card.innerHTML = `
+    <img class="slide-img" src="${url}" alt="${p.name}">
+    <div class="slide-meta">
+      <div class="slide-name">${p.name}</div>
+      <div class="slide-usage">${p.usage}</div>
+    </div>
+  `;
+  document.getElementById(gridId).appendChild(card);
+}
+
+document.fonts.ready.then(() => setTimeout(() => {
+  // Covers
+  ['cover-bigtext','cover-centered','cover-number','cover-question','cover-incomplete'].forEach(id => renderCard(id, 'grid-cover'));
+  // Slide 2
+  ['s2-whyitmatters','s2-roadmap','s2-proof','s2-selfqualify'].forEach(id => renderCard(id, 'grid-s2'));
+  // Body
+  ['body-onepoint','body-listitems','body-comparebox','body-stepnumber','body-quotehighlight','body-mythfact'].forEach(id => renderCard(id, 'grid-body'));
+  // CTA
+  ['cta-link','cta-dm','cta-saveshare','cta-follow'].forEach(id => renderCard(id, 'grid-cta'));
+}, 500));
+</script>
+</body>
+</html>

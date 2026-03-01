@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>스튜디오 템플릿 — 재기획 미리보기</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Noto Sans KR', 'Inter', sans-serif;
+    background: #0a0a0a;
+    color: #e5e5e5;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .page-header {
+    padding: 32px 40px 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .page-header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .page-header p {
+    font-size: 14px;
+    color: rgba(255,255,255,0.4);
+  }
+
+  /* 이미지 템플릿 갤러리 */
+  .section {
+    padding: 24px 40px;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .section-title {
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title .count {
+    background: rgba(255,255,255,0.08);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+  }
+  .filter-tabs {
+    display: flex;
+    gap: 8px;
+  }
+  .filter-tab {
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    background: rgba(255,255,255,0.04);
+    color: rgba(255,255,255,0.5);
+    border: 1px solid rgba(255,255,255,0.06);
+    transition: all 0.2s;
+  }
+  .filter-tab.active {
+    background: rgba(255,107,53,0.15);
+    color: #ff6b35;
+    border-color: rgba(255,107,53,0.3);
+  }
+
+  /* 템플릿 그리드 */
+  .template-grid {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    padding-bottom: 12px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.1) transparent;
+  }
+  .template-card {
+    min-width: 160px;
+    cursor: grab;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.02);
+    transition: all 0.2s;
+    position: relative;
+  }
+  .template-card:hover {
+    border-color: rgba(255,107,53,0.4);
+    transform: translateY(-2px);
+  }
+  .template-card.dragging {
+    opacity: 0.5;
+    border-color: #ff6b35;
+  }
+  .template-thumb {
+    width: 160px;
+    height: 200px;
+    background: #111;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: rgba(255,255,255,0.15);
+    position: relative;
+    overflow: hidden;
+  }
+  /* 플레이스홀더 패턴 */
+  .placeholder {
+    background: #111
+      repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 8px,
+        rgba(255,255,255,0.03) 8px,
+        rgba(255,255,255,0.03) 9px
+      );
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .placeholder .ph-icon {
+    font-size: 24px;
+    opacity: 0.2;
+  }
+  .placeholder .ph-label {
+    font-size: 10px;
+    color: rgba(255,255,255,0.25);
+    text-align: center;
+    line-height: 1.4;
+  }
+  .template-thumb .mock-slide {
+    width: 80%;
+    height: 80%;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 12px;
+  }
+  .template-thumb .mock-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+  .template-thumb .mock-sub {
+    font-size: 9px;
+    color: rgba(255,255,255,0.4);
+  }
+  .template-thumb .mock-accent {
+    position: absolute;
+    bottom: 0;
+    left: 10%;
+    right: 10%;
+    height: 2px;
+    background: linear-gradient(90deg, #ff4d4d, #ff8c00);
+    border-radius: 1px;
+  }
+  .template-info {
+    padding: 10px 12px;
+  }
+  .template-name {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  .template-tag {
+    font-size: 11px;
+    color: rgba(255,255,255,0.35);
+  }
+  .template-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .badge-carousel {
+    background: rgba(255,107,53,0.2);
+    color: #ff6b35;
+  }
+  .badge-standalone {
+    background: rgba(100,200,255,0.15);
+    color: #64c8ff;
+  }
+  .badge-universal {
+    background: rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.5);
+  }
+
+  /* 구분선 */
+  .divider {
+    height: 1px;
+    background: rgba(255,255,255,0.06);
+    margin: 8px 40px;
+  }
+
+  /* 캐러셀 섹션 */
+  .carousel-section {
+    padding: 24px 40px;
+  }
+  .carousel-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .carousel-item {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 20px;
+    transition: border-color 0.2s;
+  }
+  .carousel-item.drop-target {
+    border-color: #ff6b35;
+    border-style: dashed;
+    background: rgba(255,107,53,0.03);
+  }
+  .carousel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .carousel-title {
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .carousel-meta {
+    font-size: 12px;
+    color: rgba(255,255,255,0.35);
+  }
+  .carousel-actions {
+    display: flex;
+    gap: 8px;
+  }
+  .btn {
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .btn-ghost {
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.6);
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.1); }
+  .btn-primary {
+    background: #ff6b35;
+    color: #fff;
+  }
+  .btn-primary:hover { background: #ff7d4d; }
+  .btn-ai {
+    background: rgba(139,92,246,0.15);
+    color: #a78bfa;
+    border: 1px solid rgba(139,92,246,0.3);
+  }
+  .btn-ai:hover { background: rgba(139,92,246,0.25); }
+
+  /* 슬라이드 스트립 */
+  .slide-strip {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding: 4px 0 8px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.1) transparent;
+  }
+  .slide-slot {
+    min-width: 135px;
+    height: 168px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.02);
+    position: relative;
+    cursor: grab;
+    transition: all 0.2s;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .slide-slot:hover {
+    border-color: rgba(255,255,255,0.2);
+  }
+  .slide-slot.active {
+    border-color: #ff6b35;
+    box-shadow: 0 0 0 1px rgba(255,107,53,0.3);
+  }
+  .slide-preview {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    background: #111;
+  }
+  .slide-preview .mini-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+    line-height: 1.4;
+  }
+  .slide-preview .mini-sub {
+    font-size: 8px;
+    color: rgba(255,255,255,0.3);
+    text-align: center;
+    margin-top: 4px;
+  }
+  .slide-footer {
+    padding: 6px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .slide-label {
+    font-size: 10px;
+    color: rgba(255,255,255,0.4);
+  }
+  .slide-num-badge {
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.06);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+  .slide-drag-handle {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    font-size: 10px;
+    color: rgba(255,255,255,0.15);
+    cursor: grab;
+  }
+  .slide-swap-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.4);
+    font-size: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .slide-slot:hover .slide-swap-btn {
+    opacity: 1;
+  }
+
+  /* 빈 슬롯 */
+  .slide-slot.empty {
+    border-style: dashed;
+    border-color: rgba(255,255,255,0.08);
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .slide-slot.empty:hover {
+    border-color: rgba(255,107,53,0.3);
+    background: rgba(255,107,53,0.03);
+  }
+  .empty-label {
+    font-size: 24px;
+    color: rgba(255,255,255,0.15);
+    margin-bottom: 4px;
+  }
+  .empty-text {
+    font-size: 10px;
+    color: rgba(255,255,255,0.2);
+  }
+
+  /* 새 캐러셀 추가 */
+  .add-carousel {
+    border: 1px dashed rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .add-carousel:hover {
+    border-color: rgba(255,107,53,0.3);
+    background: rgba(255,107,53,0.02);
+  }
+  .add-carousel .plus {
+    font-size: 32px;
+    color: rgba(255,255,255,0.15);
+    margin-bottom: 8px;
+  }
+  .add-carousel .label {
+    font-size: 14px;
+    color: rgba(255,255,255,0.3);
+  }
+
+  /* 드래그 힌트 */
+  .drag-hint {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255,107,53,0.9);
+    color: #fff;
+    padding: 10px 24px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    display: none;
+    z-index: 100;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+  .drag-hint.visible { display: block; }
+
+  /* 미니 accent line on slide previews */
+  .mini-accent {
+    position: absolute;
+    top: 0;
+    left: 10%;
+    right: 10%;
+    height: 2px;
+    background: linear-gradient(90deg, #ff4d4d, #ff8c00);
+    border-radius: 1px;
+  }
+
+  /* 프로필 아바타 미니 */
+  .mini-avatar {
+    position: absolute;
+    bottom: 32px;
+    right: 8px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #333;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+</style>
+</head>
+<body>
+
+<!-- 페이지 헤더 -->
+<div class="page-header">
+  <h1>🎬 스튜디오</h1>
+  <p>이미지 템플릿을 조합해 캐러셀을 만들고, AI가 일괄 세팅합니다</p>
+</div>
+
+<!-- 이미지 템플릿 갤러리 -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-title">
+      이미지 템플릿 <span class="count">12</span>
+    </div>
+    <div class="filter-tabs">
+      <div class="filter-tab active">전체</div>
+      <div class="filter-tab">캐러셀용</div>
+      <div class="filter-tab">단독용</div>
+      <div class="filter-tab">범용</div>
+    </div>
+  </div>
+
+  <div class="template-grid">
+    <div class="template-card" draggable="true" data-template="cover-a">
+      <div class="template-thumb placeholder">
+        <div class="ph-icon">🖼️</div>
+        <div class="ph-label">CoverBold<br>미리보기</div>
+        <span class="template-badge badge-carousel">캐러셀</span>
+      </div>
+      <div class="template-info">
+        <div class="template-name">CoverBold</div>
+        <div class="template-tag">커버 · 임팩트 텍스트</div>
+      </div>
+    </div>
+
+    <div class="template-card" draggable="true" data-template="cover-b">
+      <div class="template-thumb placeholder">
+        <div class="ph-icon">🖼️</div>
+        <div class="ph-label">CoverCentered<br>미리보기</div>
+        <span class="template-badge badge-carousel">캐러셀</span>
+      </div>
+      <div class="template-info">
+        <div class="template-name">CoverCentered</div>
+        <div class="template-tag">커버 · 중앙 정렬</div>
+      </div>
+    </div>
+
+    <div class="template-card" draggable="true" data-template="body-text">
+      <div class="template-thumb placeholder">
+        <div class="ph-icon">🖼️</div>
+        <div class="ph-label">BodyText<br>미리보기</div>
+        <span class="template-badge badge-carousel">캐러셀</span>
+      </div>
+      <div class="template-info">
+        <div class="template-name">BodyText</div>
+        <div class="template-tag">본문 · 설명형</div>
+      </div>
+    </div>
+
+    <div class="template-card" draggable="true" data-template="body-list">
+      <div class="template-thumb placeholder">
+        <div class="ph-icon">🖼️</div>
+        <div class="ph-label">BodyList<br>미리보기</div>
+        <span class="template-badge badge-carousel">캐러셀</span>
+      </div>
+      <div class="template-info">
+        <div class="template-name">BodyList</div>
+        <div class="template-tag">본문 · 리스트형</div>
+      </div>
+    </div>
+
+    <div class="template-card" draggable="true" data-template="compare">
+      <div class="template-thumb placeholder">
+        <div class="ph-icon">🖼️</div>
+        <div class="ph-label">CompareBox<br>미리보기</div>
+        <span class="template-badge badge-carousel">캐러셀</span>
+      </div>
+      <div class="template-info">
+        <div class="template-name">CompareBox</div>
+        <div class="template-tag">비교 · Before/After</div>
+      </div>
+    </div>
+
+    <div class="template-card" draggable="true" data-template="step">
+      <div class="template-thumb placeholder">
+        <div class="ph-icon">🖼️</div>
+        <div class="ph-label">StepNumber<br>미리보기</div>
+        <span class="template-badge badge-carousel">캐러셀</span>
+      </div>
+      <div class="template-info">
+        <div class="template-name">StepNumber</div>
+        <div class="template-tag">가이드 · 넘버링</div>
+      </div>
+    </div>
+
+    <div class="template-card" draggable="true" data-template="cta">
+      <div class="template-thumb placeholder">
+        <div class="ph-icon">🖼️</div>
+        <div class="ph-label">CTASlide<br>미리보기</div>
+        <span class="template-badge badge-carousel">캐러셀</span>
+      </div>
+      <div class="template-info">
+        <div class="template-name">CTASlide</div>
+        <div class="template-tag">마무리 · CTA</div>
+      </div>
+    </div>
+
+    <div class="template-card" draggable="true" data-template="quote">
+      <div class="template-thumb placeholder">
+        <div class="ph-icon">🖼️</div>
+        <div class="ph-label">QuoteCard<br>미리보기</div>
+        <span class="template-badge badge-universal">범용</span>
+      </div>
+      <div class="template-info">
+        <div class="template-name">QuoteCard</div>
+        <div class="template-tag">인용 · 명언</div>
+      </div>
+    </div>
+
+    <div class="template-card" draggable="true" data-template="diagram">
+      <div class="template-thumb placeholder">
+        <div class="ph-icon">🖼️</div>
+        <div class="ph-label">FlowDiagram<br>미리보기</div>
+        <span class="template-badge badge-standalone">단독</span>
+      </div>
+      <div class="template-info">
+        <div class="template-name">FlowDiagram</div>
+        <div class="template-tag">다이어그램 · 플로우</div>
+      </div>
+    </div>
+
+    <div class="template-card" draggable="true" data-template="social-info">
+      <div class="template-thumb placeholder">
+        <div class="ph-icon">🖼️</div>
+        <div class="ph-label">SocialPost<br>미리보기</div>
+        <span class="template-badge badge-standalone">단독</span>
+      </div>
+      <div class="template-info">
+        <div class="template-name">SocialPost</div>
+        <div class="template-tag">소셜 · 인포그래픽</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- 내 캐러셀 -->
+<div class="carousel-section">
+  <div class="section-header">
+    <div class="section-title">
+      내 캐러셀 <span class="count">2</span>
+    </div>
+  </div>
+
+  <div class="carousel-list">
+    <!-- 캐러셀 1 -->
+    <div class="carousel-item" id="carousel-1">
+      <div class="carousel-header">
+        <div>
+          <div class="carousel-title">에이전틱 워크플로우 5단계</div>
+          <div class="carousel-meta">5장 · 1080×1350 · 수정됨 2분 전</div>
+        </div>
+        <div class="carousel-actions">
+          <button class="btn btn-ghost">미리보기</button>
+          <button class="btn btn-primary">렌더</button>
+        </div>
+      </div>
+      <div class="slide-strip">
+        <div class="slide-slot active">
+          <div class="slide-drag-handle">⠿</div>
+          <div class="slide-swap-btn" title="템플릿 교체">↻</div>
+          <div class="slide-preview placeholder">
+            <div class="ph-icon">🖼️</div>
+            <div class="ph-label">슬라이드 1</div>
+          </div>
+          <div class="slide-footer">
+            <span class="slide-label">CoverCentered</span>
+            <span class="slide-num-badge">1</span>
+          </div>
+        </div>
+
+        <div class="slide-slot">
+          <div class="slide-drag-handle">⠿</div>
+          <div class="slide-swap-btn" title="템플릿 교체">↻</div>
+          <div class="slide-preview placeholder">
+            <div class="ph-icon">🖼️</div>
+            <div class="ph-label">슬라이드 2</div>
+          </div>
+          <div class="slide-footer">
+            <span class="slide-label">BodyText</span>
+            <span class="slide-num-badge">2</span>
+          </div>
+        </div>
+
+        <div class="slide-slot">
+          <div class="slide-drag-handle">⠿</div>
+          <div class="slide-swap-btn" title="템플릿 교체">↻</div>
+          <div class="slide-preview placeholder">
+            <div class="ph-icon">🖼️</div>
+            <div class="ph-label">슬라이드 3</div>
+          </div>
+          <div class="slide-footer">
+            <span class="slide-label">CompareBox</span>
+            <span class="slide-num-badge">3</span>
+          </div>
+        </div>
+
+        <div class="slide-slot">
+          <div class="slide-drag-handle">⠿</div>
+          <div class="slide-swap-btn" title="템플릿 교체">↻</div>
+          <div class="slide-preview placeholder">
+            <div class="ph-icon">🖼️</div>
+            <div class="ph-label">슬라이드 4</div>
+          </div>
+          <div class="slide-footer">
+            <span class="slide-label">BodyList</span>
+            <span class="slide-num-badge">4</span>
+          </div>
+        </div>
+
+        <div class="slide-slot">
+          <div class="slide-drag-handle">⠿</div>
+          <div class="slide-swap-btn" title="템플릿 교체">↻</div>
+          <div class="slide-preview placeholder">
+            <div class="ph-icon">🖼️</div>
+            <div class="ph-label">슬라이드 5</div>
+          </div>
+          <div class="slide-footer">
+            <span class="slide-label">CTASlide</span>
+            <span class="slide-num-badge">5</span>
+          </div>
+        </div>
+
+        <!-- 빈 슬롯 (추가) -->
+        <div class="slide-slot empty">
+          <div class="empty-label">+</div>
+          <div class="empty-text">슬라이드 추가</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 캐러셀 2 (빈 상태) -->
+    <div class="carousel-item">
+      <div class="carousel-header">
+        <div>
+          <div class="carousel-title">새벽 3시 세무처리 완료</div>
+          <div class="carousel-meta">0장 · 초안</div>
+        </div>
+        <div class="carousel-actions">
+          <button class="btn btn-ghost">미리보기</button>
+        </div>
+      </div>
+      <div class="slide-strip">
+        <div class="slide-slot empty" style="width:100%;max-width:400px;">
+          <div class="empty-label">📱</div>
+          <div class="empty-text">상단에서 템플릿을 끌어다 놓거나, AI 일괄 세팅을 눌러주세요</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 새 캐러셀 추가 -->
+    <div class="add-carousel">
+      <div class="plus">+</div>
+      <div class="label">새 캐러셀 만들기</div>
+    </div>
+  </div>
+</div>
+
+<!-- 드래그 힌트 -->
+<div class="drag-hint" id="dragHint">📱 캐러셀에 드롭하여 슬라이드를 추가하세요</div>
+
+<script>
+  const cards = document.querySelectorAll('.template-card');
+  const hint = document.getElementById('dragHint');
+
+  // 템플릿 색상 매핑
+  const templateColors = {
+    'cover-a': '#ff6b35',
+    'cover-b': '#ff6b35',
+    'body-text': '#64c8ff',
+    'body-list': '#64c8ff',
+    'compare': '#ff4d4d',
+    'step': '#a78bfa',
+    'cta': '#ff6b35',
+    'quote': '#888',
+    'diagram': '#a78bfa',
+    'social-info': '#64c8ff'
+  };
+
+  cards.forEach(card => {
+    card.addEventListener('dragstart', (e) => {
+      card.classList.add('dragging');
+      hint.classList.add('visible');
+      const name = card.querySelector('.template-name').textContent;
+      const tag = card.querySelector('.template-tag').textContent;
+      e.dataTransfer.setData('application/json', JSON.stringify({
+        template: card.dataset.template,
+        name: name,
+        tag: tag
+      }));
+    });
+    card.addEventListener('dragend', () => {
+      card.classList.remove('dragging');
+      hint.classList.remove('visible');
+      document.querySelectorAll('.drop-target, .slot-drop-target').forEach(el => {
+        el.classList.remove('drop-target', 'slot-drop-target');
+      });
+    });
+  });
+
+  // 슬라이드 슬롯에 드롭 가능하게
+  function setupSlotDrop(slot) {
+    slot.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      slot.classList.add('slot-drop-target');
+    });
+    slot.addEventListener('dragleave', () => {
+      slot.classList.remove('slot-drop-target');
+    });
+    slot.addEventListener('drop', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      slot.classList.remove('slot-drop-target');
+      try {
+        const data = JSON.parse(e.dataTransfer.getData('application/json'));
+        applyTemplateToSlot(slot, data);
+      } catch(err) {}
+    });
+  }
+
+  function applyTemplateToSlot(slot, data) {
+    const color = templateColors[data.template] || '#ff6b35';
+    const preview = slot.querySelector('.slide-preview');
+    if (preview) {
+      preview.classList.remove('placeholder');
+      preview.innerHTML = `
+        <div style="width:100%;height:100%;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;position:relative;">
+          <div style="position:absolute;top:0;left:10%;right:10%;height:2px;background:${color};border-radius:1px;"></div>
+          <div style="width:40px;height:40px;border-radius:8px;background:${color}22;border:1px solid ${color}44;display:flex;align-items:center;justify-content:center;">
+            <span style="font-size:16px;">🖼️</span>
+          </div>
+          <div style="font-size:10px;font-weight:600;color:#fff;text-align:center;">${data.name}</div>
+          <div style="font-size:8px;color:rgba(255,255,255,0.3);">${data.tag}</div>
+        </div>
+      `;
+    }
+    // 푸터 라벨 업데이트
+    const label = slot.querySelector('.slide-label');
+    if (label) label.textContent = data.name;
+    
+    // empty 클래스 제거
+    slot.classList.remove('empty');
+    
+    // 드래그 핸들/교체 버튼 추가 (빈 슬롯이었을 경우)
+    if (!slot.querySelector('.slide-drag-handle')) {
+      const handle = document.createElement('div');
+      handle.className = 'slide-drag-handle';
+      handle.textContent = '⠿';
+      slot.prepend(handle);
+    }
+    if (!slot.querySelector('.slide-swap-btn')) {
+      const swap = document.createElement('div');
+      swap.className = 'slide-swap-btn';
+      swap.title = '템플릿 교체';
+      swap.textContent = '↻';
+      slot.prepend(swap);
+    }
+
+    // 활성 표시
+    document.querySelectorAll('.slide-slot').forEach(s => s.classList.remove('active'));
+    slot.classList.add('active');
+  }
+
+  // 캐러셀 영역 전체에도 드롭 → 빈 슬롯이나 끝에 추가
+  document.querySelectorAll('.carousel-item').forEach(carousel => {
+    carousel.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      carousel.classList.add('drop-target');
+    });
+    carousel.addEventListener('dragleave', (e) => {
+      if (!carousel.contains(e.relatedTarget)) {
+        carousel.classList.remove('drop-target');
+      }
+    });
+    carousel.addEventListener('drop', (e) => {
+      e.preventDefault();
+      carousel.classList.remove('drop-target');
+      // 슬롯에서 이미 처리했으면 무시
+      if (e.target.closest('.slide-slot')) return;
+      
+      try {
+        const data = JSON.parse(e.dataTransfer.getData('application/json'));
+        // 빈 슬롯 찾기
+        const emptySlot = carousel.querySelector('.slide-slot.empty');
+        if (emptySlot) {
+          applyTemplateToSlot(emptySlot, data);
+          // 새 빈 슬롯 추가
+          const strip = carousel.querySelector('.slide-strip');
+          const newEmpty = document.createElement('div');
+          newEmpty.className = 'slide-slot empty';
+          newEmpty.innerHTML = '<div class="empty-label">+</div><div class="empty-text">슬라이드 추가</div>';
+          strip.appendChild(newEmpty);
+          setupSlotDrop(newEmpty);
+        }
+      } catch(err) {}
+    });
+  });
+
+  // 초기 슬롯 세팅
+  document.querySelectorAll('.slide-slot').forEach(setupSlotDrop);
+
+  // 슬롯 드롭 타겟 스타일
+  const style = document.createElement('style');
+  style.textContent = `
+    .slide-slot.slot-drop-target {
+      border-color: #ff6b35 !important;
+      border-style: dashed !important;
+      background: rgba(255,107,53,0.05) !important;
+      transform: scale(1.03);
+    }
+  `;
+  document.head.appendChild(style);
+</script>
+
+</body>
+</html>
