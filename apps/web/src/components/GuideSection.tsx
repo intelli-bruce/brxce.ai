@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { createSupabaseBrowser } from "@/lib/supabase-browser";
 
 type Guide = {
   id: string;
@@ -42,11 +41,10 @@ export default function GuideSection({
     if (!email || !email.includes("@") || !waitlistGuide) return;
     setSubmitting(true);
     try {
-      const sb = createSupabaseBrowser();
-      await sb.from("submissions").insert({
-        email,
-        type: "waitlist",
-        product: waitlistGuide.title,
+      await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, product: waitlistGuide.title }),
       });
     } catch {}
     setSubmitting(false);
