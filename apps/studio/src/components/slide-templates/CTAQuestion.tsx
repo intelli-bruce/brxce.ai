@@ -6,6 +6,11 @@ export interface CTAQuestionProps extends BaseSlideStyleProps {
   question: string
   guide: string
   prompt: string
+  // Style overrides
+  questionFontSize?: number
+  guideFontSize?: number
+  promptFontSize?: number
+  padding?: number
 }
 
 export const ctaQuestionDefaultProps: CTAQuestionProps = {
@@ -15,26 +20,30 @@ export const ctaQuestionDefaultProps: CTAQuestionProps = {
   ...DEFAULT_COLORS,
 }
 
-export function CTAQuestion({ question, guide, prompt, ...colors }: CTAQuestionProps) {
+export function CTAQuestion({
+  question, guide, prompt,
+  questionFontSize, guideFontSize, promptFontSize, padding: paddingOverride,
+  ...colors
+}: CTAQuestionProps) {
   return (
     <SlideBase {...colors}>
       <div
         className="flex h-full flex-col items-center justify-center text-center"
-        style={{ padding: spacing.containerLg }}
+        style={{ padding: paddingOverride ?? spacing.containerLg }}
       >
         <SlideTitle
           variant="title"
-          style={{ fontSize: fontSize.ctaLg, fontWeight: fontWeight.bold, lineHeight: lineHeight.default }}
+          style={{ fontSize: questionFontSize ?? fontSize.ctaLg, fontWeight: fontWeight.bold, lineHeight: lineHeight.default }}
         >
           {question}
         </SlideTitle>
-        <MutedText size="md" mutedColor={textOpacity.tertiary} style={{ marginTop: gap['4xl'], fontSize: fontSize.captionLg }}>
+        <MutedText size="md" mutedColor={textOpacity.tertiary} style={{ marginTop: gap['4xl'], fontSize: guideFontSize ?? fontSize.captionLg }}>
           {guide}
         </MutedText>
         <MutedText
           size="lg"
           mutedColor={colors.accentColor}
-          style={{ marginTop: gap['5xl'], fontSize: fontSize.bodyMd, fontWeight: fontWeight.semibold }}
+          style={{ marginTop: gap['5xl'], fontSize: promptFontSize ?? fontSize.bodyMd, fontWeight: fontWeight.semibold }}
         >
           {prompt}
         </MutedText>

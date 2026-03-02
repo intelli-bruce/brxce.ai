@@ -5,6 +5,12 @@ import { DEFAULT_COLORS, SlideBase, type BaseSlideStyleProps } from './SlideBase
 export interface BodyTextProps extends BaseSlideStyleProps {
   heading: string
   body: string
+  // Style overrides
+  headingFontSize?: number
+  bodyFontSize?: number
+  showAccentBar?: boolean
+  headingBodyGap?: number
+  paddingX?: number
 }
 
 export const bodyTextDefaultProps: BodyTextProps = {
@@ -27,21 +33,28 @@ function renderMarkdownBold(text: string, accentColor?: string) {
   })
 }
 
-export function BodyText({ heading, body, ...colors }: BodyTextProps) {
+export function BodyText({
+  heading, body,
+  headingFontSize, bodyFontSize, showAccentBar, headingBodyGap, paddingX,
+  ...colors
+}: BodyTextProps) {
+  const px = paddingX ?? spacing.containerMd
   return (
     <SlideBase {...colors}>
       <div
         className="flex h-full flex-col justify-center"
-        style={{ paddingLeft: spacing.containerMd, paddingRight: spacing.containerMd, paddingBottom: spacing.bottomLg, paddingTop: spacing.topMd }}
+        style={{ paddingLeft: px, paddingRight: px, paddingBottom: spacing.bottomLg, paddingTop: spacing.topMd }}
       >
-        <AccentBar variant="narrow" accentColor={colors.accentColor} style={{ marginBottom: gap['4xl'] }} />
-        <SlideTitle variant="title">
+        {(showAccentBar ?? true) && (
+          <AccentBar variant="narrow" accentColor={colors.accentColor} style={{ marginBottom: gap['4xl'] }} />
+        )}
+        <SlideTitle variant="title" style={headingFontSize != null ? { fontSize: headingFontSize } : undefined}>
           {heading}
         </SlideTitle>
         <MutedText
           size="lg"
           mutedColor={colors.mutedColor}
-          style={{ marginTop: gap['7xl'], fontSize: fontSize.bodyLg, lineHeight: lineHeight.body }}
+          style={{ marginTop: headingBodyGap ?? gap['7xl'], fontSize: bodyFontSize ?? fontSize.bodyLg, lineHeight: lineHeight.body }}
         >
           {renderMarkdownBold(body, colors.accentColor)}
         </MutedText>

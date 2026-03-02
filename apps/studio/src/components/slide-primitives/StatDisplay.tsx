@@ -21,6 +21,8 @@ export interface StatDisplayProps {
   textColor?: string
   mutedColor?: string
   style?: CSSProperties
+  valueFontSize?: number
+  labelFontSize?: number
 }
 
 const DEFAULT_ACCENT = '#ff6b35'
@@ -34,6 +36,8 @@ export function StatDisplay({
   textColor = DEFAULT_TEXT,
   mutedColor = DEFAULT_MUTED,
   style,
+  valueFontSize,
+  labelFontSize: labelFontSizeOverride,
 }: StatDisplayProps) {
   return (
     <div
@@ -49,7 +53,7 @@ export function StatDisplay({
       {/* Hero stat value */}
       <div
         style={{
-          fontSize: fontSize.displayXl,
+          fontSize: valueFontSize ?? fontSize.displayXl,
           fontWeight: fontWeight.black,
           lineHeight: lineHeight.none,
           color: accentColor,
@@ -61,7 +65,7 @@ export function StatDisplay({
       {/* Stat label */}
       <div
         style={{
-          fontSize: fontSize.headingSm,
+          fontSize: labelFontSizeOverride ?? fontSize.headingSm,
           fontWeight: fontWeight.semibold,
           lineHeight: lineHeight.default,
           color: textColor,

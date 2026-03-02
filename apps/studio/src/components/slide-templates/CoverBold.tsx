@@ -21,6 +21,13 @@ export interface CoverBoldProps extends BaseSlideStyleProps {
   subtitle: string
   tag: string
   backgroundImageUrl?: string
+  // Style overrides
+  titleFontSize?: number
+  subtitleFontSize?: number
+  tagFontSize?: number
+  showAccentBar?: boolean
+  barWidth?: number
+  paddingX?: number
 }
 
 export const coverBoldDefaultProps: CoverBoldProps = {
@@ -31,10 +38,16 @@ export const coverBoldDefaultProps: CoverBoldProps = {
   ...DEFAULT_COLORS,
 }
 
-export function CoverBold({ title, subtitle, tag, backgroundImageUrl, ...colors }: CoverBoldProps) {
+export function CoverBold({
+  title, subtitle, tag, backgroundImageUrl,
+  titleFontSize: titleFontSizeOverride, subtitleFontSize, tagFontSize,
+  showAccentBar, barWidth, paddingX,
+  ...colors
+}: CoverBoldProps) {
   const lineCount = title.split('\n').length
-  const titleFontSize = lineCount >= 3 ? fontSize.coverCompact : fontSize.coverMd
+  const defaultTitleSize = lineCount >= 3 ? fontSize.coverCompact : fontSize.coverMd
   const titleLineHeight = lineCount >= 3 ? lineHeight.tight : lineHeight.tighter
+  const px = paddingX ?? spacing.containerMd
 
   return (
     <SlideBase {...colors}>
@@ -54,24 +67,26 @@ export function CoverBold({ title, subtitle, tag, backgroundImageUrl, ...colors 
       <div className="absolute inset-0" style={{ backgroundColor: cardBackground.overlay }} />
       <div
         className="relative z-10 flex h-full flex-col justify-center"
-        style={{ paddingLeft: spacing.containerMd, paddingRight: spacing.containerMd, paddingTop: spacing.containerMd, paddingBottom: spacing.containerMd }}
+        style={{ paddingLeft: px, paddingRight: px, paddingTop: px, paddingBottom: px }}
       >
-        <Overline variant="tag" accentColor={colors.accentColor} style={{ marginBottom: gap['3xl'] }}>
+        <Overline variant="tag" accentColor={colors.accentColor} style={{ marginBottom: gap['3xl'], ...(tagFontSize != null ? { fontSize: tagFontSize } : {}) }}>
           {tag}
         </Overline>
         <SlideTitle
           variant="hero"
-          style={{ fontSize: titleFontSize, lineHeight: titleLineHeight, fontWeight: fontWeight.black }}
+          style={{ fontSize: titleFontSizeOverride ?? defaultTitleSize, lineHeight: titleLineHeight, fontWeight: fontWeight.black }}
         >
           {title.includes('**') ? renderHighlight(title, colors.accentColor) : title}
         </SlideTitle>
-        <AccentBar variant="wide" accentColor={colors.accentColor} style={{ marginTop: gap['3xl'] }} />
+        {(showAccentBar ?? true) && (
+          <AccentBar variant="wide" accentColor={colors.accentColor} style={{ marginTop: gap['3xl'], ...(barWidth != null ? { width: barWidth } : {}) }} />
+        )}
         <MutedText
           size="lg"
           mutedColor={colors.textColor}
           style={{
             marginTop: gap['3xl'],
-            fontSize: fontSize.subtitleLg,
+            fontSize: subtitleFontSize ?? fontSize.subtitleLg,
             fontWeight: fontWeight.medium,
             lineHeight: lineHeight.subtitle,
             color: 'rgba(255, 255, 255, 0.98)',
