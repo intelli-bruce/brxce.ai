@@ -1,3 +1,5 @@
+import { SlideTitle, DiagramFlow } from '@/components/slide-primitives'
+import { fontSize, fontWeight, lineHeight, spacing, gap } from '@/lib/studio/slide-tokens'
 import { DEFAULT_COLORS, SlideBase, type BaseSlideStyleProps } from './SlideBase'
 
 export interface BodyDiagramProps extends BaseSlideStyleProps {
@@ -14,16 +16,15 @@ export const bodyDiagramDefaultProps: BodyDiagramProps = {
 export function BodyDiagram({ title, nodes, ...colors }: BodyDiagramProps) {
   return (
     <SlideBase {...colors}>
-      <div className="p-20">
-        <h3 className="text-[66px] font-bold">{title}</h3>
-        <div className="mt-24 flex items-center justify-between gap-3">
-          {nodes.map((node, idx) => (
-            <div key={node + idx} className="flex items-center gap-3">
-              <div className="rounded-xl border border-white/15 px-6 py-5 text-center text-3xl min-w-[180px]">{node}</div>
-              {idx < nodes.length - 1 && <div className="text-4xl" style={{ color: colors.accentColor }}>→</div>}
-            </div>
-          ))}
-        </div>
+      <div style={{ padding: spacing.containerLg }}>
+        <SlideTitle variant="title" style={{ fontSize: fontSize.headingLg, fontWeight: fontWeight.bold }}>
+          {title}
+        </SlideTitle>
+        <DiagramFlow
+          nodes={nodes}
+          accentColor={colors.accentColor}
+          style={{ marginTop: gap['9xl'], justifyContent: 'space-between' }}
+        />
       </div>
     </SlideBase>
   )

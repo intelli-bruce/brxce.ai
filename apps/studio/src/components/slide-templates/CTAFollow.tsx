@@ -1,3 +1,5 @@
+import { SlideTitle, CTAButton, MutedText } from '@/components/slide-primitives'
+import { fontSize, fontWeight, lineHeight, spacing, gap, layout, accentOpacity } from '@/lib/studio/slide-tokens'
 import { DEFAULT_COLORS, SlideBase, type BaseSlideStyleProps } from './SlideBase'
 
 export interface CTAFollowProps extends BaseSlideStyleProps {
@@ -18,25 +20,42 @@ export const ctaFollowDefaultProps: CTAFollowProps = {
 export function CTAFollow({ title, handle, reason, hintText, ...colors }: CTAFollowProps) {
   return (
     <SlideBase {...colors}>
-      <div className="flex h-full flex-col items-center justify-center px-16 pb-24 pt-12 text-center">
-        <h3 className="max-w-[920px] whitespace-pre-line text-[68px] font-bold leading-[1.18]">{title}</h3>
-        <p
-          className="mt-12 rounded-full px-16 py-8 text-[60px] font-black text-white shadow-[0_12px_35px_rgba(255,107,53,0.5)]"
-          style={{ backgroundColor: colors.accentColor }}
+      <div
+        className="flex h-full flex-col items-center justify-center text-center"
+        style={{ paddingLeft: spacing.containerMd, paddingRight: spacing.containerMd, paddingBottom: spacing.bottomLg, paddingTop: spacing.topSm }}
+      >
+        <SlideTitle
+          variant="title"
+          style={{ maxWidth: layout.maxWidth.title, fontSize: fontSize.ctaSm, fontWeight: fontWeight.bold, lineHeight: lineHeight.snug }}
         >
+          {title}
+        </SlideTitle>
+        <CTAButton accentColor={colors.accentColor} style={{ marginTop: gap['5xl'] }}>
           팔로우 {handle}
-        </p>
+        </CTAButton>
         {hintText ? (
-          <p className="mt-4 text-[34px] font-semibold" style={{ color: `${colors.accentColor}ee` }}>
+          <MutedText
+            size="md"
+            mutedColor={`${colors.accentColor}${accentOpacity.hint}`}
+            style={{ marginTop: gap.md, fontSize: fontSize.bodySm, fontWeight: fontWeight.semibold }}
+          >
             {hintText}
-          </p>
+          </MutedText>
         ) : null}
-        <p className="mt-8 max-w-[900px] whitespace-pre-line text-[34px] leading-relaxed" style={{ color: colors.mutedColor }}>
+        <MutedText
+          size="md"
+          mutedColor={colors.mutedColor}
+          style={{ marginTop: gap['3xl'], maxWidth: layout.maxWidth.content, fontSize: fontSize.bodySm, lineHeight: lineHeight.relaxed }}
+        >
           {reason}
-        </p>
-        <p className="mt-3 max-w-[900px] text-[30px] leading-relaxed" style={{ color: colors.mutedColor }}>
+        </MutedText>
+        <MutedText
+          size="md"
+          mutedColor={colors.mutedColor}
+          style={{ marginTop: gap.sm, maxWidth: layout.maxWidth.content, fontSize: fontSize.captionLg, lineHeight: lineHeight.relaxed }}
+        >
           실제 자동화 워크플로우, 프롬프트, 운영 체크리스트까지 받아보세요.
-        </p>
+        </MutedText>
       </div>
     </SlideBase>
   )

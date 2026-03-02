@@ -17,6 +17,8 @@ export const DEFAULT_COLORS = {
 
 export const slideCenteredLayoutClass = 'flex h-full flex-col justify-center'
 
+export type FooterVariant = 'avatar' | 'minimal' | 'none'
+
 export function SlideBase({
   children,
   backgroundColor = DEFAULT_COLORS.backgroundColor,
@@ -24,7 +26,13 @@ export function SlideBase({
   slideNumber,
   style,
   centerContent = false,
-}: BaseSlideStyleProps & { children: ReactNode; style?: CSSProperties; centerContent?: boolean }) {
+  footer = 'avatar',
+}: BaseSlideStyleProps & {
+  children: ReactNode
+  style?: CSSProperties
+  centerContent?: boolean
+  footer?: FooterVariant
+}) {
   return (
     <div
       className="relative h-[1350px] w-[1080px] overflow-hidden"
@@ -32,8 +40,22 @@ export function SlideBase({
     >
       <div className={centerContent ? slideCenteredLayoutClass : 'h-full'}>{children}</div>
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/30" />
-      <div className="absolute bottom-10 left-16 text-[30px] tracking-[0.38em] text-white/88">BRXCE.AI</div>
-      <div className="absolute bottom-10 right-12 text-[32px] tracking-[0.2em] text-white/78">{slideNumber ?? 'SLIDE'}</div>
+      {footer === 'avatar' && (
+        <div className="absolute bottom-8 left-16 flex items-center gap-5">
+          <img
+            src="/bruce-avatar-rounded.png"
+            alt="Bruce"
+            className="h-[64px] w-[64px] rounded-full"
+          />
+          <span className="text-[26px] font-semibold tracking-wide text-white/70">@brxce.ai</span>
+        </div>
+      )}
+      {footer === 'minimal' && (
+        <div className="absolute bottom-10 left-16 text-[28px] tracking-[0.38em] text-white/50">@brxce.ai</div>
+      )}
+      {footer !== 'none' && slideNumber && (
+        <div className="absolute bottom-10 right-12 text-[28px] tracking-[0.2em] text-white/40">{slideNumber}</div>
+      )}
     </div>
   )
 }

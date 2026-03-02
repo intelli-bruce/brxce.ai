@@ -1,3 +1,5 @@
+import { SlideTitle, AccentBar, MutedText } from '@/components/slide-primitives'
+import { fontSize, fontWeight, lineHeight, spacing, gap, layout, accentOpacity } from '@/lib/studio/slide-tokens'
 import { DEFAULT_COLORS, SlideBase, type BaseSlideStyleProps } from './SlideBase'
 
 export interface CoverMinimalProps extends BaseSlideStyleProps {
@@ -16,12 +18,31 @@ export const coverMinimalDefaultProps: CoverMinimalProps = {
 export function CoverMinimal({ title, subtitle, issue, ...colors }: CoverMinimalProps) {
   return (
     <SlideBase {...colors}>
-      <div className="flex h-full flex-col justify-between p-20">
-        <p className="text-2xl" style={{ color: colors.mutedColor }}>{issue}</p>
-        <div className="space-y-10 pb-28">
-          <h1 className="whitespace-pre-line text-[86px] font-semibold leading-tight">{title}</h1>
-          <p className="max-w-[760px] text-4xl" style={{ color: colors.mutedColor }}>{subtitle}</p>
-          <div className="h-1 w-36" style={{ backgroundColor: colors.accentColor }} />
+      <div
+        className="flex h-full flex-col justify-between"
+        style={{ padding: spacing.containerLg }}
+      >
+        <MutedText size="sm" mutedColor={colors.mutedColor}>
+          {issue}
+        </MutedText>
+        <div style={{ paddingBottom: spacing.bottomXl }}>
+          <div className="space-y-10">
+            <SlideTitle
+              variant="hero"
+              style={{ fontSize: fontSize.coverSm, fontWeight: fontWeight.semibold, lineHeight: lineHeight.default }}
+            >
+              {title}
+            </SlideTitle>
+            <MutedText size="lg" mutedColor={colors.mutedColor} style={{ maxWidth: layout.maxWidth.subtitle, fontSize: fontSize.bodyMd }}>
+              {subtitle}
+            </MutedText>
+            <AccentBar
+              variant="narrow"
+              accentColor={colors.accentColor}
+              opacity={accentOpacity.full}
+              style={{ width: 144, borderRadius: 0, height: 4 }}
+            />
+          </div>
         </div>
       </div>
     </SlideBase>

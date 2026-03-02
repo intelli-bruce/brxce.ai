@@ -1,3 +1,5 @@
+import { SlideTitle, AccentBar, NumberBadge, SlideCard, MutedText } from '@/components/slide-primitives'
+import { fontSize, fontWeight, lineHeight, spacing, gap, accentOpacity } from '@/lib/studio/slide-tokens'
 import { DEFAULT_COLORS, SlideBase, type BaseSlideStyleProps } from './SlideBase'
 
 export interface BodyListProps extends BaseSlideStyleProps {
@@ -14,20 +16,37 @@ export const bodyListDefaultProps: BodyListProps = {
 export function BodyList({ title, items, ...colors }: BodyListProps) {
   return (
     <SlideBase {...colors}>
-      <div className="flex h-full flex-col justify-center px-16 pb-24 pt-14">
-        <h3 className="text-[62px] font-bold leading-tight">{title}</h3>
-        <div className="mt-10 h-[4px] w-28 rounded-full" style={{ backgroundColor: `${colors.accentColor}c7` }} />
-        <div className="mt-12 space-y-8">
+      <div
+        className="flex h-full flex-col justify-center"
+        style={{ paddingLeft: spacing.containerMd, paddingRight: spacing.containerMd, paddingBottom: spacing.bottomLg, paddingTop: spacing.topMd }}
+      >
+        <SlideTitle variant="title">
+          {title}
+        </SlideTitle>
+        <AccentBar
+          variant="narrow"
+          accentColor={colors.accentColor}
+          opacity={accentOpacity.muted}
+          style={{ marginTop: gap['4xl'] }}
+        />
+        <div style={{ marginTop: gap['5xl'], display: 'flex', flexDirection: 'column', gap: gap['3xl'] }}>
           {items.map((item, idx) => (
-            <div key={item + idx} className="flex items-start gap-6 rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-5">
-              <span
-                className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-[30px] font-black text-white"
-                style={{ backgroundColor: colors.accentColor }}
-              >
+            <SlideCard
+              key={item + idx}
+              variant="listItem"
+              style={{ display: 'flex', alignItems: 'flex-start', gap: gap.xl, paddingLeft: spacing.cardSmH, paddingRight: spacing.cardSmH, paddingTop: spacing.cardSmV, paddingBottom: spacing.cardSmV }}
+            >
+              <NumberBadge size="sm" accentColor={colors.accentColor}>
                 {idx + 1}
-              </span>
-              <p className="flex-1 whitespace-pre-line text-[36px] leading-[1.35]">{item}</p>
-            </div>
+              </NumberBadge>
+              <MutedText
+                size="md"
+                mutedColor={colors.textColor}
+                style={{ flex: 1, fontSize: fontSize.bodyMd, fontWeight: fontWeight.normal, lineHeight: lineHeight.listItem }}
+              >
+                {item}
+              </MutedText>
+            </SlideCard>
           ))}
         </div>
       </div>

@@ -1,5 +1,785 @@
 [
   {
+    "id": "carousel-sejply77",
+    "title": "에이전틱 워크플로우에 열광하는 진짜 이유",
+    "slides": [
+      {
+        "templateId": "cover-bold",
+        "label": "커버",
+        "category": "cover",
+        "content": {
+          "title": "AI 판이\n**에이전틱 워크플로우**에\n열광하는 진짜 이유",
+          "subtitle": "단순히 묻고 답하는 시대는 끝났습니다"
+        },
+        "overrides": {
+          "tag": "AGENTIC WORKFLOW"
+        },
+        "id": "slide-w3jgv1jw"
+      },
+      {
+        "templateId": "hook-stat",
+        "label": "비교 훅",
+        "category": "hook",
+        "content": {},
+        "overrides": {
+          "statValue": "VS",
+          "statLabel": "제로샷 vs 에이전틱",
+          "detail": "\"이거 해줘\" → 끝 (기존)\nvs\n계획 → 실행 → 검토 → 수정 → 완성 (에이전틱)"
+        },
+        "id": "slide-s9b6t7dd"
+      },
+      {
+        "templateId": "body-text",
+        "label": "이유 1 - Reasoning",
+        "category": "body",
+        "content": {
+          "title": "생각의 근육이\n다릅니다",
+          "body": "거대한 목표를 **작은 실행 단위(Task)**로 나눕니다.\n\n단순 답변이 아니라,\n\"먼저 자료 조사를 하고, 초안을 쓰고,\n팩트 체크를 한 뒤 수정하자\"는\n**전략**을 먼저 세우죠.\n\n인간이 일일이 가이드하지 않아도\n복잡한 프로젝트 수행이 가능해집니다."
+        },
+        "overrides": {},
+        "id": "slide-0rwm81aw"
+      },
+      {
+        "templateId": "body-text",
+        "label": "이유 2 - Self-Correction",
+        "category": "body",
+        "content": {
+          "title": "자아 성찰하는 AI",
+          "body": "과거엔 AI가 헛소리를 해도 그냥 내뱉었습니다.\n\n에이전틱 워크플로우는 **반성(Reflection)** 단계를 가집니다.\n\n\"내가 짠 코드가 맞나?\"\n→ 테스트 실행\n→ 에러 발생\n→ 수정 후 재실행.\n\n이 과정만으로도 성능이 **비약적으로** 높아집니다."
+        },
+        "overrides": {},
+        "id": "slide-z0teeunl"
+      },
+      {
+        "templateId": "body-text",
+        "label": "이유 3 - Tool Use",
+        "category": "body",
+        "content": {
+          "title": "도구를 쓸 줄 아는\n지능",
+          "body": "GPT 안에만 갇혀 있지 않습니다.\n\n필요하면 **웹 검색**을 하고,\n**코드**를 돌려 계산하고,\n**외부 API**를 호출해 데이터를 가져옵니다.\n\n단순한 채팅봇을 넘어\n업무를 처리하는 **디지털 일꾼**으로 진화한 것이죠."
+        },
+        "overrides": {},
+        "id": "slide-n8vryr1i"
+      },
+      {
+        "templateId": "body-text",
+        "label": "앤드류 응 인용",
+        "category": "body",
+        "content": {
+          "title": "모델 성능보다\n워크플로우가 더 중요하다",
+          "body": "**Andrew Ng** 교수의 핵심 메시지.\n\n최신 모델을 기다리는 것보다,\n현재 모델로 **에이전틱 시스템**을 구축하는 게\n훨씬 더 좋은 결과물을 냅니다.\n\n기술의 핵심은\n어떤 모델을 쓰느냐에서\n**AI를 어떻게 일하게 만드느냐**로 이동 중."
+        },
+        "overrides": {},
+        "id": "slide-zqrhtqis"
+      },
+      {
+        "templateId": "hook-stat",
+        "label": "요약",
+        "category": "hook",
+        "content": {},
+        "overrides": {
+          "statValue": "3",
+          "statLabel": "핵심 키워드",
+          "detail": "자율성 — 스스로 계획하고 실행\n정확성 — 반복 검토로 품질 향상\n확장성 — 도구 활용으로 실무 해결"
+        },
+        "id": "slide-vots4i41"
+      },
+      {
+        "templateId": "cta-question",
+        "label": "CTA",
+        "category": "cta",
+        "content": {},
+        "overrides": {
+          "question": "여러분의 업무엔\n어떤 AI 에이전트가\n필요한가요?",
+          "guide": "댓글로 여러분의 아이디어를 공유해주세요!",
+          "prompt": "#에이전틱워크플로우 #AI자동화"
+        },
+        "id": "slide-4fxjrzxt"
+      }
+    ],
+    "createdAt": "2026-03-02T20:41:19.233Z",
+    "updatedAt": "2026-03-02T20:41:19.233Z"
+  },
+  {
+    "id": "carousel-hymfy8kp",
+    "title": "에이전트를 공유하세요!",
+    "slides": [
+      {
+        "templateId": "cover-bold",
+        "label": "표지",
+        "category": "cover",
+        "content": {
+          "title": "에이전트를\n공유하세요!",
+          "subtitle": "혼자 쓰기엔 아깝잖아"
+        },
+        "overrides": {
+          "tag": "COMMUNITY"
+        },
+        "id": "slide-7nsx75jo"
+      },
+      {
+        "templateId": "body-text",
+        "label": "본문",
+        "category": "body",
+        "content": {
+          "title": "만들었으면 공유하자",
+          "body": "좋은 에이전트를 만들어놓고\n혼자만 쓰고 있다면.\n\n공유하는 순간\n피드백이 오고\n더 좋아지고\n커뮤니티가 생긴다.\n\n혼자 만든 건 도구.\n같이 쓰면 생태계다."
+        },
+        "overrides": {},
+        "id": "slide-qexv07rv"
+      },
+      {
+        "templateId": "cta-follow",
+        "label": "CTA",
+        "category": "cta",
+        "content": {
+          "title": "에이전트 공유 커뮤니티\n준비 중입니다",
+          "handle": "@brxce.ai"
+        },
+        "overrides": {},
+        "id": "slide-bp3yx7t3"
+      }
+    ],
+    "createdAt": "2026-03-02T09:02:54.252Z",
+    "updatedAt": "2026-03-02T09:02:54.252Z"
+  },
+  {
+    "id": "carousel-sdpw4mbw",
+    "title": "토큰 아끼는 방법 → 직접 구현하지 마세요",
+    "slides": [
+      {
+        "templateId": "cover-bold",
+        "label": "표지",
+        "category": "cover",
+        "content": {
+          "title": "토큰 아끼는 방법?\n직접 구현하지 마세요",
+          "subtitle": ""
+        },
+        "overrides": {
+          "tag": "TIP"
+        },
+        "id": "slide-a52kwhqr"
+      },
+      {
+        "templateId": "body-text",
+        "label": "본문",
+        "category": "body",
+        "content": {
+          "title": "바퀴를 다시 발명하지 마라",
+          "body": "토큰 절약한다고\n프롬프트 짧게 줄이고\n직접 파싱 로직 짜고\n자체 캐시 만들고.\n\n그 시간에 이미 있는 도구를 쓰면\n토큰도 아끼고 시간도 아낀다."
+        },
+        "overrides": {},
+        "id": "slide-uerlx6px"
+      },
+      {
+        "templateId": "cta-follow",
+        "label": "CTA",
+        "category": "cta",
+        "content": {
+          "title": "실전 효율화 팁 공유 중",
+          "handle": "@brxce.ai"
+        },
+        "overrides": {},
+        "id": "slide-gqqrmlzb"
+      }
+    ],
+    "createdAt": "2026-03-02T09:02:54.248Z",
+    "updatedAt": "2026-03-02T09:02:54.248Z"
+  },
+  {
+    "id": "carousel-x2gdqsne",
+    "title": "에이전틱 워크플로우 진행방안",
+    "slides": [
+      {
+        "templateId": "cover-bold",
+        "label": "표지",
+        "category": "cover",
+        "content": {
+          "title": "지금\n에이전틱 워크플로우가\n대세인 이유",
+          "subtitle": ""
+        },
+        "overrides": {
+          "tag": "WHY NOW"
+        },
+        "id": "slide-d60t4iwb"
+      },
+      {
+        "templateId": "body-text",
+        "label": "구분",
+        "category": "body",
+        "content": {
+          "title": "AI 도구를 쓰는 것과\n다르다",
+          "body": "ChatGPT 열고 질문하고 답 복사하고.\n그거 자동화 아니다.\n그냥 빠른 수작업이다.\n\n에이전틱 워크플로우는\n내가 자는 동안에도 돌아간다."
+        },
+        "overrides": {},
+        "id": "slide-6uwymmgu"
+      },
+      {
+        "templateId": "body-list",
+        "label": "실전",
+        "category": "body",
+        "content": {
+          "title": "6명짜리 회사에서 쓰고 있다",
+          "items": [
+            "콘텐츠 초안 → AI가 생성, 내가 검토",
+            "고객 문의 → AI가 분류·1차 응답",
+            "프로젝트 리포트 → 매일 자동 생성",
+            "내가 하는 건 하나. 방향 잡기."
+          ]
+        },
+        "overrides": {},
+        "id": "slide-dee2ypg7"
+      },
+      {
+        "templateId": "cta-follow",
+        "label": "CTA",
+        "category": "cta",
+        "content": {
+          "title": "도구를 쓰는 건 누구나 한다\n구조를 설계하는 건 다른 얘기다",
+          "handle": "@brxce.ai"
+        },
+        "overrides": {},
+        "id": "slide-tv706tb6"
+      }
+    ],
+    "createdAt": "2026-03-02T09:02:54.243Z",
+    "updatedAt": "2026-03-02T09:02:54.243Z"
+  },
+  {
+    "id": "carousel-dbkjg7bg",
+    "title": "~하는 워크플로우 시리즈",
+    "slides": [
+      {
+        "templateId": "cover-bold",
+        "label": "표지",
+        "category": "cover",
+        "content": {
+          "title": "~하는\n워크플로우 시리즈",
+          "subtitle": "실전 에이전틱 워크플로우 모음"
+        },
+        "overrides": {
+          "tag": "SERIES"
+        },
+        "id": "slide-6mwv2wfq"
+      },
+      {
+        "templateId": "body-list",
+        "label": "시리즈 목록",
+        "category": "body",
+        "content": {
+          "title": "공개 예정 워크플로우",
+          "items": [
+            "콘텐츠 자동 생성하는 워크플로우",
+            "고객 문의 자동 응답하는 워크플로우",
+            "리서치 자동화하는 워크플로우",
+            "일일 리포트 만드는 워크플로우",
+            "앱 아이디어 검증하는 워크플로우"
+          ]
+        },
+        "overrides": {},
+        "id": "slide-f6o0hz8d"
+      },
+      {
+        "templateId": "cta-follow",
+        "label": "CTA",
+        "category": "cta",
+        "content": {
+          "title": "매주 하나씩 공개합니다",
+          "handle": "@brxce.ai"
+        },
+        "overrides": {},
+        "id": "slide-m04luffc"
+      }
+    ],
+    "createdAt": "2026-03-02T09:02:54.238Z",
+    "updatedAt": "2026-03-02T09:02:54.238Z"
+  },
+  {
+    "id": "carousel-hflzpdek",
+    "title": "슈퍼파워를 갖는 방법 : 에이전틱 워크플로우",
+    "slides": [
+      {
+        "templateId": "cover-bold",
+        "label": "표지",
+        "category": "cover",
+        "content": {
+          "title": "슈퍼파워를\n갖는 방법",
+          "subtitle": "에이전틱 워크플로우"
+        },
+        "overrides": {
+          "tag": "SUPERPOWER"
+        },
+        "id": "slide-wuwnjza1"
+      },
+      {
+        "templateId": "body-text",
+        "label": "핵심",
+        "category": "body",
+        "content": {
+          "title": "혼자서 10명분의\n일을 하는 사람들",
+          "body": "비밀은 간단하다.\n\n반복되는 일을 AI에게 맡기고\n자기는 판단과 방향만 잡는다.\n\n이게 슈퍼파워다.\n특별한 능력이 아니라\n구조의 문제다."
+        },
+        "overrides": {},
+        "id": "slide-bwmpp3x5"
+      },
+      {
+        "templateId": "cta-follow",
+        "label": "CTA",
+        "category": "cta",
+        "content": {
+          "title": "구조를 설계하면\n능력이 된다",
+          "handle": "@brxce.ai"
+        },
+        "overrides": {},
+        "id": "slide-7u5mcdur"
+      }
+    ],
+    "createdAt": "2026-03-02T09:02:54.234Z",
+    "updatedAt": "2026-03-02T09:02:54.234Z"
+  },
+  {
+    "id": "carousel-zl8bignp",
+    "title": "맥미니 사고 뭐 어떻게 해야 할지 모르셨던 분들",
+    "slides": [
+      {
+        "templateId": "cover-bold",
+        "label": "표지",
+        "category": "cover",
+        "content": {
+          "title": "맥미니 사고\n뭐 어떻게 해야 할지\n모르셨던 분들",
+          "subtitle": "저를 팔로우 하세요"
+        },
+        "overrides": {
+          "tag": "MAC MINI"
+        },
+        "id": "slide-tkxhjhdd"
+      },
+      {
+        "templateId": "body-list",
+        "label": "활용법",
+        "category": "body",
+        "content": {
+          "title": "맥미니로 할 수 있는 것들",
+          "items": [
+            "24시간 AI 에이전트 서버 운영",
+            "로컬 LLM 돌리기 (ComfyUI, Ollama)",
+            "자동화 워크플로우 허브",
+            "개발 서버 + CI/CD 러너"
+          ]
+        },
+        "overrides": {},
+        "id": "slide-7sm5eh7o"
+      },
+      {
+        "templateId": "cta-follow",
+        "label": "CTA",
+        "category": "cta",
+        "content": {
+          "title": "맥미니 활용법\n매주 공유합니다",
+          "handle": "@brxce.ai"
+        },
+        "overrides": {},
+        "id": "slide-rzcy43yq"
+      }
+    ],
+    "createdAt": "2026-03-02T09:02:54.229Z",
+    "updatedAt": "2026-03-02T09:02:54.229Z"
+  },
+  {
+    "id": "carousel-jimxzdgw",
+    "title": "아니 왜 다들 클코클로 하는거지? 이미 지났는데",
+    "slides": [
+      {
+        "templateId": "cover-bold",
+        "label": "표지",
+        "category": "cover",
+        "content": {
+          "title": "아니 왜 다들\n클코클로 하는거지?\n이미 지났는데",
+          "subtitle": ""
+        },
+        "overrides": {
+          "tag": "OPINION"
+        },
+        "id": "slide-7lzpua85"
+      },
+      {
+        "templateId": "body-text",
+        "label": "본문",
+        "category": "body",
+        "content": {
+          "title": "클로드 코드가 문제가 아니다",
+          "body": "도구 하나에 매달리는 게 문제다.\n\n클코가 나왔다고 몰려가고\n다음 달에 새 도구 나오면 또 몰려간다.\n\n중요한 건 도구가 아니라\n워크플로우 설계 능력이다."
+        },
+        "overrides": {},
+        "id": "slide-takm6m13"
+      },
+      {
+        "templateId": "cta-follow",
+        "label": "CTA",
+        "category": "cta",
+        "content": {
+          "title": "도구는 바뀐다\n구조는 남는다",
+          "handle": "@brxce.ai"
+        },
+        "overrides": {},
+        "id": "slide-o8rrt9ea"
+      }
+    ],
+    "createdAt": "2026-03-02T09:02:54.225Z",
+    "updatedAt": "2026-03-02T09:02:54.225Z"
+  },
+  {
+    "id": "carousel-t5g0gx44",
+    "title": "에이전틱 워크플로우로 니치 시장 찾고 앱 개발하는 방법",
+    "slides": [
+      {
+        "templateId": "cover-bold",
+        "label": "표지",
+        "category": "cover",
+        "content": {
+          "title": "에이전틱 워크플로우로\n니치 시장을 찾고\n앱을 만드는 방법",
+          "subtitle": "아이디어부터 출시까지"
+        },
+        "overrides": {
+          "tag": "WORKFLOW"
+        },
+        "id": "slide-ah626255"
+      },
+      {
+        "templateId": "body-step",
+        "label": "과정",
+        "category": "body",
+        "content": {
+          "title": "아이디어 → 출시 파이프라인"
+        },
+        "overrides": {
+          "steps": [
+            {
+              "title": "시장 리서치",
+              "desc": "AI가 트렌드 데이터 수집·분석"
+            },
+            {
+              "title": "니치 검증",
+              "desc": "경쟁 강도, 수요 크기 자동 평가"
+            },
+            {
+              "title": "MVP 개발",
+              "desc": "코딩 에이전트로 빠르게 프로토타입"
+            }
+          ]
+        },
+        "id": "slide-1eqnvq9p"
+      },
+      {
+        "templateId": "body-text",
+        "label": "핵심",
+        "category": "body",
+        "content": {
+          "title": "속도가 곧 경쟁력",
+          "body": "예전엔 니치 시장 찾는 데만 몇 주.\n지금은 하루면 된다.\n\nAI가 리서치하고,\nAI가 코드 짜고,\nAI가 배포한다.\n\n당신은 판단만 하면 된다."
+        },
+        "overrides": {},
+        "id": "slide-2lwfbkkg"
+      },
+      {
+        "templateId": "cta-follow",
+        "label": "CTA",
+        "category": "cta",
+        "content": {
+          "title": "실전 워크플로우가 궁금하다면",
+          "handle": "@brxce.ai"
+        },
+        "overrides": {},
+        "id": "slide-236bpc8i"
+      }
+    ],
+    "createdAt": "2026-03-02T09:02:54.221Z",
+    "updatedAt": "2026-03-02T09:02:54.221Z"
+  },
+  {
+    "id": "carousel-ou5m0sdz",
+    "title": "에이전틱 워크플로우 + 전문 지식 = 시너지 대폭발",
+    "slides": [
+      {
+        "templateId": "cover-bold",
+        "label": "표지",
+        "category": "cover",
+        "content": {
+          "title": "에이전틱 워크플로우 +\n전문 지식 =\n시너지 대폭발",
+          "subtitle": "AI만으로는 안 된다"
+        },
+        "overrides": {
+          "tag": "INSIGHT"
+        },
+        "id": "slide-tg5p8t9a"
+      },
+      {
+        "templateId": "body-text",
+        "label": "핵심",
+        "category": "body",
+        "content": {
+          "title": "AI는 범용이다.\n전문성은 당신 거다.",
+          "body": "같은 AI를 써도 결과가 다른 이유.\n\n도메인 지식이 있는 사람이\n워크플로우를 설계하면\nAI는 10배로 일한다.\n\n모르는 사람이 쓰면\n그냥 비싼 검색엔진이다."
+        },
+        "overrides": {},
+        "id": "slide-21o7kqvr"
+      },
+      {
+        "templateId": "body-step",
+        "label": "공식",
+        "category": "body",
+        "content": {
+          "title": "시너지 공식"
+        },
+        "overrides": {
+          "steps": [
+            {
+              "title": "전문 지식",
+              "desc": "당신이 10년간 쌓은 도메인 경험"
+            },
+            {
+              "title": "워크플로우 설계",
+              "desc": "반복 패턴을 구조화하는 능력"
+            },
+            {
+              "title": "AI 실행",
+              "desc": "설계된 구조를 AI가 24시간 돌림"
+            }
+          ]
+        },
+        "id": "slide-ddymsqj4"
+      },
+      {
+        "templateId": "cta-follow",
+        "label": "CTA",
+        "category": "cta",
+        "content": {
+          "title": "전문성 + 에이전틱 워크플로우\n= 대체 불가능한 경쟁력",
+          "handle": "@brxce.ai"
+        },
+        "overrides": {},
+        "id": "slide-rpsgexix"
+      }
+    ],
+    "createdAt": "2026-03-02T09:02:54.216Z",
+    "updatedAt": "2026-03-02T09:02:54.216Z"
+  },
+  {
+    "id": "carousel-0eiwp8yp",
+    "title": "스타트업 대표님께 에이전틱 워크플로우를 전도했더니 생긴 변화",
+    "slides": [
+      {
+        "templateId": "cover-bold",
+        "label": "표지",
+        "category": "cover",
+        "content": {
+          "title": "스타트업 대표님께\n에이전틱 워크플로우를\n전도했더니",
+          "subtitle": "실제로 벌어진 변화"
+        },
+        "overrides": {
+          "tag": "REAL STORY"
+        },
+        "id": "slide-krp5tasx"
+      },
+      {
+        "templateId": "hook-problem",
+        "label": "훅",
+        "category": "hook",
+        "content": {
+          "title": "처음 반응은 이랬다",
+          "items": [
+            "그거 ChatGPT 쓰는 거 아냐?",
+            "우리 회사엔 안 맞을 것 같은데",
+            "개발자가 있어야 하는 거 아니야?",
+            "결국 사람이 해야 하는 거잖아"
+          ]
+        },
+        "overrides": {},
+        "id": "slide-ki54d3q6"
+      },
+      {
+        "templateId": "body-text",
+        "label": "전환점",
+        "category": "body",
+        "content": {
+          "title": "2주 뒤, 전화가 왔다",
+          "body": "\"야, 이거 진짜 되네?\"\n\n매일 2시간 걸리던 리포트가\n10분으로 줄었다고 했다.\n\n그 다음 주에 팀 전체에 도입했다."
+        },
+        "overrides": {},
+        "id": "slide-iy3hqsmn"
+      },
+      {
+        "templateId": "body-list",
+        "label": "변화",
+        "category": "body",
+        "content": {
+          "title": "3개월 뒤 실제 변화",
+          "items": [
+            "리포트 자동화 → 주 10시간 절약",
+            "고객 문의 1차 응답 → AI 처리",
+            "주간회의 자료 → 자동 생성",
+            "대표는 전략에만 집중"
+          ]
+        },
+        "overrides": {},
+        "id": "slide-8oodhd2d"
+      },
+      {
+        "templateId": "cta-follow",
+        "label": "CTA",
+        "category": "cta",
+        "content": {
+          "title": "도구를 쓰는 건 누구나 한다\n구조를 설계하는 건 다른 얘기다",
+          "handle": "@brxce.ai"
+        },
+        "overrides": {},
+        "id": "slide-iuggd8xi"
+      }
+    ],
+    "createdAt": "2026-03-02T09:02:54.210Z",
+    "updatedAt": "2026-03-02T09:02:54.210Z"
+  },
+  {
+    "id": "carousel-czhqu3mb",
+    "title": "에이전틱 워크플로우 모음",
+    "slides": [
+      {
+        "templateId": "cover-bold",
+        "label": "표지",
+        "category": "cover",
+        "content": {
+          "title": "AI 도구를 쓰는 것과\nAI가 일하게 하는 것은\n다릅니다",
+          "subtitle": "에이전틱 워크플로우 실전 가이드"
+        },
+        "overrides": {
+          "tag": "AGENTIC WORKFLOW"
+        },
+        "id": "slide-sk1n2ko2"
+      },
+      {
+        "templateId": "hook-problem",
+        "label": "문제 제기",
+        "category": "hook",
+        "content": {
+          "title": "이런 상황, 익숙하지 않나요?",
+          "items": [
+            "ChatGPT에 매번 같은 프롬프트를 복붙한다",
+            "결과물을 다시 수동으로 정리한다",
+            "AI를 쓰는데 오히려 시간이 더 든다",
+            "자동화했다고 생각했는데 사람이 빠지면 멈춘다"
+          ]
+        },
+        "overrides": {},
+        "id": "slide-sjwz7f6m"
+      },
+      {
+        "templateId": "body-text",
+        "label": "에이전틱 워크플로우란",
+        "category": "body",
+        "content": {
+          "title": "에이전틱 워크플로우란\n무엇인가",
+          "body": "AI가 단순히 답변하는 게 아니라, **스스로 판단하고 도구를 선택하고 작업을 완료**하는 구조입니다.\n\n사람은 목표만 설정합니다. 실행은 에이전트가 합니다.\n\n프롬프트 한 번이 아니라, **연쇄적인 의사결정 루프**가 핵심입니다."
+        },
+        "overrides": {},
+        "id": "slide-nnw2kbql"
+      },
+      {
+        "templateId": "body-diagram",
+        "label": "워크플로우 구조",
+        "category": "body",
+        "content": {
+          "title": "에이전틱 워크플로우 구조",
+          "items": [
+            "목표 설정",
+            "계획 수립",
+            "도구 실행",
+            "결과 검증"
+          ]
+        },
+        "overrides": {},
+        "id": "slide-kmfxu6xn"
+      },
+      {
+        "templateId": "body-step",
+        "label": "구축 3단계",
+        "category": "body",
+        "content": {
+          "title": "실전 구축 3단계"
+        },
+        "overrides": {
+          "steps": [
+            {
+              "title": "Define",
+              "desc": "반복되는 업무를 식별하고 목표를 명확히 정의"
+            },
+            {
+              "title": "Compose",
+              "desc": "MCP 도구 + 프롬프트 + 판단 로직을 조합"
+            },
+            {
+              "title": "Deploy",
+              "desc": "트리거 설정 후 에이전트가 자율 실행"
+            }
+          ]
+        },
+        "id": "slide-vwbiwfs9"
+      },
+      {
+        "templateId": "body-compare",
+        "label": "수동 vs 에이전틱",
+        "category": "body",
+        "content": {
+          "title": "수동 AI 사용 vs 에이전틱",
+          "beforeItems": [
+            "매번 프롬프트 작성",
+            "결과 복사 → 붙여넣기",
+            "사람이 빠지면 멈춤",
+            "확장이 불가능"
+          ],
+          "afterItems": [
+            "목표만 설정하면 실행",
+            "도구 연결로 자동 처리",
+            "24시간 자율 운영",
+            "병렬 확장 가능"
+          ]
+        },
+        "overrides": {
+          "beforeTitle": "수동 AI 사용",
+          "afterTitle": "에이전틱 워크플로우"
+        },
+        "id": "slide-u69hcoqd"
+      },
+      {
+        "templateId": "body-quote",
+        "label": "핵심 인사이트",
+        "category": "body",
+        "content": {
+          "body": "AI를 잘 쓰는 사람은\nAI에게 질문하는 사람이 아니라,\nAI가 일하는 구조를 만드는 사람이다."
+        },
+        "overrides": {
+          "author": "BRXCE.AI"
+        },
+        "id": "slide-gadte143"
+      },
+      {
+        "templateId": "cta-follow",
+        "label": "CTA",
+        "category": "cta",
+        "content": {
+          "title": "에이전틱 워크플로우를\n직접 구축하고 싶다면?",
+          "subtitle": "매주 실전 워크플로우와 프롬프트를 공유합니다."
+        },
+        "overrides": {
+          "handle": "@brxce.ai",
+          "hintText": "↑ 프로필에서 팔로우"
+        },
+        "id": "slide-5wxgcubh"
+      }
+    ],
+    "createdAt": "2026-03-01T08:24:04.016Z",
+    "updatedAt": "2026-03-01T08:24:04.016Z"
+  },
+  {
     "id": "carousel-l9m14v0p",
     "title": "아직도 에이전틱 워크플로우를 모르세요?",
     "slides": [

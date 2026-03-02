@@ -1,3 +1,5 @@
+import { SlideTitle, BulletList } from '@/components/slide-primitives'
+import { fontSize, fontWeight, lineHeight, spacing, gap } from '@/lib/studio/slide-tokens'
 import { DEFAULT_COLORS, SlideBase, type BaseSlideStyleProps } from './SlideBase'
 
 export interface HookProblemProps extends BaseSlideStyleProps {
@@ -14,16 +16,20 @@ export const hookProblemDefaultProps: HookProblemProps = {
 export function HookProblem({ title, points, ...colors }: HookProblemProps) {
   return (
     <SlideBase {...colors}>
-      <div className="p-20">
-        <h2 className="text-[82px] font-bold leading-tight">{title}</h2>
-        <div className="mt-14 space-y-7">
-          {points.map((point, i) => (
-            <div key={point + i} className="flex items-start gap-5 text-4xl">
-              <span className="mt-2 block h-4 w-4 rounded-full" style={{ backgroundColor: colors.accentColor }} />
-              <span>{point}</span>
-            </div>
-          ))}
-        </div>
+      <div style={{ padding: spacing.containerLg }}>
+        <SlideTitle
+          variant="title"
+          style={{ fontSize: fontSize.hookMd, fontWeight: fontWeight.bold, lineHeight: lineHeight.default }}
+        >
+          {title}
+        </SlideTitle>
+        <BulletList
+          items={points}
+          dotSize="md"
+          accentColor={colors.accentColor}
+          itemGap={gap['2xl']}
+          style={{ marginTop: gap['6xl'] }}
+        />
       </div>
     </SlideBase>
   )

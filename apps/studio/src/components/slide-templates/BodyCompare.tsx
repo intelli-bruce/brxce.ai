@@ -1,3 +1,5 @@
+import { SlideTitle, SlideCard, BulletList } from '@/components/slide-primitives'
+import { fontSize, fontWeight, lineHeight, spacing, gap, layout, textOpacity, accentOpacity } from '@/lib/studio/slide-tokens'
 import { DEFAULT_COLORS, SlideBase, type BaseSlideStyleProps } from './SlideBase'
 
 export interface BodyCompareProps extends BaseSlideStyleProps {
@@ -19,22 +21,26 @@ export const bodyCompareDefaultProps: BodyCompareProps = {
   ...DEFAULT_COLORS,
 }
 
-function CompareContent({ desc, items }: { desc?: string; items?: string[] }) {
+function CompareContent({ desc, items, accentColor, textColor }: { desc?: string; items?: string[]; accentColor: string; textColor: string }) {
   if (items?.length) {
     return (
-      <ul className="mt-5 space-y-4 text-[34px] leading-relaxed">
-        {items.map((item, idx) => (
-          <li key={`${item}-${idx}`} className="flex gap-3">
-            <span className="mt-2 h-3 w-3 shrink-0 rounded-full bg-current/80" />
-            <span className="whitespace-pre-line">{item}</span>
-          </li>
-        ))}
-      </ul>
+      <BulletList
+        items={items}
+        dotSize="sm"
+        accentColor="currentColor"
+        textColor={textColor}
+        itemGap={gap.md}
+        style={{ marginTop: gap.lg, fontSize: fontSize.bodySm, lineHeight: lineHeight.relaxed }}
+      />
     )
   }
 
   if (desc) {
-    return <p className="mt-5 whitespace-pre-line text-[36px] leading-relaxed">{desc}</p>
+    return (
+      <div style={{ marginTop: gap.lg, whiteSpace: 'pre-line', fontSize: fontSize.bodyMd, lineHeight: lineHeight.relaxed }}>
+        {desc}
+      </div>
+    )
   }
 
   return null
@@ -43,25 +49,41 @@ function CompareContent({ desc, items }: { desc?: string; items?: string[] }) {
 export function BodyCompare({ title, beforeTitle, beforeDesc, beforeItems, afterTitle, afterDesc, afterItems, ...colors }: BodyCompareProps) {
   return (
     <SlideBase {...colors}>
-      <div className="flex h-full flex-col justify-center px-16 pb-24 pt-14">
-        <h3 className="text-[66px] font-bold">{title}</h3>
-        <div className="mt-10 grid grid-cols-2 gap-8">
-          <div className="flex min-h-[520px] flex-col justify-center rounded-3xl border border-white/12 bg-white/[0.04] p-10">
-            <p className="flex items-center gap-3 text-[42px] font-bold text-white/90">
-              <span className="text-[52px] leading-none">❌</span>
+      <div
+        className="flex h-full flex-col justify-center"
+        style={{ paddingLeft: spacing.containerMd, paddingRight: spacing.containerMd, paddingBottom: spacing.bottomLg, paddingTop: spacing.topMd }}
+      >
+        <SlideTitle variant="title" style={{ fontSize: fontSize.headingLg }}>
+          {title}
+        </SlideTitle>
+        <div style={{ marginTop: gap['4xl'], display: 'grid', gridTemplateColumns: '1fr 1fr', gap: gap['3xl'] }}>
+          <SlideCard
+            variant="compareCard"
+            style={{ display: 'flex', minHeight: layout.minHeight.compareCard, flexDirection: 'column', justifyContent: 'center', padding: spacing.cardLg }}
+          >
+            <p style={{ display: 'flex', alignItems: 'center', gap: gap.sm, fontSize: fontSize.cardLabel, fontWeight: fontWeight.bold, color: textOpacity.primary }}>
+              <span style={{ fontSize: fontSize.emojiLg, lineHeight: lineHeight.none }}>❌</span>
               {beforeTitle}
             </p>
-            <CompareContent desc={beforeDesc} items={beforeItems} />
-          </div>
+            <CompareContent desc={beforeDesc} items={beforeItems} accentColor={colors.accentColor ?? ''} textColor={colors.textColor ?? ''} />
+          </SlideCard>
           <div
-            className="flex min-h-[520px] flex-col justify-center rounded-3xl p-10"
-            style={{ backgroundColor: `${colors.accentColor}33`, border: `1px solid ${colors.accentColor}99` }}
+            style={{
+              display: 'flex',
+              minHeight: layout.minHeight.compareCard,
+              flexDirection: 'column',
+              justifyContent: 'center',
+              padding: spacing.cardLg,
+              backgroundColor: `${colors.accentColor}${accentOpacity.bgLight}`,
+              border: `1px solid ${colors.accentColor}${accentOpacity.light}`,
+              borderRadius: 24,
+            }}
           >
-            <p className="flex items-center gap-3 text-[42px] font-bold" style={{ color: colors.accentColor }}>
-              <span className="text-[52px] leading-none">✅</span>
+            <p style={{ display: 'flex', alignItems: 'center', gap: gap.sm, fontSize: fontSize.cardLabel, fontWeight: fontWeight.bold, color: colors.accentColor }}>
+              <span style={{ fontSize: fontSize.emojiLg, lineHeight: lineHeight.none }}>✅</span>
               {afterTitle}
             </p>
-            <CompareContent desc={afterDesc} items={afterItems} />
+            <CompareContent desc={afterDesc} items={afterItems} accentColor={colors.accentColor ?? ''} textColor={colors.textColor ?? ''} />
           </div>
         </div>
       </div>

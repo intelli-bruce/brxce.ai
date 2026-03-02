@@ -154,9 +154,22 @@ function TemplateCard({ template }: { template: SlideTemplateInfo }) {
           <Comp {...template.defaultProps} />
         </div>
       </div>
-      <div className="px-4 py-3 border-t border-white/[0.06]">
-        <p className="text-sm font-bold text-[#eee]">{template.name}</p>
-        <p className="text-[11px] text-white/30 mt-0.5">{template.description}</p>
+      <div
+        className="px-4 py-3 border-t border-white/[0.06] cursor-pointer hover:bg-white/5 transition-colors"
+        onClick={(e) => {
+          e.stopPropagation();
+          const ta = document.createElement("textarea"); ta.value = template.id; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta);
+          const el = e.currentTarget;
+          const orig = el.querySelector('.tpl-name')?.textContent;
+          const nameEl = el.querySelector('.tpl-name');
+          if (nameEl) {
+            nameEl.textContent = '✓ Copied!';
+            setTimeout(() => { if (nameEl) nameEl.textContent = orig || template.name; }, 1200);
+          }
+        }}
+      >
+        <p className="tpl-name text-sm font-bold text-[#eee]">{template.name}</p>
+        <p className="text-[11px] text-white/30 mt-0.5">{template.id}</p>
       </div>
     </div>
   );

@@ -1,3 +1,5 @@
+import { Overline, SlideTitle, MutedText } from '@/components/slide-primitives'
+import { fontSize, fontWeight, lineHeight, spacing, gap, textOpacity } from '@/lib/studio/slide-tokens'
 import { DEFAULT_COLORS, SlideBase, type BaseSlideStyleProps } from './SlideBase'
 
 export interface HookTeaserProps extends BaseSlideStyleProps {
@@ -16,10 +18,19 @@ export const hookTeaserDefaultProps: HookTeaserProps = {
 export function HookTeaser({ overline, title, teaser, ...colors }: HookTeaserProps) {
   return (
     <SlideBase {...colors}>
-      <div className="flex h-full flex-col justify-center p-20">
-        <p className="text-3xl" style={{ color: colors.accentColor }}>{overline}</p>
-        <h2 className="mt-8 whitespace-pre-line text-[90px] font-bold leading-tight">{title}</h2>
-        <p className="mt-12 text-4xl text-white/80">{teaser}</p>
+      <div className="flex h-full flex-col justify-center" style={{ padding: spacing.containerLg }}>
+        <Overline variant="kicker" accentColor={colors.accentColor} style={{ fontSize: fontSize.captionLg, letterSpacing: 'normal', textTransform: 'none' }}>
+          {overline}
+        </Overline>
+        <SlideTitle
+          variant="hero"
+          style={{ marginTop: gap['3xl'], fontSize: fontSize.hookLg, fontWeight: fontWeight.bold, lineHeight: lineHeight.default }}
+        >
+          {title}
+        </SlideTitle>
+        <MutedText size="lg" mutedColor={textOpacity.tertiary} style={{ marginTop: gap['5xl'], fontSize: fontSize.bodyMd }}>
+          {teaser}
+        </MutedText>
       </div>
     </SlideBase>
   )

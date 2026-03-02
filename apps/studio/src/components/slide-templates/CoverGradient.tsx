@@ -1,3 +1,5 @@
+import { SlideTitle, MutedText } from '@/components/slide-primitives'
+import { fontSize, fontWeight, lineHeight, spacing, gap, textOpacity } from '@/lib/studio/slide-tokens'
 import { DEFAULT_COLORS, SlideBase, type BaseSlideStyleProps } from './SlideBase'
 
 export interface CoverGradientProps extends BaseSlideStyleProps {
@@ -23,9 +25,16 @@ export function CoverGradient({ title, subtitle, gradientFrom, gradientTo, ...co
         background: `radial-gradient(circle at 20% 10%, ${gradientTo}55, transparent 40%), linear-gradient(135deg, ${gradientFrom}, #0a0a0a 70%)`,
       }}
     >
-      <div className="flex h-full flex-col justify-center p-20">
-        <h1 className="whitespace-pre-line text-[100px] font-black leading-[0.95]">{title}</h1>
-        <p className="mt-10 text-4xl text-white/85">{subtitle}</p>
+      <div className="flex h-full flex-col justify-center" style={{ padding: spacing.containerLg }}>
+        <SlideTitle
+          variant="hero"
+          style={{ fontSize: fontSize.coverXl, fontWeight: fontWeight.black, lineHeight: lineHeight.tightest }}
+        >
+          {title}
+        </SlideTitle>
+        <MutedText size="lg" mutedColor={textOpacity.secondary} style={{ marginTop: gap['4xl'], fontSize: fontSize.bodyMd }}>
+          {subtitle}
+        </MutedText>
       </div>
     </SlideBase>
   )

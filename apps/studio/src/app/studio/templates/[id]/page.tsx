@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import Link from "next/link";
+import { SLIDE_TEMPLATES } from "@/lib/studio/slide-templates";
 import {
   Comparison, OrgChart, BeforeAfter, FlowChart,
   OgImage, Thumbnail, Quote, SocialPost, Infographic,
@@ -180,6 +181,13 @@ export default function TemplateDetailPage() {
       .then(({ data }) => { if (data) setLinkedAssets(data); });
   }, [tmpl]);
 
+  // Check if it's a slide template (cover-bold, hook-stat, etc.)
+  const slideTpl = useMemo(() => SLIDE_TEMPLATES.find((t) => t.id === id), [id]);
+
+  if (!tmpl && slideTpl) {
+    return <SlideTemplateDetail tpl={slideTpl} />;
+  }
+
   if (!tmpl) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
@@ -347,6 +355,216 @@ export default function TemplateDetailPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ── Slide Template Detail (cover-bold, hook-stat, body-text, cta-question 등) ── */
+import type { SlideTemplateInfo } from "@/lib/studio/slide-templates";
+
+function SlideTemplateDetail({ tpl }: { tpl: SlideTemplateInfo }) {
+  const Comp = tpl.component;
+  const [editableProps, setEditableProps] = useState<Record<string, any>>({ ...tpl.defaultProps });
+
+  const categoryLabel: Record<string, string> = {
+    cover: "표지", hook: "훅", body: "본문", cta: "CTA",
+  };
+  const categoryColor: Record<string, string> = {
+    cover: "bg-orange-500/10 text-orange-400",
+    hook: "bg-purple-500/10 text-purple-400",
+    body: "bg-blue-500/10 text-blue-400",
+    cta: "bg-green-500/10 text-green-400",
+  };
+
+  const updateProp = (key: string, value: any) => {
+    setEditableProps((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const resetProps = () => {
+    setEditableProps({ ...tpl.defaultProps });
+  };
+
+  // Same category templates for comparison
+  const sameCategory = SLIDE_TEMPLATES.filter((t) => t.category === tpl.category);
+
+  return (
+    <div className="w-full space-y-6">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-2 text-xs text-[#555]">
+        <Link href="/studio/templates?tab=carousel" className="hover:text-[#aaa] transition-colors">캐러셀 템플릿</Link>
+        <span>/</span>
+        <span className="text-[#aaa]">{tpl.name}</span>
+      </div>
+
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <h1 className="text-2xl font-bold text-[#fafafa]">{tpl.name}</h1>
+        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${categoryColor[tpl.category] || ""}`}>
+          {categoryLabel[tpl.category] || tpl.category}
+        </span>
+        <span className="text-sm text-[#666]">{tpl.description}</span>
+      </div>
+
+      <div className="flex gap-6">
+        {/* 미리보기 */}
+        <div className="shrink-0">
+          <div
+            className="border border-[#222] rounded-xl overflow-hidden bg-[#0a0a0a]"
+            style={{ width: 432, height: 540 }}
+          >
+            <div
+              style={{
+                transform: "scale(0.4)",
+                transformOrigin: "top left",
+                width: 1080,
+                height: 1350,
+                pointerEvents: "none",
+              }}
+            >
+              <Comp {...editableProps} slideNumber="1/1" />
+            </div>
+          </div>
+        </div>
+
+        {/* 에디터 패널 */}
+        <div className="flex-1 min-w-0 space-y-4">
+          {/* Props 에디터 */}
+          <div className="bg-[#0f0f0f] border border-[#222] rounded-xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-[#fafafa]">Props 에디터</h3>
+              <button
+                onClick={resetProps}
+                className="text-[10px] px-2 py-1 rounded bg-[#1a1a1a] text-[#666] hover:text-[#aaa] border border-[#222] cursor-pointer transition-colors"
+              >
+                초기화
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {Object.entries(tpl.propsSchema).map(([key, schema]) => {
+                if (key === "slideNumber") return null;
+                const value = editableProps[key] ?? "";
+
+                // Skip style props
+                if (["backgroundColor", "accentColor", "textColor", "mutedColor"].includes(key)) return null;
+
+                if (schema.type === "string") {
+                  const isLong = typeof value === "string" && (value.length > 60 || value.includes("\n"));
+                  return (
+                    <div key={key}>
+                      <label className="text-[10px] text-[#555] uppercase tracking-wider block mb-1">
+                        {schema.label}
+                        {schema.required && <span className="text-[#ff6b35] ml-1">*</span>}
+                      </label>
+                      {isLong ? (
+                        <textarea
+                          value={value}
+                          onChange={(e) => updateProp(key, e.target.value)}
+                          rows={4}
+                          className="w-full bg-[#0a0a0a] border border-[#222] rounded-lg px-3 py-2 text-sm text-[#ccc] resize-y focus:border-[#ff6b35] focus:outline-none transition-colors"
+                        />
+                      ) : (
+                        <input
+                          type="text"
+                          value={value}
+                          onChange={(e) => updateProp(key, e.target.value)}
+                          className="w-full bg-[#0a0a0a] border border-[#222] rounded-lg px-3 py-2 text-sm text-[#ccc] focus:border-[#ff6b35] focus:outline-none transition-colors"
+                        />
+                      )}
+                    </div>
+                  );
+                }
+
+                if (schema.type === "image") {
+                  return (
+                    <div key={key}>
+                      <label className="text-[10px] text-[#555] uppercase tracking-wider block mb-1">
+                        {schema.label}
+                      </label>
+                      <input
+                        type="text"
+                        value={value || ""}
+                        onChange={(e) => updateProp(key, e.target.value)}
+                        placeholder="이미지 URL"
+                        className="w-full bg-[#0a0a0a] border border-[#222] rounded-lg px-3 py-2 text-sm text-[#ccc] focus:border-[#ff6b35] focus:outline-none transition-colors"
+                      />
+                    </div>
+                  );
+                }
+
+                if (schema.type === "color") {
+                  return (
+                    <div key={key}>
+                      <label className="text-[10px] text-[#555] uppercase tracking-wider block mb-1">
+                        {schema.label}
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="color"
+                          value={value || "#ff6b35"}
+                          onChange={(e) => updateProp(key, e.target.value)}
+                          className="w-10 h-8 rounded border border-[#222] cursor-pointer bg-transparent"
+                        />
+                        <input
+                          type="text"
+                          value={value || ""}
+                          onChange={(e) => updateProp(key, e.target.value)}
+                          className="flex-1 bg-[#0a0a0a] border border-[#222] rounded-lg px-3 py-2 text-sm text-[#ccc] font-mono focus:border-[#ff6b35] focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  );
+                }
+
+                return null;
+              })}
+            </div>
+          </div>
+
+          {/* 같은 카테고리 비교 */}
+          <div className="bg-[#0f0f0f] border border-[#222] rounded-xl p-5">
+            <h3 className="text-sm font-semibold text-[#fafafa] mb-3">
+              같은 카테고리 ({categoryLabel[tpl.category]}) 비교
+            </h3>
+            <div className="flex gap-3 overflow-x-auto pb-2">
+              {sameCategory.map((alt) => {
+                const AltComp = alt.component;
+                const isCurrent = alt.id === tpl.id;
+                return (
+                  <Link
+                    key={alt.id}
+                    href={`/studio/templates/${alt.id}`}
+                    className={`shrink-0 rounded-lg overflow-hidden border-2 no-underline transition-colors ${
+                      isCurrent ? "border-[#ff6b35]" : "border-[#222] hover:border-[#444]"
+                    }`}
+                  >
+                    <div
+                      className="bg-[#0a0a0a]"
+                      style={{ width: 120, height: 150, overflow: "hidden" }}
+                    >
+                      <div
+                        style={{
+                          transform: "scale(0.111)",
+                          transformOrigin: "top left",
+                          width: 1080,
+                          height: 1350,
+                          pointerEvents: "none",
+                        }}
+                      >
+                        <AltComp {...alt.defaultProps} slideNumber="1/1" />
+                      </div>
+                    </div>
+                    <div className="px-2 py-1.5 bg-[#0a0a0a]">
+                      <div className="text-[10px] text-[#aaa] truncate">{alt.name}</div>
+                      {isCurrent && <div className="text-[9px] text-[#ff6b35]">현재</div>}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

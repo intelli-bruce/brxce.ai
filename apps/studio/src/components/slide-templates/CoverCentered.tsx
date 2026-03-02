@@ -1,3 +1,5 @@
+import { Overline, SlideTitle, AccentBar, MutedText } from '@/components/slide-primitives'
+import { fontSize, fontWeight, lineHeight, spacing, gap, accentOpacity } from '@/lib/studio/slide-tokens'
 import { DEFAULT_COLORS, SlideBase, type BaseSlideStyleProps } from './SlideBase'
 
 export interface CoverCenteredProps extends BaseSlideStyleProps {
@@ -16,11 +18,28 @@ export const coverCenteredDefaultProps: CoverCenteredProps = {
 export function CoverCentered({ title, subtitle, kicker, ...colors }: CoverCenteredProps) {
   return (
     <SlideBase {...colors}>
-      <div className="flex h-full flex-col items-center justify-center p-20 text-center">
-        <p className="mb-10 text-2xl tracking-[0.3em]" style={{ color: colors.accentColor }}>{kicker}</p>
-        <h1 className="whitespace-pre-line text-[98px] font-bold leading-tight">{title}</h1>
-        <div className="my-12 h-1 w-40" style={{ backgroundColor: colors.accentColor }} />
-        <p className="text-4xl text-white/80">{subtitle}</p>
+      <div
+        className="flex h-full flex-col items-center justify-center text-center"
+        style={{ padding: spacing.containerLg }}
+      >
+        <Overline variant="kicker" accentColor={colors.accentColor} style={{ marginBottom: gap['4xl'] }}>
+          {kicker}
+        </Overline>
+        <SlideTitle
+          variant="hero"
+          style={{ fontSize: fontSize.coverLg, fontWeight: fontWeight.bold, lineHeight: lineHeight.default }}
+        >
+          {title}
+        </SlideTitle>
+        <AccentBar
+          variant="narrow"
+          accentColor={colors.accentColor}
+          opacity={accentOpacity.full}
+          style={{ marginTop: gap['5xl'], marginBottom: gap['5xl'], width: 160, borderRadius: 0, height: 4 }}
+        />
+        <MutedText size="lg" mutedColor="rgba(255, 255, 255, 0.80)" style={{ fontSize: fontSize.bodyMd }}>
+          {subtitle}
+        </MutedText>
       </div>
     </SlideBase>
   )

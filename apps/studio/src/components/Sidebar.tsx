@@ -18,10 +18,12 @@ const navItems: NavItem[] = [
   { type: "link", href: "/publications", label: "발행", icon: "📢" },
   { type: "link", href: "/showcase", label: "쇼케이스", icon: "🎨" },
   { type: "link", href: "/newsletter", label: "뉴스레터", icon: "📩" },
+  { type: "link", href: "/email-templates", label: "이메일 템플릿", icon: "✉️", indent: true },
 
   // ── 제작 (Studio) ──
   { type: "section", label: "제작 (Studio)" },
   { type: "link", href: "/studio", label: "스튜디오", icon: "🎬" },
+  { type: "link", href: "/carousel", label: "캐러셀", icon: "📱", indent: true },
   { type: "link", href: "/studio/templates", label: "템플릿: 이미지", icon: "🖼️", indent: true },
   { type: "link", href: "/studio/templates?tab=video", label: "템플릿: 영상", icon: "🎥", indent: true },
   { type: "link", href: "/studio/references", label: "레퍼런스", icon: "📚", indent: true },

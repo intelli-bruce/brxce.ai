@@ -1,3 +1,5 @@
+import { SlideCard, QuoteBlock } from '@/components/slide-primitives'
+import { spacing } from '@/lib/studio/slide-tokens'
 import { DEFAULT_COLORS, SlideBase, type BaseSlideStyleProps } from './SlideBase'
 
 export interface BodyQuoteProps extends BaseSlideStyleProps {
@@ -14,19 +16,21 @@ export const bodyQuoteDefaultProps: BodyQuoteProps = {
 export function BodyQuote({ quote, author, ...colors }: BodyQuoteProps) {
   return (
     <SlideBase {...colors}>
-      <div className="flex h-full flex-col justify-center px-16 py-14">
-        <div className="relative rounded-[36px] border border-white/12 bg-white/[0.04] px-14 py-16">
-          <p className="pointer-events-none absolute -left-4 -top-14 text-[190px] font-black leading-none" style={{ color: `${colors.accentColor}dd` }}>
-            “
-          </p>
-          <p className="whitespace-pre-line text-[56px] font-semibold leading-[1.23]">{quote}</p>
-          <p className="pointer-events-none absolute -bottom-24 right-8 text-[190px] font-black leading-none" style={{ color: `${colors.accentColor}dd` }}>
-            ”
-          </p>
-        </div>
-        <p className="mt-14 text-right text-3xl" style={{ color: colors.mutedColor }}>
-          — {author || 'BRXCE.AI'}
-        </p>
+      <div
+        className="flex h-full flex-col justify-center"
+        style={{ paddingLeft: spacing.containerMd, paddingRight: spacing.containerMd, paddingTop: spacing.topMd, paddingBottom: spacing.topMd }}
+      >
+        <SlideCard
+          variant="quoteCard"
+          style={{ paddingLeft: spacing.quoteH, paddingRight: spacing.quoteH, paddingTop: spacing.quoteV, paddingBottom: spacing.quoteV }}
+        >
+          <QuoteBlock
+            text={quote}
+            author={author || 'BRXCE.AI'}
+            accentColor={colors.accentColor}
+            mutedColor={colors.mutedColor}
+          />
+        </SlideCard>
       </div>
     </SlideBase>
   )

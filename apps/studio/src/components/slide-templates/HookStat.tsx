@@ -1,3 +1,5 @@
+import { Overline, StatDisplay, AccentBar, MutedText } from '@/components/slide-primitives'
+import { spacing, gap, layout, textOpacity, accentOpacity } from '@/lib/studio/slide-tokens'
 import { DEFAULT_COLORS, SlideBase, type BaseSlideStyleProps } from './SlideBase'
 
 export interface HookStatProps extends BaseSlideStyleProps {
@@ -16,21 +18,48 @@ export const hookStatDefaultProps: HookStatProps = {
 export function HookStat({ statValue, statLabel, detail, ...colors }: HookStatProps) {
   return (
     <SlideBase {...colors}>
-      <div className="flex h-full flex-col px-16 pt-14 text-center">
-        <div className="self-center rounded-3xl border border-white/15 px-12 py-4 text-[30px] uppercase tracking-[0.22em] text-white/70">impact metric</div>
+      <div
+        className="flex h-full flex-col text-center"
+        style={{ paddingLeft: spacing.containerMd, paddingRight: spacing.containerMd, paddingTop: spacing.topMd }}
+      >
+        <Overline
+          variant="badge"
+          accentColor={textOpacity.muted}
+          style={{
+            alignSelf: 'center',
+            borderRadius: 24,
+            border: `1px solid rgba(255, 255, 255, 0.15)`,
+            paddingLeft: spacing.badgeH,
+            paddingRight: spacing.badgeH,
+            paddingTop: spacing.badgeV,
+            paddingBottom: spacing.badgeV,
+          }}
+        >
+          impact metric
+        </Overline>
 
         <div className="flex flex-1 flex-col items-center justify-center">
-          <p className="text-[220px] font-black leading-none" style={{ color: colors.accentColor }}>
-            {statValue}
-          </p>
-          <p className="mt-2 text-[64px] font-semibold leading-tight">{statLabel}</p>
+          <StatDisplay
+            value={statValue}
+            label={statLabel}
+            accentColor={colors.accentColor}
+          />
         </div>
 
-        <div className="pb-24">
-          <div className="mx-auto h-[3px] w-40 rounded-full" style={{ backgroundColor: `${colors.accentColor}b3` }} />
-          <p className="mx-auto mt-8 max-w-[900px] whitespace-pre-line text-[44px] leading-relaxed" style={{ color: colors.mutedColor }}>
+        <div style={{ paddingBottom: spacing.bottomLg }}>
+          <AccentBar
+            variant="narrow"
+            accentColor={colors.accentColor}
+            opacity={accentOpacity.mid}
+            style={{ width: 160, height: 3, borderRadius: 9999, marginLeft: 'auto', marginRight: 'auto' }}
+          />
+          <MutedText
+            size="lg"
+            mutedColor={colors.mutedColor}
+            style={{ marginTop: gap['3xl'], maxWidth: layout.maxWidth.content, marginLeft: 'auto', marginRight: 'auto', fontSize: 44, lineHeight: 1.625 }}
+          >
             {detail}
-          </p>
+          </MutedText>
         </div>
       </div>
     </SlideBase>

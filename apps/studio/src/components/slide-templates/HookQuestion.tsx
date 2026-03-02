@@ -1,3 +1,5 @@
+import { SlideTitle, MutedText } from '@/components/slide-primitives'
+import { fontSize, fontWeight, lineHeight, spacing, gap, layout } from '@/lib/studio/slide-tokens'
 import { DEFAULT_COLORS, SlideBase, type BaseSlideStyleProps } from './SlideBase'
 
 export interface HookQuestionProps extends BaseSlideStyleProps {
@@ -14,11 +16,23 @@ export const hookQuestionDefaultProps: HookQuestionProps = {
 export function HookQuestion({ question, subQuestion, ...colors }: HookQuestionProps) {
   return (
     <SlideBase {...colors}>
-      <div className="flex h-full flex-col items-center justify-center px-16 py-20 text-center">
-        <h2 className="max-w-[900px] whitespace-pre-line text-[96px] font-extrabold leading-tight">{question}</h2>
-        <p className="mt-20 text-[44px]" style={{ color: colors.accentColor }}>
+      <div
+        className="flex h-full flex-col items-center justify-center text-center"
+        style={{ paddingLeft: spacing.containerMd, paddingRight: spacing.containerMd, paddingTop: spacing.containerLg, paddingBottom: spacing.containerLg }}
+      >
+        <SlideTitle
+          variant="hero"
+          style={{ fontSize: fontSize.hookXl, fontWeight: fontWeight.extrabold, lineHeight: lineHeight.default, maxWidth: layout.maxWidth.content }}
+        >
+          {question}
+        </SlideTitle>
+        <MutedText
+          size="lg"
+          mutedColor={colors.accentColor}
+          style={{ marginTop: gap['8xl'], fontSize: fontSize.subHeading }}
+        >
           {subQuestion}
-        </p>
+        </MutedText>
       </div>
     </SlideBase>
   )

@@ -23,9 +23,9 @@ const TEMPLATES: Record<string, WaitlistTemplate> = {
     bodyHtml: `
 <p style="margin:0 0 16px;font-size:16px;color:#fafafa;">안녕하세요,</p>
 <p style="margin:0 0 16px;"><strong>"OpenClaw이 뭔데?"</strong> 가이드를 신청해주셨네요.</p>
-<p style="margin:0 0 16px;">짧게 말하면 — AI 에이전트를 실제 업무에 붙이는 도구입니다.<br/>
-ChatGPT 대화창과는 다릅니다. 에이전트가 직접 일을 합니다.</p>
-<p style="margin:0 0 16px;">가이드가 준비되면 바로 보내드리겠습니다.<br/>
+<p style="margin:0 0 16px;">에이전틱 워크플로우가 실제로 어떻게 돌아가는지,<br/>
+제가 회사 운영하면서 쓰는 방식 그대로 정리하고 있습니다.</p>
+<p style="margin:0 0 16px;">완성되면 바로 보내드리겠습니다.<br/>
 그 사이에 먼저 둘러보셔도 좋습니다:</p>
 <p style="margin:0 0 24px;">
 → <a href="https://brxce.ai/guides" style="color:#60a5fa;text-decoration:underline;">에이전틱 워크플로우 가이드</a>

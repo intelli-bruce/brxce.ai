@@ -1,3 +1,5 @@
+import { SlideTitle, AccentBar, MutedText } from '@/components/slide-primitives'
+import { fontSize, fontWeight, lineHeight, spacing, gap, accentOpacity } from '@/lib/studio/slide-tokens'
 import { DEFAULT_COLORS, ImagePlaceholder, SlideBase, type BaseSlideStyleProps } from './SlideBase'
 
 export interface CoverSplitProps extends BaseSlideStyleProps {
@@ -20,10 +22,22 @@ export function CoverSplit({ title, subtitle, imageUrl, ...colors }: CoverSplitP
         <div className="h-full">
           {imageUrl ? <img src={imageUrl} alt={title} className="h-full w-full object-cover" /> : <ImagePlaceholder label="좌측 이미지" />}
         </div>
-        <div className="flex flex-col justify-center p-16">
-          <div className="mb-8 h-2 w-24" style={{ backgroundColor: colors.accentColor }} />
-          <h1 className="whitespace-pre-line text-[78px] font-bold leading-tight">{title}</h1>
-          <p className="mt-8 text-4xl" style={{ color: colors.mutedColor }}>{subtitle}</p>
+        <div className="flex flex-col justify-center" style={{ padding: spacing.containerMd }}>
+          <AccentBar
+            variant="narrow"
+            accentColor={colors.accentColor}
+            opacity={accentOpacity.full}
+            style={{ width: 96, height: 8, borderRadius: 0, marginBottom: gap['3xl'] }}
+          />
+          <SlideTitle
+            variant="hero"
+            style={{ fontSize: fontSize.coverSplit, fontWeight: fontWeight.bold, lineHeight: lineHeight.default }}
+          >
+            {title}
+          </SlideTitle>
+          <MutedText size="lg" mutedColor={colors.mutedColor} style={{ marginTop: gap['3xl'], fontSize: fontSize.bodyMd }}>
+            {subtitle}
+          </MutedText>
         </div>
       </div>
     </SlideBase>

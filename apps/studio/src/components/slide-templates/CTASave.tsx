@@ -1,3 +1,5 @@
+import { SlideTitle, MutedText } from '@/components/slide-primitives'
+import { fontSize, fontWeight, lineHeight, spacing, gap, textOpacity } from '@/lib/studio/slide-tokens'
 import { DEFAULT_COLORS, SlideBase, type BaseSlideStyleProps } from './SlideBase'
 
 export interface CTASaveProps extends BaseSlideStyleProps {
@@ -16,10 +18,19 @@ export const ctaSaveDefaultProps: CTASaveProps = {
 export function CTASave({ title, subtitle, tip, ...colors }: CTASaveProps) {
   return (
     <SlideBase {...colors}>
-      <div className="flex h-full flex-col justify-center p-20">
-        <h3 className="whitespace-pre-line text-[84px] font-black leading-tight">{title}</h3>
-        <p className="mt-10 text-4xl text-white/85">{subtitle}</p>
-        <p className="mt-10 text-3xl" style={{ color: colors.accentColor }}>{tip}</p>
+      <div className="flex h-full flex-col justify-center" style={{ padding: spacing.containerLg }}>
+        <SlideTitle
+          variant="hero"
+          style={{ fontSize: fontSize.ctaXl, fontWeight: fontWeight.black, lineHeight: lineHeight.default }}
+        >
+          {title}
+        </SlideTitle>
+        <MutedText size="lg" mutedColor={textOpacity.secondary} style={{ marginTop: gap['4xl'], fontSize: fontSize.bodyMd }}>
+          {subtitle}
+        </MutedText>
+        <MutedText size="md" mutedColor={colors.accentColor} style={{ marginTop: gap['4xl'], fontSize: fontSize.captionLg }}>
+          {tip}
+        </MutedText>
       </div>
     </SlideBase>
   )

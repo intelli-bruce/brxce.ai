@@ -1,3 +1,5 @@
+import { SlideTitle, NumberBadge, SlideCard, MutedText } from '@/components/slide-primitives'
+import { fontSize, fontWeight, lineHeight, spacing, gap } from '@/lib/studio/slide-tokens'
 import { DEFAULT_COLORS, SlideBase, type BaseSlideStyleProps } from './SlideBase'
 
 export interface BodyStepProps extends BaseSlideStyleProps {
@@ -20,24 +22,40 @@ export function BodyStep({ title, steps, ...colors }: BodyStepProps) {
 
   return (
     <SlideBase {...colors}>
-      <div className="flex h-full flex-col px-16 pb-24 pt-14">
-        <h3 className="text-[62px] font-bold">{title}</h3>
-        <div className="mt-8 flex flex-1 flex-col justify-between gap-6">
+      <div
+        className="flex h-full flex-col"
+        style={{ paddingLeft: spacing.containerMd, paddingRight: spacing.containerMd, paddingBottom: spacing.bottomLg, paddingTop: spacing.topMd }}
+      >
+        <SlideTitle variant="title">
+          {title}
+        </SlideTitle>
+        <div style={{ marginTop: gap['3xl'], display: 'flex', flex: 1, flexDirection: 'column', justifyContent: 'space-between', gap: gap.xl }}>
           {normalizedSteps.map((step, idx) => (
-            <div key={step.title + idx} className="flex items-center gap-6 rounded-3xl border border-white/12 bg-white/[0.04] px-8 py-7">
-              <div
-                className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full text-4xl font-black text-white"
-                style={{ backgroundColor: colors.accentColor }}
-              >
+            <SlideCard
+              key={step.title + idx}
+              variant="stepCard"
+              style={{ display: 'flex', alignItems: 'center', gap: gap.xl, paddingLeft: spacing.cardMdH, paddingRight: spacing.cardMdH, paddingTop: spacing.cardMdV, paddingBottom: spacing.cardMdV }}
+            >
+              <NumberBadge size="lg" accentColor={colors.accentColor}>
                 {idx + 1}
-              </div>
+              </NumberBadge>
               <div>
-                <p className="text-[46px] font-semibold leading-tight">{step.title}</p>
-                <p className="mt-2 text-[32px] leading-relaxed" style={{ color: colors.mutedColor }}>
+                <MutedText
+                  size="lg"
+                  mutedColor={colors.textColor}
+                  style={{ fontSize: fontSize.cardTitle, fontWeight: fontWeight.semibold, lineHeight: lineHeight.default }}
+                >
+                  {step.title}
+                </MutedText>
+                <MutedText
+                  size="md"
+                  mutedColor={colors.mutedColor}
+                  style={{ marginTop: gap.xs, fontSize: fontSize.bodyXs, lineHeight: lineHeight.relaxed }}
+                >
                   {step.desc}
-                </p>
+                </MutedText>
               </div>
-            </div>
+            </SlideCard>
           ))}
         </div>
       </div>

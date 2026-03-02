@@ -1,3 +1,5 @@
+import { SlideTitle, MutedText } from '@/components/slide-primitives'
+import { fontSize, fontWeight, lineHeight, spacing, gap, textOpacity } from '@/lib/studio/slide-tokens'
 import { DEFAULT_COLORS, SlideBase, type BaseSlideStyleProps } from './SlideBase'
 
 export interface CTAQuestionProps extends BaseSlideStyleProps {
@@ -16,10 +18,26 @@ export const ctaQuestionDefaultProps: CTAQuestionProps = {
 export function CTAQuestion({ question, guide, prompt, ...colors }: CTAQuestionProps) {
   return (
     <SlideBase {...colors}>
-      <div className="flex h-full flex-col items-center justify-center p-20 text-center">
-        <h3 className="whitespace-pre-line text-[74px] font-bold leading-tight">{question}</h3>
-        <p className="mt-10 text-3xl text-white/80">{guide}</p>
-        <p className="mt-12 text-4xl font-semibold" style={{ color: colors.accentColor }}>{prompt}</p>
+      <div
+        className="flex h-full flex-col items-center justify-center text-center"
+        style={{ padding: spacing.containerLg }}
+      >
+        <SlideTitle
+          variant="title"
+          style={{ fontSize: fontSize.ctaLg, fontWeight: fontWeight.bold, lineHeight: lineHeight.default }}
+        >
+          {question}
+        </SlideTitle>
+        <MutedText size="md" mutedColor={textOpacity.tertiary} style={{ marginTop: gap['4xl'], fontSize: fontSize.captionLg }}>
+          {guide}
+        </MutedText>
+        <MutedText
+          size="lg"
+          mutedColor={colors.accentColor}
+          style={{ marginTop: gap['5xl'], fontSize: fontSize.bodyMd, fontWeight: fontWeight.semibold }}
+        >
+          {prompt}
+        </MutedText>
       </div>
     </SlideBase>
   )

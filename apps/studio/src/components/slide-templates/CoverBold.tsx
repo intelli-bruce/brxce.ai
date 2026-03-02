@@ -1,3 +1,19 @@
+import { Overline, SlideTitle, AccentBar, MutedText } from '@/components/slide-primitives'
+import { fontSize, fontWeight, lineHeight, spacing, gap, cardBackground } from '@/lib/studio/slide-tokens'
+import type { ReactNode } from 'react'
+
+function renderHighlight(text: string, accentColor?: string): ReactNode {
+  return text.split(/(\*\*[^*]+\*\*)/g).map((part, idx) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return (
+        <span key={`hl-${idx}`} style={{ color: accentColor }}>
+          {part.slice(2, -2)}
+        </span>
+      )
+    }
+    return <span key={`t-${idx}`}>{part}</span>
+  })
+}
 import { DEFAULT_COLORS, SlideBase, type BaseSlideStyleProps } from './SlideBase'
 
 export interface CoverBoldProps extends BaseSlideStyleProps {
@@ -17,7 +33,8 @@ export const coverBoldDefaultProps: CoverBoldProps = {
 
 export function CoverBold({ title, subtitle, tag, backgroundImageUrl, ...colors }: CoverBoldProps) {
   const lineCount = title.split('\n').length
-  const titleClass = lineCount >= 3 ? 'text-[80px] leading-[1.02]' : 'text-[94px] leading-[0.98]'
+  const titleFontSize = lineCount >= 3 ? fontSize.coverCompact : fontSize.coverMd
+  const titleLineHeight = lineCount >= 3 ? lineHeight.tight : lineHeight.tighter
 
   return (
     <SlideBase {...colors}>
@@ -34,14 +51,34 @@ export function CoverBold({ title, subtitle, tag, backgroundImageUrl, ...colors 
           />
         )}
       </div>
-      <div className="absolute inset-0 bg-black/60" />
-      <div className="relative z-10 flex h-full flex-col justify-center px-16 py-16">
-        <p className="mb-8 text-[38px] font-semibold tracking-[0.04em]" style={{ color: colors.accentColor }}>
+      <div className="absolute inset-0" style={{ backgroundColor: cardBackground.overlay }} />
+      <div
+        className="relative z-10 flex h-full flex-col justify-center"
+        style={{ paddingLeft: spacing.containerMd, paddingRight: spacing.containerMd, paddingTop: spacing.containerMd, paddingBottom: spacing.containerMd }}
+      >
+        <Overline variant="tag" accentColor={colors.accentColor} style={{ marginBottom: gap['3xl'] }}>
           {tag}
-        </p>
-        <h1 className={`whitespace-pre-line font-black ${titleClass}`}>{title}</h1>
-        <div className="mt-8 h-[4px] w-44 rounded-full" style={{ backgroundColor: `${colors.accentColor}cc` }} />
-        <p className="mt-8 whitespace-pre-line text-[56px] font-medium leading-[1.3] text-white/98">{subtitle}</p>
+        </Overline>
+        <SlideTitle
+          variant="hero"
+          style={{ fontSize: titleFontSize, lineHeight: titleLineHeight, fontWeight: fontWeight.black }}
+        >
+          {title.includes('**') ? renderHighlight(title, colors.accentColor) : title}
+        </SlideTitle>
+        <AccentBar variant="wide" accentColor={colors.accentColor} style={{ marginTop: gap['3xl'] }} />
+        <MutedText
+          size="lg"
+          mutedColor={colors.textColor}
+          style={{
+            marginTop: gap['3xl'],
+            fontSize: fontSize.subtitleLg,
+            fontWeight: fontWeight.medium,
+            lineHeight: lineHeight.subtitle,
+            color: 'rgba(255, 255, 255, 0.98)',
+          }}
+        >
+          {subtitle}
+        </MutedText>
       </div>
     </SlideBase>
   )

@@ -1,3 +1,5 @@
+import { SlideTitle, AccentBar, MutedText } from '@/components/slide-primitives'
+import { fontSize, fontWeight, lineHeight, spacing, gap } from '@/lib/studio/slide-tokens'
 import { DEFAULT_COLORS, SlideBase, type BaseSlideStyleProps } from './SlideBase'
 
 export interface BodyTextProps extends BaseSlideStyleProps {
@@ -16,7 +18,7 @@ function renderMarkdownBold(text: string, accentColor?: string) {
     if (part.startsWith('**') && part.endsWith('**')) {
       const content = part.slice(2, -2)
       return (
-        <span key={`bold-${idx}`} className="font-bold" style={{ color: accentColor }}>
+        <span key={`bold-${idx}`} style={{ fontWeight: fontWeight.bold, color: accentColor }}>
           {content}
         </span>
       )
@@ -28,12 +30,21 @@ function renderMarkdownBold(text: string, accentColor?: string) {
 export function BodyText({ heading, body, ...colors }: BodyTextProps) {
   return (
     <SlideBase {...colors}>
-      <div className="flex h-full flex-col justify-center px-16 pb-24 pt-14">
-        <div className="mb-10 h-[4px] w-28 rounded-full" style={{ backgroundColor: `${colors.accentColor}cc` }} />
-        <h3 className="whitespace-pre-line text-[62px] font-bold leading-tight">{heading}</h3>
-        <p className="mt-16 whitespace-pre-line text-[38px] leading-[1.7]" style={{ color: colors.mutedColor }}>
+      <div
+        className="flex h-full flex-col justify-center"
+        style={{ paddingLeft: spacing.containerMd, paddingRight: spacing.containerMd, paddingBottom: spacing.bottomLg, paddingTop: spacing.topMd }}
+      >
+        <AccentBar variant="narrow" accentColor={colors.accentColor} style={{ marginBottom: gap['4xl'] }} />
+        <SlideTitle variant="title">
+          {heading}
+        </SlideTitle>
+        <MutedText
+          size="lg"
+          mutedColor={colors.mutedColor}
+          style={{ marginTop: gap['7xl'], fontSize: fontSize.bodyLg, lineHeight: lineHeight.body }}
+        >
           {renderMarkdownBold(body, colors.accentColor)}
-        </p>
+        </MutedText>
       </div>
     </SlideBase>
   )
