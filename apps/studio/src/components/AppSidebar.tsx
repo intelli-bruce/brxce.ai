@@ -1,0 +1,208 @@
+"use client"
+
+import Link from "next/link"
+import { usePathname, useRouter } from "next/navigation"
+import { createSupabaseBrowser } from "@/lib/supabase-browser"
+import {
+  BarChart3,
+  BookOpen,
+  Calendar,
+  Clapperboard,
+  FileText,
+  FolderOpen,
+  Image,
+  Lightbulb,
+  LogOut,
+  Mail,
+  Map,
+  Megaphone,
+  Newspaper,
+  Palette,
+  Rocket,
+  Smartphone,
+  Theater,
+  Video,
+  type LucideIcon,
+} from "lucide-react"
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+  SidebarRail,
+} from "@/components/ui/sidebar"
+
+type NavLink = {
+  href: string
+  label: string
+  icon: LucideIcon
+  children?: { href: string; label: string }[]
+}
+
+type NavSection = {
+  title: string
+  items: NavLink[]
+}
+
+const navSections: NavSection[] = [
+  {
+    title: "CMS",
+    items: [
+      { href: "/", label: "대시보드", icon: BarChart3 },
+      { href: "/contents", label: "콘텐츠", icon: FileText },
+      { href: "/ideas", label: "아이디어", icon: Lightbulb },
+      { href: "/publications", label: "발행", icon: Megaphone },
+      { href: "/showcase", label: "쇼케이스", icon: Palette },
+      {
+        href: "/newsletter",
+        label: "뉴스레터",
+        icon: Newspaper,
+        children: [
+          { href: "/email-templates", label: "이메일 템플릿" },
+        ],
+      },
+    ],
+  },
+  {
+    title: "제작 (Studio)",
+    items: [
+      {
+        href: "/studio",
+        label: "스튜디오",
+        icon: Clapperboard,
+        children: [
+          { href: "/carousel", label: "캐러셀" },
+          { href: "/studio/templates", label: "템플릿: 이미지" },
+          { href: "/studio/templates?tab=video", label: "템플릿: 영상" },
+          { href: "/studio/references", label: "레퍼런스" },
+        ],
+      },
+      { href: "/media", label: "미디어 라이브러리", icon: FolderOpen },
+    ],
+  },
+  {
+    title: "캠페인",
+    items: [
+      {
+        href: "/campaigns",
+        label: "캠페인",
+        icon: Rocket,
+        children: [
+          { href: "/campaigns/calendar", label: "캘린더" },
+          { href: "/campaigns/series", label: "시리즈" },
+        ],
+      },
+      { href: "/analytics", label: "성과", icon: BarChart3 },
+      { href: "/style-profiles", label: "스타일 프로필", icon: Theater },
+    ],
+  },
+  {
+    title: "전략",
+    items: [
+      { href: "/studio/funnel", label: "퍼널 맵", icon: Map },
+    ],
+  },
+]
+
+export function AppSidebar() {
+  const pathname = usePathname()
+  const router = useRouter()
+
+  const isActive = (href: string) => {
+    if (href === "/") return pathname === "/"
+    return pathname.startsWith(href)
+  }
+
+  return (
+    <Sidebar collapsible="icon">
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" asChild>
+              <Link href="/">
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                  <Clapperboard className="size-4" />
+                </div>
+                <div className="flex flex-col gap-0.5 leading-none">
+                  <span className="font-semibold">BrxceStudio</span>
+                  <span className="text-xs text-sidebar-foreground/50">CMS + Studio</span>
+                </div>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
+
+      <SidebarContent>
+        {navSections.map((section) => (
+          <SidebarGroup key={section.title}>
+            <SidebarGroupLabel>{section.title}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {section.items.map((item) => (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive(item.href)}
+                      tooltip={item.label}
+                    >
+                      <Link href={item.href}>
+                        <item.icon />
+                        <span>{item.label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                    {item.children && (
+                      <SidebarMenuSub>
+                        {item.children.map((child) => (
+                          <SidebarMenuSubItem key={child.href}>
+                            <SidebarMenuSubButton
+                              asChild
+                              isActive={isActive(child.href)}
+                            >
+                              <Link href={child.href}>
+                                <span>{child.label}</span>
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        ))}
+                      </SidebarMenuSub>
+                    )}
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
+      </SidebarContent>
+
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              tooltip="로그아웃"
+              onClick={async () => {
+                const sb = createSupabaseBrowser()
+                await sb.auth.signOut()
+                router.push("/auth/login")
+              }}
+            >
+              <LogOut />
+              <span>로그아웃</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+
+      <SidebarRail />
+    </Sidebar>
+  )
+}
