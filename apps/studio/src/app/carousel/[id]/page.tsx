@@ -108,30 +108,6 @@ export default function CarouselDetailPage() {
       </div>
 
       <div className="flex gap-6">
-        {/* 슬라이드 네비게이션 */}
-        <div className="flex flex-col gap-2 shrink-0">
-          {carousel.slides.map((s, idx) => (
-            <button
-              key={s.id}
-              onClick={() => {
-                setSelectedSlide(idx);
-                setPreviewTemplateId(null);
-                setShowTemplatePicker(false);
-              }}
-              className={`w-24 text-left px-3 py-2 rounded-lg text-xs border cursor-pointer transition-colors ${
-                idx === selectedSlide
-                  ? "bg-[#1a1a1a] border-[#ff6b35] text-[#fafafa]"
-                  : "bg-transparent border-[#222] text-[#666] hover:text-[#aaa] hover:border-[#333]"
-              }`}
-            >
-              <div className="font-medium">{idx + 1}</div>
-              <div className="text-[10px] text-[#555] truncate mt-0.5">
-                {s.templateId}
-              </div>
-            </button>
-          ))}
-        </div>
-
         {/* 미리보기 */}
         <div className="flex-1 flex justify-center">
           <div
@@ -156,7 +132,6 @@ export default function CarouselDetailPage() {
             )}
           </div>
         </div>
-
         {/* 우측 패널 */}
         <div className="w-72 shrink-0 flex flex-col gap-4">
           {/* 슬라이드 정보 */}
@@ -203,12 +178,12 @@ export default function CarouselDetailPage() {
               원본 크기로 보기 (1080×1350)
             </a>
 
-            {/* 템플릿 수정 */}
+            {/* 템플릿 수정 (Konva 에디터) */}
             <Link
-              href={`/studio/templates/${slide?.templateId}`}
+              href={`/studio/editor?carousel=${carousel.id}&slide=${selectedSlide}`}
               className="block w-full text-center px-4 py-2.5 text-xs rounded-lg bg-[#1a1a1a] text-[#aaa] hover:text-[#fafafa] hover:bg-[#222] border border-[#333] no-underline transition-colors font-medium"
             >
-              🛠 템플릿 수정 ({tpl?.name})
+              🎨 에디터에서 수정 ({tpl?.name})
             </Link>
 
             {/* 템플릿 변경 토글 */}
@@ -291,6 +266,53 @@ export default function CarouselDetailPage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* 슬라이드 네비게이션 (썸네일) */}
+      <div className="flex gap-2 flex-wrap mt-6">
+        {carousel.slides.map((s, idx) => {
+          const thumbTpl = SLIDE_TEMPLATES.find((t) => t.id === s.templateId);
+          const ThumbComp = thumbTpl?.component;
+          const thumbProps = resolveProps(s, idx, carousel.slides.length);
+
+          return (
+            <button
+              key={s.id}
+              onClick={() => {
+                setSelectedSlide(idx);
+                setPreviewTemplateId(null);
+                setShowTemplatePicker(false);
+              }}
+              className={`relative rounded-lg border-2 cursor-pointer transition-colors overflow-hidden ${
+                idx === selectedSlide
+                  ? "border-[#ff6b35]"
+                  : "border-[#222] hover:border-[#444]"
+              }`}
+              style={{ width: 154, height: 192 }}
+            >
+              {ThumbComp ? (
+                <div
+                  className="pointer-events-none"
+                  style={{
+                    transform: `scale(${154 / 1080})`,
+                    transformOrigin: "top left",
+                    width: 1080,
+                    height: 1350,
+                  }}
+                >
+                  <ThumbComp {...thumbProps} />
+                </div>
+              ) : (
+                <div className="w-full h-full bg-[#111] flex items-center justify-center text-[#555] text-[10px]">
+                  {idx + 1}
+                </div>
+              )}
+              <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-[9px] text-[#aaa] text-center py-0.5">
+                {idx + 1}
+              </div>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
