@@ -76,11 +76,11 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       <AppSidebar />
       <SidebarInset>
         <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
+          <SidebarTrigger className="-ml-1" title="Toggle Sidebar (⌘B)" />
           <Separator orientation="vertical" className="mr-2 !h-4" />
           <span className="text-sm text-muted-foreground truncate">{pathname}</span>
         </header>
-        <div className="flex-1 px-6 py-6 min-w-0">
+        <div className="flex-1 px-6 py-6 min-w-0 overflow-auto">
           {children}
         </div>
       </SidebarInset>
