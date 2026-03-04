@@ -69,7 +69,7 @@ export async function GET(req: Request, ctx: Ctx) {
       }
 
       const png = await renderSlide(id, slideIndex)
-      return new NextResponse(png, {
+      return new NextResponse(png as unknown as BodyInit, {
         status: 200,
         headers: {
           'Content-Type': 'image/png',
@@ -87,7 +87,7 @@ export async function GET(req: Request, ctx: Ctx) {
     )
 
     const zip = await zipPngs(rendered)
-    return new NextResponse(zip, {
+    return new NextResponse(zip as unknown as BodyInit, {
       status: 200,
       headers: {
         'Content-Type': 'application/zip',

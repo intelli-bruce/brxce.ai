@@ -16,7 +16,7 @@ export async function GET(
   }
 
   const buffer = readFileSync(imagePath);
-  return new NextResponse(buffer, {
+  return new NextResponse(buffer as unknown as BodyInit, {
     headers: {
       "Content-Type": "image/jpeg",
       "Cache-Control": "public, max-age=86400",

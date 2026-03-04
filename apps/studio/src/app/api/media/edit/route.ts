@@ -269,6 +269,7 @@ export async function POST(req: NextRequest) {
                 fit: "inside",
               });
             }
+            // @ts-expect-error Buffer<ArrayBufferLike> vs Buffer<ArrayBuffer> mismatch
             oBuf = await oImg.png().toBuffer();
             img = img.composite([
               {
@@ -309,7 +310,7 @@ export async function POST(req: NextRequest) {
 
     const outBuf = await img.toBuffer();
 
-    return new NextResponse(outBuf, {
+    return new NextResponse(outBuf as unknown as BodyInit, {
       headers: {
         "Content-Type": mimeMap[fmt] || "image/png",
         "Content-Length": outBuf.length.toString(),

@@ -68,7 +68,7 @@ export async function GET(req: NextRequest) {
     if (VIDEO_EXTS.has(ext) && thumbSize > 0) {
       try {
         const buf = await extractVideoThumbnail(resolved, thumbSize);
-        return new NextResponse(buf, {
+        return new NextResponse(buf as unknown as BodyInit, {
           headers: {
             "Content-Type": "image/jpeg",
             "Content-Length": buf.length.toString(),
@@ -85,7 +85,7 @@ export async function GET(req: NextRequest) {
     if (needsConvert || (thumbSize > 0 && [".jpg", ".jpeg", ".png", ".heic", ".heif", ".bmp"].includes(ext))) {
       try {
         const buf = await convertImageWithSips(resolved, thumbSize || 1600);
-        return new NextResponse(buf, {
+        return new NextResponse(buf as unknown as BodyInit, {
           headers: {
             "Content-Type": "image/jpeg",
             "Content-Length": buf.length.toString(),
@@ -101,7 +101,7 @@ export async function GET(req: NextRequest) {
     const buffer = await readFile(resolved);
     const contentType = MIME_MAP[ext] || "application/octet-stream";
 
-    return new NextResponse(buffer, {
+    return new NextResponse(buffer as unknown as BodyInit, {
       headers: {
         "Content-Type": contentType,
         "Content-Length": buffer.length.toString(),
