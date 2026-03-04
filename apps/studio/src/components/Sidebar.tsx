@@ -24,6 +24,7 @@ const navItems: NavItem[] = [
   { type: "section", label: "제작 (Studio)" },
   { type: "link", href: "/studio", label: "스튜디오", icon: "🎬" },
   { type: "link", href: "/carousel", label: "캐러셀", icon: "📱", indent: true },
+  { type: "link", href: "/studio/editor", label: "디자인 에디터", icon: "🎨", indent: true },
   { type: "link", href: "/studio/templates", label: "템플릿: 이미지", icon: "🖼️", indent: true },
   { type: "link", href: "/studio/templates?tab=video", label: "템플릿: 영상", icon: "🎥", indent: true },
   { type: "link", href: "/studio/references", label: "레퍼런스", icon: "📚", indent: true },
