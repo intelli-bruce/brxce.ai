@@ -2,6 +2,20 @@ import { SlideTitle, MutedText } from '@/components/slide-primitives'
 import { fontSize, fontWeight, lineHeight, spacing, gap, textOpacity } from '@/lib/studio/slide-tokens'
 import { DEFAULT_COLORS, SlideBase, type BaseSlideStyleProps } from './SlideBase'
 
+function renderMarkdownBold(text: string, accentColor?: string) {
+  return text.split(/(\*\*[^*]+\*\*)/g).map((part, idx) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      const content = part.slice(2, -2)
+      return (
+        <span key={`bold-${idx}`} style={{ fontWeight: fontWeight.bold, color: accentColor }}>
+          {content}
+        </span>
+      )
+    }
+    return <span key={`text-${idx}`}>{part}</span>
+  })
+}
+
 export interface CTAQuestionProps extends BaseSlideStyleProps {
   question: string
   guide: string
@@ -29,16 +43,16 @@ export function CTAQuestion({
     <SlideBase {...colors}>
       <div
         className="flex h-full flex-col items-center justify-center text-center"
-        style={{ padding: paddingOverride ?? spacing.containerLg }}
+        style={{ paddingLeft: paddingOverride ?? spacing.safeX, paddingRight: paddingOverride ?? spacing.safeX, paddingTop: paddingOverride ?? spacing.safeY, paddingBottom: paddingOverride ?? spacing.safeY }}
       >
         <SlideTitle
           variant="title"
           style={{ fontSize: questionFontSize ?? fontSize.ctaLg, fontWeight: fontWeight.bold, lineHeight: lineHeight.default }}
         >
-          {question}
+          {renderMarkdownBold(question, colors.accentColor)}
         </SlideTitle>
         <MutedText size="md" mutedColor={textOpacity.tertiary} style={{ marginTop: gap['4xl'], fontSize: guideFontSize ?? fontSize.captionLg }}>
-          {guide}
+          {renderMarkdownBold(guide, colors.accentColor)}
         </MutedText>
         <MutedText
           size="lg"
