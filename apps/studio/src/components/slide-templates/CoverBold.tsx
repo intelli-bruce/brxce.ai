@@ -67,7 +67,7 @@ export function CoverBold({
       <div className="absolute inset-0" style={{ backgroundColor: cardBackground.overlay }} />
       <div
         className="relative z-10 flex h-full flex-col justify-center"
-        style={{ paddingLeft: px, paddingRight: px, paddingTop: px, paddingBottom: px }}
+        style={{ paddingLeft: px, paddingRight: px, paddingTop: px, paddingBottom: px * 0.5 }}
       >
         <Overline variant="tag" accentColor={colors.accentColor} style={{ marginBottom: gap['3xl'], ...(tagFontSize != null ? { fontSize: tagFontSize } : {}) }}>
           {tag}

@@ -574,7 +574,7 @@ export const VSReel: React.FC<VSReelProps> = ({
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          minHeight: fontSize * 3,
+
         }}
       >
         {texts.map((item, index) => (
