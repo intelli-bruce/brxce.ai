@@ -1,7 +1,7 @@
 /**
  * Slide Primitives — Barrel export.
  *
- * Reusable building blocks for 1080x1350 slide templates.
+ * Reusable building blocks for slide templates (canvas size defined in slide-tokens.ts).
  * All components consume design tokens from slide-tokens.ts.
  */
 

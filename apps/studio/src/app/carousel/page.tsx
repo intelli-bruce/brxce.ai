@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Carousel } from "@/lib/studio/carousel-store";
 import { SLIDE_TEMPLATES } from "@/lib/studio/slide-templates";
+import { canvas } from "@/lib/studio/slide-tokens";
 
 const FIELD_ALIASES: Record<string, string[]> = {
   title: ["title", "heading", "question", "overline", "eventName", "statLabel"],
@@ -37,10 +38,10 @@ function resolveProps(slide: any, slideIndex: number, totalSlides: number) {
   };
 }
 
-/** 1080×1350 → 216×270 (20% scale) */
+/** canvas → 20% scale thumbnail */
 const THUMB_SCALE = 0.2;
-const THUMB_W = Math.round(1080 * THUMB_SCALE);
-const THUMB_H = Math.round(1350 * THUMB_SCALE);
+const THUMB_W = Math.round(canvas.width * THUMB_SCALE);
+const THUMB_H = Math.round(canvas.height * THUMB_SCALE);
 
 function SlideThumbnail({ slide, slideIndex, totalSlides }: { slide: any; slideIndex: number; totalSlides: number }) {
   const tpl = SLIDE_TEMPLATES.find((t) => t.id === slide.templateId);
@@ -54,8 +55,8 @@ function SlideThumbnail({ slide, slideIndex, totalSlides }: { slide: any; slideI
         style={{
           transform: `scale(${THUMB_SCALE})`,
           transformOrigin: "top left",
-          width: 1080,
-          height: 1350,
+          width: canvas.width,
+          height: canvas.height,
           pointerEvents: "none",
         }}
       >

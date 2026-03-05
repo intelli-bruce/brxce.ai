@@ -7,7 +7,7 @@
  * BodyCompare, BodyDiagram, BodyList, BodyQuote, BodyStep, BodyText,
  * CTAFollow, CTALink, CTAQuestion, CTASave, and SlideBase.
  *
- * All values are in pixels (matching 1080x1350 canvas, inline styles).
+ * All values are in pixels (matching 1080x1440 canvas, inline styles).
  */
 
 import type { CSSProperties } from 'react'
@@ -16,10 +16,10 @@ import type { CSSProperties } from 'react'
 // Canvas
 // ---------------------------------------------------------------------------
 
-/** Fixed slide canvas dimensions (Instagram carousel standard) */
+/** Fixed slide canvas dimensions (3:4 ratio) */
 export const canvas = {
   width: 1080,
-  height: 1350,
+  height: 1440,
 } as const
 
 // ---------------------------------------------------------------------------

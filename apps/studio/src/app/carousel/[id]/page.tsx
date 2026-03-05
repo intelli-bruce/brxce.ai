@@ -502,7 +502,7 @@ export default function CarouselDetailPage() {
               rel="noopener"
               className="block w-full text-center px-4 py-2.5 text-xs rounded-lg bg-[#ff6b35] text-white no-underline hover:bg-[#e55a28] transition-colors font-medium"
             >
-              원본 크기로 보기 (1080×1440)
+              원본 크기로 보기 ({canvas.width}×{canvas.height})
             </a>
 
             <button

@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import Link from "next/link";
 import { SLIDE_TEMPLATES } from "@/lib/studio/slide-templates";
+import { canvas } from "@/lib/studio/slide-tokens";
 import {
   Comparison, OrgChart, BeforeAfter, FlowChart,
   OgImage, Thumbnail, Quote, SocialPost, Infographic,
@@ -69,36 +70,36 @@ const INFOGRAPHIC_SAMPLE: InfographicProps = {
   title: "2026 AI 트렌드", sections: [
     { heading: "에이전틱 워크플로우", items: ["자율 판단", "실시간 적응", "지속 학습"] },
     { heading: "멀티모달 AI", items: ["텍스트+이미지", "음성+영상", "코드 생성"] },
-  ], ratio: "insta-4:5",
+  ], ratio: "insta-3:4",
 };
 const CARDNEWS_SAMPLE: CardNewsCarouselProps = {
   cover: { title: "에이전틱 워크플로우 5단계", hook: "AI가 일하게 만드는 법" },
   slides: [{ point: "자율 판단", detail: "AI가 스스로 결정" }, { point: "실시간 적응" }, { point: "지속 학습" }],
-  cta: "brxce.ai에서 더 알아보기", ratio: "insta-4:5",
+  cta: "brxce.ai에서 더 알아보기", ratio: "insta-3:4",
 };
 const STEPBYSTEP_SAMPLE: StepByStepCarouselProps = {
   title: "OpenClaw 시작하기", steps: [
     { number: 1, title: "설치", desc: "npm install openclaw" },
     { number: 2, title: "설정", desc: "config 파일 생성" },
     { number: 3, title: "실행", desc: "openclaw start" },
-  ], ratio: "insta-4:5",
+  ], ratio: "insta-3:4",
 };
 const LISTCAROUSEL_SAMPLE: ListCarouselProps = {
   title: "AI 에이전트 필수 도구 5선", items: [
     { label: "OpenClaw", desc: "에이전트 오케스트레이션" },
     { label: "Claude Code", desc: "코딩 에이전트" },
     { label: "Cursor", desc: "AI IDE" },
-  ], ratio: "insta-4:5",
+  ], ratio: "insta-3:4",
 };
 const BEFOREAFTER_CAROUSEL_SAMPLE: BeforeAfterCarouselProps = {
   before: { label: "Before", items: ["매일 2시간 소요", "실수 빈번", "확장 불가"] },
-  after: { label: "After", items: ["10분으로 단축", "일관된 품질", "무한 확장"] }, ratio: "insta-4:5",
+  after: { label: "After", items: ["10분으로 단축", "일관된 품질", "무한 확장"] }, ratio: "insta-3:4",
 };
 const QUOTECAROUSEL_SAMPLE: QuoteCarouselProps = {
   quotes: [
     { text: "에이전틱 워크플로우는 자동화의 다음 단계다", author: "Bruce Choe" },
     { text: "AI는 도구가 아니라 동료다", author: "Bruce Choe" },
-  ], ratio: "insta-4:5",
+  ], ratio: "insta-3:4",
 };
 
 /* ── Registry ── */
@@ -115,11 +116,11 @@ const ALL_TEMPLATES: TemplateMeta[] = [
   { id: "socialpost", name: "SocialPost", category: "image", sub: "소셜", desc: "소셜 미디어 정사각형 (1080×1080)", layout: "배경 + 메인 텍스트 + CTA", ratios: ["1080×1080"], propsSchema: { text: "string", cta: "string" }, sampleData: SOCIALPOST_SAMPLE as unknown as Record<string, unknown>, livePreview: "socialpost" },
   { id: "infographic", name: "Infographic", category: "image", sub: "인포그래픽", desc: "데이터 시각화 세로 인포그래픽", layout: "섹션별 데이터 블록 세로 배치", ratios: ["1080×1920"], propsSchema: { title: "string", sections: "Section[]" }, sampleData: INFOGRAPHIC_SAMPLE as unknown as Record<string, unknown>, livePreview: "infographic" },
   // Carousel
-  { id: "cardnews", name: "CardNews", category: "carousel", sub: "카드뉴스", desc: "커버→본문→CTA 구조 캐러셀", layout: "슬라이드: 커버(제목+훅) → 본문(1포인트/장) → CTA", ratios: ["1080×1350 (4:5)"], propsSchema: { cover: "{ title, hook }", slides: "Slide[]", cta: "string" }, sampleData: CARDNEWS_SAMPLE as unknown as Record<string, unknown>, livePreview: "cardnews", slideCount: 5 },
-  { id: "stepbystep", name: "StepByStep", category: "carousel", sub: "가이드", desc: "단계별 가이드 캐러셀", layout: "슬라이드: 번호 + 제목 + 설명", ratios: ["1080×1350"], propsSchema: { steps: "Step[] — { number, title, desc }" }, sampleData: STEPBYSTEP_SAMPLE as unknown as Record<string, unknown>, livePreview: "stepbystep", slideCount: 3 },
-  { id: "listcarousel", name: "ListCarousel", category: "carousel", sub: "리스트", desc: "리스트형 아이템 슬라이드", layout: "슬라이드: 리스트 항목 카드", ratios: ["1080×1350"], propsSchema: { items: "ListItem[]" }, sampleData: LISTCAROUSEL_SAMPLE as unknown as Record<string, unknown>, livePreview: "listcarousel", slideCount: 3 },
-  { id: "beforeaftercarousel", name: "BeforeAfterCarousel", category: "carousel", sub: "비교", desc: "전후 비교 슬라이드 페어", layout: "Before 슬라이드 → After 슬라이드", ratios: ["1080×1350"], propsSchema: { before: "Slide", after: "Slide" }, sampleData: BEFOREAFTER_CAROUSEL_SAMPLE as unknown as Record<string, unknown>, livePreview: "beforeaftercarousel", slideCount: 2 },
-  { id: "quotecarousel", name: "QuoteCarousel", category: "carousel", sub: "인용", desc: "명언/인용 캐러셀", layout: "각 슬라이드에 인용문+출처", ratios: ["1080×1350"], propsSchema: { quotes: "Quote[]" }, sampleData: QUOTECAROUSEL_SAMPLE as unknown as Record<string, unknown>, livePreview: "quotecarousel", slideCount: 2 },
+  { id: "cardnews", name: "CardNews", category: "carousel", sub: "카드뉴스", desc: "커버→본문→CTA 구조 캐러셀", layout: "슬라이드: 커버(제목+훅) → 본문(1포인트/장) → CTA", ratios: ["1080×1440 (3:4)"], propsSchema: { cover: "{ title, hook }", slides: "Slide[]", cta: "string" }, sampleData: CARDNEWS_SAMPLE as unknown as Record<string, unknown>, livePreview: "cardnews", slideCount: 5 },
+  { id: "stepbystep", name: "StepByStep", category: "carousel", sub: "가이드", desc: "단계별 가이드 캐러셀", layout: "슬라이드: 번호 + 제목 + 설명", ratios: ["1080×1440"], propsSchema: { steps: "Step[] — { number, title, desc }" }, sampleData: STEPBYSTEP_SAMPLE as unknown as Record<string, unknown>, livePreview: "stepbystep", slideCount: 3 },
+  { id: "listcarousel", name: "ListCarousel", category: "carousel", sub: "리스트", desc: "리스트형 아이템 슬라이드", layout: "슬라이드: 리스트 항목 카드", ratios: ["1080×1440"], propsSchema: { items: "ListItem[]" }, sampleData: LISTCAROUSEL_SAMPLE as unknown as Record<string, unknown>, livePreview: "listcarousel", slideCount: 3 },
+  { id: "beforeaftercarousel", name: "BeforeAfterCarousel", category: "carousel", sub: "비교", desc: "전후 비교 슬라이드 페어", layout: "Before 슬라이드 → After 슬라이드", ratios: ["1080×1440"], propsSchema: { before: "Slide", after: "Slide" }, sampleData: BEFOREAFTER_CAROUSEL_SAMPLE as unknown as Record<string, unknown>, livePreview: "beforeaftercarousel", slideCount: 2 },
+  { id: "quotecarousel", name: "QuoteCarousel", category: "carousel", sub: "인용", desc: "명언/인용 캐러셀", layout: "각 슬라이드에 인용문+출처", ratios: ["1080×1440"], propsSchema: { quotes: "Quote[]" }, sampleData: QUOTECAROUSEL_SAMPLE as unknown as Record<string, unknown>, livePreview: "quotecarousel", slideCount: 2 },
   // Video (no live preview)
   { id: "vsreel", name: "VSReel", category: "video", sub: "비교", desc: "VS 비교 릴스 (좌우 분할)", layout: "좌 vs 우 비교 + 점수 + 승자", ratios: ["1080×1920 (9:16)", "60fps"], propsSchema: { left: "Item", right: "Item", rounds: "Round[]" }, sampleData: {} },
   { id: "newsbreaking", name: "NewsBreaking", category: "video", sub: "뉴스", desc: "뉴스 속보 스타일", layout: "BREAKING 배너 + 슬라이딩 텍스트", ratios: ["1080×1920"], propsSchema: { headline: "string", body: "string" }, sampleData: {} },
@@ -563,8 +564,8 @@ function SlideTemplateDetail({ tpl }: { tpl: SlideTemplateInfo }) {
               style={{
                 transform: "scale(0.4)",
                 transformOrigin: "top left",
-                width: 1080,
-                height: 1350,
+                width: canvas.width,
+                height: canvas.height,
                 pointerEvents: "none",
               }}
             >
@@ -652,8 +653,8 @@ function SlideTemplateDetail({ tpl }: { tpl: SlideTemplateInfo }) {
                         style={{
                           transform: "scale(0.111)",
                           transformOrigin: "top left",
-                          width: 1080,
-                          height: 1350,
+                          width: canvas.width,
+                          height: canvas.height,
                           pointerEvents: "none",
                         }}
                       >

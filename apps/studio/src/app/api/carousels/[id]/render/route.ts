@@ -6,6 +6,7 @@ import { join } from 'node:path'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { getCarousel } from '@/lib/studio/carousel-store'
+import { canvas } from '@/lib/studio/slide-tokens'
 
 const execFileAsync = promisify(execFile)
 
@@ -18,7 +19,7 @@ async function renderSlide(id: string, slideIndex: number, scale: number = 1): P
 
   try {
     const page = await browser.newPage()
-    await page.setViewport({ width: 1080, height: 1350, deviceScaleFactor: scale })
+    await page.setViewport({ width: canvas.width, height: canvas.height, deviceScaleFactor: scale })
 
     const url = `http://localhost:3200/render/${id}?slide=${slideIndex}`
     await page.goto(url, { waitUntil: 'networkidle2', timeout: 60_000 })
