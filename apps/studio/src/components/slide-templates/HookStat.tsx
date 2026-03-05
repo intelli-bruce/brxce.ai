@@ -34,15 +34,15 @@ export function HookStat({
   return (
     <SlideBase {...colors}>
       <div
-        className="flex h-full flex-col text-center"
-        style={{ paddingLeft: px, paddingRight: px, paddingTop: spacing.topMd }}
+        className="flex h-full flex-col items-center justify-center text-center"
+        style={{ paddingLeft: px, paddingRight: px, paddingTop: spacing.safeY, paddingBottom: spacing.safeY }}
       >
         {(showOverline ?? true) && (
           <Overline
             variant="badge"
             accentColor={textOpacity.muted}
             style={{
-              alignSelf: 'center',
+              marginBottom: gap['4xl'],
               borderRadius: 24,
               border: `1px solid rgba(255, 255, 255, 0.15)`,
               paddingLeft: spacing.badgeH,
@@ -55,33 +55,29 @@ export function HookStat({
           </Overline>
         )}
 
-        <div className="flex flex-1 flex-col items-center justify-center">
-          <StatDisplay
-            value={statValue}
-            label={statLabel}
-            accentColor={colors.accentColor}
-            valueFontSize={statFontSize}
-            labelFontSize={labelFontSize}
-          />
-        </div>
+        <StatDisplay
+          value={statValue}
+          label={statLabel}
+          accentColor={colors.accentColor}
+          valueFontSize={statFontSize}
+          labelFontSize={labelFontSize}
+        />
 
-        <div style={{ paddingBottom: spacing.bottomLg }}>
-          {(showAccentBar ?? true) && (
-            <AccentBar
-              variant="narrow"
-              accentColor={colors.accentColor}
-              opacity={accentOpacity.mid}
-              style={{ width: barWidth ?? 160, height: 3, borderRadius: 9999, marginLeft: 'auto', marginRight: 'auto' }}
-            />
-          )}
-          <MutedText
-            size="lg"
-            mutedColor={colors.mutedColor}
-            style={{ marginTop: gap['3xl'], maxWidth: layout.maxWidth.content, marginLeft: 'auto', marginRight: 'auto', fontSize: detailFontSize ?? 44, lineHeight: 1.625 }}
-          >
-            {detail}
-          </MutedText>
-        </div>
+        {(showAccentBar ?? true) && (
+          <AccentBar
+            variant="narrow"
+            accentColor={colors.accentColor}
+            opacity={accentOpacity.mid}
+            style={{ width: barWidth ?? 160, height: 3, borderRadius: 9999, marginTop: gap['5xl'] }}
+          />
+        )}
+        <MutedText
+          size="lg"
+          mutedColor={colors.mutedColor}
+          style={{ marginTop: gap['3xl'], maxWidth: layout.maxWidth.content, fontSize: detailFontSize ?? 44, lineHeight: 1.625 }}
+        >
+          {detail}
+        </MutedText>
       </div>
     </SlideBase>
   )

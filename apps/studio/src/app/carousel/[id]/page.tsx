@@ -356,11 +356,7 @@ export default function CarouselDetailPage() {
                   {/* Center cross */}
                   <div className="absolute left-1/2 top-0 bottom-0 w-px bg-red-400/25" />
                   <div className="absolute top-1/2 left-0 right-0 h-px bg-red-400/25" />
-                  {/* Safe zone (safeX/safeY) — IG 4:5 crop boundary */}
-                  <div className="absolute top-0 left-0 right-0 bg-amber-400/10" style={{ height: `${(spacing.safeY / canvas.height) * 100}%` }} />
-                  <div className="absolute bottom-0 left-0 right-0 bg-amber-400/10" style={{ height: `${(spacing.safeY / canvas.height) * 100}%` }} />
-                  <div className="absolute top-0 bottom-0 left-0 bg-amber-400/10" style={{ width: `${(spacing.safeX / canvas.width) * 100}%` }} />
-                  <div className="absolute top-0 bottom-0 right-0 bg-amber-400/10" style={{ width: `${(spacing.safeX / canvas.width) * 100}%` }} />
+                  {/* Safe zone lines (safeX/safeY) — IG 4:5 crop boundary */}
                   <div className="absolute left-0 right-0 h-px bg-amber-400/50" style={{ top: `${(spacing.safeY / canvas.height) * 100}%` }} />
                   <div className="absolute left-0 right-0 h-px bg-amber-400/50" style={{ bottom: `${(spacing.safeY / canvas.height) * 100}%` }} />
                   <div className="absolute top-0 bottom-0 w-px bg-amber-400/50" style={{ left: `${(spacing.safeX / canvas.width) * 100}%` }} />
