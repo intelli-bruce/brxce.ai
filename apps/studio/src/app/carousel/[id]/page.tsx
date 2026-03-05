@@ -232,9 +232,9 @@ export default function CarouselDetailPage() {
         <span className="text-xs text-[#555]">{carousel.slides.length}장</span>
       </div>
 
-      <div className="flex gap-6">
+      <div className="flex gap-6 items-start justify-center">
         {/* 미리보기 */}
-        <div className="flex-1 flex flex-col items-center gap-2">
+        <div className="flex flex-col gap-2 shrink-0">
           {showIGPreview ? (
             /* Instagram 피드 미리보기 */
             <div className="bg-black rounded-xl overflow-hidden" style={{ width: 468 }}>
@@ -307,16 +307,19 @@ export default function CarouselDetailPage() {
                 {captionDraft ? (
                   <div className="text-[13px] text-white">
                     <span className="font-semibold">brxce.ai</span>{" "}
-                    {captionExpanded ? (
-                      <span className="whitespace-pre-wrap">{captionDraft}</span>
-                    ) : (
-                      <>
-                        <span>{captionDraft.length > 80 ? captionDraft.slice(0, 80) + "..." : captionDraft}</span>
-                        {captionDraft.length > 80 && (
-                          <button onClick={() => setCaptionExpanded(true)} className="text-[#a8a8a8] bg-transparent border-none cursor-pointer text-[13px] ml-1">더 보기</button>
-                        )}
-                      </>
-                    )}
+                    {(() => {
+                      const plain = captionDraft.replace(/\*\*([^*]+)\*\*/g, "$1");
+                      return captionExpanded ? (
+                        <span className="whitespace-pre-wrap">{plain}</span>
+                      ) : (
+                        <>
+                          <span>{plain.length > 80 ? plain.slice(0, 80) + "..." : plain}</span>
+                          {plain.length > 80 && (
+                            <button onClick={() => setCaptionExpanded(true)} className="text-[#a8a8a8] bg-transparent border-none cursor-pointer text-[13px] ml-1">더 보기</button>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 ) : (
                   <span className="text-[13px] text-[#a8a8a8] italic">캡션을 입력해주세요</span>
@@ -389,7 +392,7 @@ export default function CarouselDetailPage() {
         </div>
 
         {/* 우측 패널 — 콘텐츠 편집기 */}
-        <div className="w-72 shrink-0 flex flex-col gap-4">
+        <div className="w-72 flex-1 min-w-[288px] max-w-sm flex flex-col gap-4">
           {/* 편집 패널 */}
           {tpl && (
             <div className="bg-[#0f0f0f] border border-[#222] rounded-xl p-4">
@@ -465,6 +468,18 @@ export default function CarouselDetailPage() {
           <div className="bg-[#0f0f0f] border border-[#222] rounded-xl p-4">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-semibold text-[#fafafa]">캡션</h3>
+              <div className="flex items-center gap-1.5">
+              {captionDraft && (
+                <button
+                  onClick={() => {
+                    const plain = captionDraft.replace(/\*\*([^*]+)\*\*/g, "$1");
+                    navigator.clipboard.writeText(plain);
+                  }}
+                  className="px-2.5 py-1 text-[10px] rounded-lg bg-transparent border border-[#333] text-[#888] font-medium cursor-pointer hover:text-[#ccc] hover:border-[#555] transition-colors"
+                >
+                  복사
+                </button>
+              )}
               {captionDirty && (
                 <button
                   onClick={async () => {
@@ -490,6 +505,7 @@ export default function CarouselDetailPage() {
                   {captionSaving ? "저장 중..." : "저장"}
                 </button>
               )}
+              </div>
             </div>
             <textarea
               value={captionDraft}
@@ -621,7 +637,7 @@ export default function CarouselDetailPage() {
       </div>
 
       {/* 슬라이드 네비게이션 (썸네일) */}
-      <div className="flex gap-2 flex-wrap mt-6">
+      <div className="flex gap-2 flex-wrap mt-6 justify-center">
         {carousel.slides.map((s, idx) => {
           const thumbTpl = SLIDE_TEMPLATES.find((t) => t.id === s.templateId);
           const ThumbComp = thumbTpl?.component;

@@ -40,7 +40,6 @@ export function SlideBase({
       style={{ width: canvas.width, height: canvas.height, backgroundColor, color: textColor, ...style }}
     >
       <div className={centerContent ? slideCenteredLayoutClass : 'h-full'}>{children}</div>
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/30" />
       {footer !== 'none' && (
         <div
           className="absolute bottom-0 left-0 right-0 flex items-center"
