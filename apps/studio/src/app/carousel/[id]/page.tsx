@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { SLIDE_TEMPLATES } from "@/lib/studio/slide-templates";
 import type { PropSchema } from "@/lib/studio/slide-templates";
-import { canvas } from "@/lib/studio/slide-tokens";
+import { canvas, spacing } from "@/lib/studio/slide-tokens";
 import { PropControl } from "@/components/slide-editor/PropControl";
 import type { Carousel } from "@/lib/studio/carousel-store";
 
@@ -348,12 +348,23 @@ export default function CarouselDetailPage() {
               {/* Grid overlay */}
               {showGrid && (
                 <div className="absolute inset-0 pointer-events-none">
+                  {/* Rule of thirds */}
                   <div className="absolute left-1/3 top-0 bottom-0 w-px bg-cyan-400/30" />
                   <div className="absolute left-2/3 top-0 bottom-0 w-px bg-cyan-400/30" />
                   <div className="absolute top-1/3 left-0 right-0 h-px bg-cyan-400/30" />
                   <div className="absolute top-2/3 left-0 right-0 h-px bg-cyan-400/30" />
+                  {/* Center cross */}
                   <div className="absolute left-1/2 top-0 bottom-0 w-px bg-red-400/25" />
                   <div className="absolute top-1/2 left-0 right-0 h-px bg-red-400/25" />
+                  {/* Safe zone (safeX/safeY) — IG 4:5 crop boundary */}
+                  <div className="absolute top-0 left-0 right-0 bg-amber-400/10" style={{ height: `${(spacing.safeY / canvas.height) * 100}%` }} />
+                  <div className="absolute bottom-0 left-0 right-0 bg-amber-400/10" style={{ height: `${(spacing.safeY / canvas.height) * 100}%` }} />
+                  <div className="absolute top-0 bottom-0 left-0 bg-amber-400/10" style={{ width: `${(spacing.safeX / canvas.width) * 100}%` }} />
+                  <div className="absolute top-0 bottom-0 right-0 bg-amber-400/10" style={{ width: `${(spacing.safeX / canvas.width) * 100}%` }} />
+                  <div className="absolute left-0 right-0 h-px bg-amber-400/50" style={{ top: `${(spacing.safeY / canvas.height) * 100}%` }} />
+                  <div className="absolute left-0 right-0 h-px bg-amber-400/50" style={{ bottom: `${(spacing.safeY / canvas.height) * 100}%` }} />
+                  <div className="absolute top-0 bottom-0 w-px bg-amber-400/50" style={{ left: `${(spacing.safeX / canvas.width) * 100}%` }} />
+                  <div className="absolute top-0 bottom-0 w-px bg-amber-400/50" style={{ right: `${(spacing.safeX / canvas.width) * 100}%` }} />
                 </div>
               )}
             </div>
