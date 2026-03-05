@@ -68,10 +68,26 @@ function SlotCard({ item, stageColor }: { item: FunnelSlot; stageColor: string }
       style={{ borderLeftColor: stageColor, borderLeftWidth: 3, borderLeftStyle: "solid" }}
     >
       <div className="flex items-start gap-2 mb-1.5">
+        {/* Code badge */}
+        {item.code && (
+          <span
+            className="shrink-0 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded"
+            style={{ backgroundColor: stageColor + "22", color: stageColor }}
+          >
+            {item.code}
+          </span>
+        )}
         <span className="text-sm font-medium text-[#e5e5e5] flex-1 leading-snug">
           {item.title}
         </span>
       </div>
+
+      {/* Description — strategic context */}
+      {item.description && (
+        <p className="mb-1.5 text-[11px] text-[#888] leading-relaxed line-clamp-3">
+          {item.description}
+        </p>
+      )}
 
       <div className="flex items-center gap-1.5 flex-wrap">
         {/* Status */}

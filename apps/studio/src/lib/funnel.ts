@@ -8,6 +8,7 @@ export type Priority = "critical" | "high" | "medium" | "low";
 export interface FunnelSlot {
   type: "slot";
   id: string;
+  code: string | null;
   title: string;
   description: string | null;
   funnel_stage: FunnelStage;

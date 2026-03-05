@@ -26,6 +26,7 @@ export async function POST(req: Request) {
     const { data, error } = await sb
       .from("funnel_slots")
       .insert({
+        code: body.code ?? null,
         title: body.title,
         description: body.description ?? null,
         funnel_stage: body.funnel_stage,
@@ -55,6 +56,7 @@ export async function PATCH(req: Request) {
 
     const sb = createSupabaseAdmin();
     const updates: Record<string, unknown> = {};
+    if (body.code !== undefined) updates.code = body.code;
     if (body.status !== undefined) updates.status = body.status;
     if (body.title !== undefined) updates.title = body.title;
     if (body.description !== undefined) updates.description = body.description;

@@ -12,6 +12,7 @@ const CHANNELS = Object.keys(CHANNEL_LABELS);
 const PRIORITIES: Priority[] = ["critical", "high", "medium", "low"];
 
 export default function AddSlotModal({ onClose, onCreated }: AddSlotModalProps) {
+  const [code, setCode] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [funnelStage, setFunnelStage] = useState<FunnelStage>("tofu");
@@ -30,6 +31,7 @@ export default function AddSlotModal({ onClose, onCreated }: AddSlotModalProps) 
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          code: code.trim().toUpperCase() || null,
           title: title.trim(),
           description: description.trim() || null,
           funnel_stage: funnelStage,
@@ -57,16 +59,28 @@ export default function AddSlotModal({ onClose, onCreated }: AddSlotModalProps) 
         <h2 className="text-base font-bold text-[#fafafa] mb-4">슬롯 추가</h2>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          {/* Title */}
-          <div>
-            <label className="text-[11px] text-[#888] mb-1 block">제목 *</label>
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="예: Threads 숏텍스트 시리즈"
-              className="w-full px-3 py-2 rounded-lg bg-[#0a0a0a] border border-[#333] text-[#fafafa] text-sm placeholder:text-[#444] outline-none focus:border-[#FF6B35]"
-              autoFocus
-            />
+          {/* Code + Title row */}
+          <div className="grid grid-cols-[80px_1fr] gap-3">
+            <div>
+              <label className="text-[11px] text-[#888] mb-1 block">코드</label>
+              <input
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                placeholder="T8"
+                maxLength={5}
+                className="w-full px-3 py-2 rounded-lg bg-[#0a0a0a] border border-[#333] text-[#fafafa] text-sm font-mono placeholder:text-[#444] outline-none focus:border-[#FF6B35] uppercase"
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="text-[11px] text-[#888] mb-1 block">제목 *</label>
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="예: Threads 숏텍스트 시리즈"
+                className="w-full px-3 py-2 rounded-lg bg-[#0a0a0a] border border-[#333] text-[#fafafa] text-sm placeholder:text-[#444] outline-none focus:border-[#FF6B35]"
+              />
+            </div>
           </div>
 
           {/* Description */}

@@ -22,9 +22,12 @@ create index if not exists funnel_slots_stage on funnel_slots (funnel_stage);
 create index if not exists funnel_slots_status on funnel_slots (status);
 
 alter table funnel_slots enable row level security;
-create policy "Admin full access funnel_slots" on funnel_slots for all using (
-  exists (select 1 from profiles where id = auth.uid() and role = 'admin')
-);
+do $$ begin
+  create policy "Admin full access funnel_slots" on funnel_slots for all using (
+    exists (select 1 from profiles where id = auth.uid() and role = 'admin')
+  );
+exception when duplicate_object then null;
+end $$;
 
 create trigger funnel_slots_updated_at before update on funnel_slots
   for each row execute function update_updated_at();
