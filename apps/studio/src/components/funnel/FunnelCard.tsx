@@ -21,7 +21,7 @@ export default function FunnelCard({ item }: FunnelCardProps) {
 
   // Campaign or Content card
   const href = item.type === "campaign" ? `/campaigns/${item.id}` : `/contents/${item.id}`;
-  const statusCfg = STATUS_CONFIG[(item.status as keyof typeof STATUS_CONFIG) ?? "planned"];
+  const statusCfg = STATUS_CONFIG[item.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.planned;
   const typeLabel = item.type === "campaign" ? "캠페인" : "콘텐츠";
 
   return (
