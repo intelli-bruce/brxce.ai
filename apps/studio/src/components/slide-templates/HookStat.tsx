@@ -37,7 +37,7 @@ export function HookStat({
         className="flex h-full flex-col items-center justify-center text-center"
         style={{ paddingLeft: px, paddingRight: px, paddingTop: spacing.safeY, paddingBottom: spacing.safeY }}
       >
-        {(showOverline ?? true) && (
+        {showOverline && (
           <Overline
             variant="badge"
             accentColor={textOpacity.muted}
