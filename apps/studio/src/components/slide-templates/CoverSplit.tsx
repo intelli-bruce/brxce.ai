@@ -22,7 +22,7 @@ export function CoverSplit({ title, subtitle, imageUrl, ...colors }: CoverSplitP
         <div className="h-full">
           {imageUrl ? <img src={imageUrl} alt={title} className="h-full w-full object-cover" /> : <ImagePlaceholder label="좌측 이미지" />}
         </div>
-        <div className="flex flex-col justify-center" style={{ padding: spacing.containerMd }}>
+        <div className="flex flex-col justify-center" style={{ paddingLeft: spacing.safeX, paddingRight: spacing.safeX, paddingTop: spacing.safeY, paddingBottom: spacing.safeY }}>
           <AccentBar
             variant="narrow"
             accentColor={colors.accentColor}

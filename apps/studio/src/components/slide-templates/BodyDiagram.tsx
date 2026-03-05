@@ -16,7 +16,7 @@ export const bodyDiagramDefaultProps: BodyDiagramProps = {
 export function BodyDiagram({ title, nodes, ...colors }: BodyDiagramProps) {
   return (
     <SlideBase {...colors}>
-      <div style={{ padding: spacing.containerLg }}>
+      <div style={{ paddingLeft: spacing.safeX, paddingRight: spacing.safeX, paddingTop: spacing.safeY, paddingBottom: spacing.safeY }}>
         <SlideTitle variant="title" style={{ fontSize: fontSize.headingLg, fontWeight: fontWeight.bold }}>
           {title}
         </SlideTitle>

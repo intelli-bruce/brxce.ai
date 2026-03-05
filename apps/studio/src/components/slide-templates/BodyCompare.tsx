@@ -51,7 +51,7 @@ export function BodyCompare({ title, beforeTitle, beforeDesc, beforeItems, after
     <SlideBase {...colors}>
       <div
         className="flex h-full flex-col justify-center"
-        style={{ paddingLeft: spacing.containerMd, paddingRight: spacing.containerMd, paddingBottom: spacing.bottomLg, paddingTop: spacing.topMd }}
+        style={{ paddingLeft: spacing.safeX, paddingRight: spacing.safeX, paddingBottom: spacing.bottomLg, paddingTop: spacing.topMd }}
       >
         <SlideTitle variant="title" style={{ fontSize: fontSize.headingLg }}>
           {title}

@@ -20,7 +20,7 @@ export function CoverCentered({ title, subtitle, kicker, ...colors }: CoverCente
     <SlideBase {...colors}>
       <div
         className="flex h-full flex-col items-center justify-center text-center"
-        style={{ padding: spacing.containerLg }}
+        style={{ paddingLeft: spacing.safeX, paddingRight: spacing.safeX, paddingTop: spacing.safeY, paddingBottom: spacing.safeY }}
       >
         <Overline variant="kicker" accentColor={colors.accentColor} style={{ marginBottom: gap['4xl'] }}>
           {kicker}

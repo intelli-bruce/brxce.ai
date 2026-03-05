@@ -24,7 +24,7 @@ export function BodyStep({ title, steps, ...colors }: BodyStepProps) {
     <SlideBase {...colors}>
       <div
         className="flex h-full flex-col"
-        style={{ paddingLeft: spacing.containerMd, paddingRight: spacing.containerMd, paddingBottom: spacing.bottomLg, paddingTop: spacing.topMd }}
+        style={{ paddingLeft: spacing.safeX, paddingRight: spacing.safeX, paddingBottom: spacing.bottomLg, paddingTop: spacing.topMd }}
       >
         <SlideTitle variant="title">
           {title}

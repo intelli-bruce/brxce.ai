@@ -47,7 +47,7 @@ export function CoverBold({
   const lineCount = title.split('\n').length
   const defaultTitleSize = lineCount >= 3 ? fontSize.coverCompact : fontSize.coverMd
   const titleLineHeight = lineCount >= 3 ? lineHeight.tight : lineHeight.tighter
-  const px = paddingX ?? spacing.containerMd
+  const px = paddingX ?? spacing.safeX
 
   return (
     <SlideBase {...colors}>

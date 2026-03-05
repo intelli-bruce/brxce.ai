@@ -18,7 +18,7 @@ export function HookQuestion({ question, subQuestion, ...colors }: HookQuestionP
     <SlideBase {...colors}>
       <div
         className="flex h-full flex-col items-center justify-center text-center"
-        style={{ paddingLeft: spacing.containerMd, paddingRight: spacing.containerMd, paddingTop: spacing.containerLg, paddingBottom: spacing.containerLg }}
+        style={{ paddingLeft: spacing.safeX, paddingRight: spacing.safeX, paddingTop: spacing.safeY, paddingBottom: spacing.safeY }}
       >
         <SlideTitle
           variant="hero"

@@ -205,6 +205,7 @@ export const cardBody = {
 export const RATIO_PRESETS = {
   "blog-16:9": { ratio: 16 / 9, label: "블로그 (16:9)", exportWidth: 1920, exportHeight: 1080 },
   "insta-4:5": { ratio: 4 / 5, label: "인스타 (4:5)", exportWidth: 1080, exportHeight: 1350 },
+  "insta-3:4": { ratio: 3 / 4, label: "인스타 캐러셀 (3:4)", exportWidth: 1080, exportHeight: 1440 },
   "square-1:1": { ratio: 1, label: "정사각 (1:1)", exportWidth: 1080, exportHeight: 1080 },
   "wide-21:9": { ratio: 21 / 9, label: "와이드 (21:9)", exportWidth: 2520, exportHeight: 1080 },
   "guide-3:2": { ratio: 3 / 2, label: "가이드 (3:2)", exportWidth: 1800, exportHeight: 1200 },

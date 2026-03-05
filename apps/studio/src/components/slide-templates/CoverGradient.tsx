@@ -25,7 +25,7 @@ export function CoverGradient({ title, subtitle, gradientFrom, gradientTo, ...co
         background: `radial-gradient(circle at 20% 10%, ${gradientTo}55, transparent 40%), linear-gradient(135deg, ${gradientFrom}, #0a0a0a 70%)`,
       }}
     >
-      <div className="flex h-full flex-col justify-center" style={{ padding: spacing.containerLg }}>
+      <div className="flex h-full flex-col justify-center" style={{ paddingLeft: spacing.safeX, paddingRight: spacing.safeX, paddingTop: spacing.safeY, paddingBottom: spacing.safeY }}>
         <SlideTitle
           variant="hero"
           style={{ fontSize: fontSize.coverXl, fontWeight: fontWeight.black, lineHeight: lineHeight.tightest }}

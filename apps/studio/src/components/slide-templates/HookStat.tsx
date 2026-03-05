@@ -30,7 +30,7 @@ export function HookStat({
   overlineText, showOverline, showAccentBar, barWidth, paddingX,
   ...colors
 }: HookStatProps) {
-  const px = paddingX ?? spacing.containerMd
+  const px = paddingX ?? spacing.safeX
   return (
     <SlideBase {...colors}>
       <div

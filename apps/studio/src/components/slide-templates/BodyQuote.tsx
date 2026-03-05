@@ -18,7 +18,7 @@ export function BodyQuote({ quote, author, ...colors }: BodyQuoteProps) {
     <SlideBase {...colors}>
       <div
         className="flex h-full flex-col justify-center"
-        style={{ paddingLeft: spacing.containerMd, paddingRight: spacing.containerMd, paddingTop: spacing.topMd, paddingBottom: spacing.topMd }}
+        style={{ paddingLeft: spacing.safeX, paddingRight: spacing.safeX, paddingTop: spacing.safeY, paddingBottom: spacing.safeY }}
       >
         <SlideCard
           variant="quoteCard"

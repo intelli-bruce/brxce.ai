@@ -214,6 +214,10 @@ export const letterSpacing = {
  *   buttonV  32  py-8  — CTAFollow button
  */
 export const spacing = {
+  /** Safe zone for Instagram 3:4→4:5 crop. Horizontal safe area (px). */
+  safeX: 70,
+  /** Safe zone for Instagram 3:4→4:5 crop. Vertical safe area / footer height (px). */
+  safeY: 90,
   containerLg: 80,
   containerMd: 64,
   containerSm: 56,

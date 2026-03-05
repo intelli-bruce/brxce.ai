@@ -18,7 +18,7 @@ export const hookTeaserDefaultProps: HookTeaserProps = {
 export function HookTeaser({ overline, title, teaser, ...colors }: HookTeaserProps) {
   return (
     <SlideBase {...colors}>
-      <div className="flex h-full flex-col justify-center" style={{ padding: spacing.containerLg }}>
+      <div className="flex h-full flex-col justify-center" style={{ paddingLeft: spacing.safeX, paddingRight: spacing.safeX, paddingTop: spacing.safeY, paddingBottom: spacing.safeY }}>
         <Overline variant="kicker" accentColor={colors.accentColor} style={{ fontSize: fontSize.captionLg, letterSpacing: 'normal', textTransform: 'none' }}>
           {overline}
         </Overline>

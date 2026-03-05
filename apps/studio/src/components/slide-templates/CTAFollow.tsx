@@ -22,7 +22,7 @@ export function CTAFollow({ title, handle, reason, hintText, ...colors }: CTAFol
     <SlideBase {...colors}>
       <div
         className="flex h-full flex-col items-center justify-center text-center"
-        style={{ paddingLeft: spacing.containerMd, paddingRight: spacing.containerMd, paddingBottom: spacing.bottomLg, paddingTop: spacing.topSm }}
+        style={{ paddingLeft: spacing.safeX, paddingRight: spacing.safeX, paddingBottom: spacing.bottomLg, paddingTop: spacing.topSm }}
       >
         <SlideTitle
           variant="title"

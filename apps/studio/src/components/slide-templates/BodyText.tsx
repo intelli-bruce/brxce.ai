@@ -43,7 +43,7 @@ export function BodyText({
     <SlideBase {...colors}>
       <div
         className="flex h-full flex-col justify-center"
-        style={{ paddingLeft: px, paddingRight: px, paddingBottom: spacing.bottomLg, paddingTop: spacing.topMd }}
+        style={{ paddingLeft: spacing.safeX, paddingRight: spacing.safeX, paddingBottom: spacing.bottomLg, paddingTop: spacing.topMd }}
       >
         {(showAccentBar ?? true) && (
           <AccentBar variant="narrow" accentColor={colors.accentColor} style={{ marginBottom: gap['4xl'] }} />

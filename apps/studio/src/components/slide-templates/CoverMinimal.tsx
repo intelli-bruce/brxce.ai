@@ -20,7 +20,7 @@ export function CoverMinimal({ title, subtitle, issue, ...colors }: CoverMinimal
     <SlideBase {...colors}>
       <div
         className="flex h-full flex-col justify-between"
-        style={{ padding: spacing.containerLg }}
+        style={{ paddingLeft: spacing.safeX, paddingRight: spacing.safeX, paddingTop: spacing.safeY, paddingBottom: spacing.safeY }}
       >
         <MutedText size="sm" mutedColor={colors.mutedColor}>
           {issue}

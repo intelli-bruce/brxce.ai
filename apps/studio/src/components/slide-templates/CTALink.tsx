@@ -20,7 +20,7 @@ export const ctaLinkDefaultProps: CTALinkProps = {
 export function CTALink({ title, linkLabel, linkValue, caption, ...colors }: CTALinkProps) {
   return (
     <SlideBase {...colors}>
-      <div className="flex h-full flex-col justify-center" style={{ padding: spacing.containerLg }}>
+      <div className="flex h-full flex-col justify-center" style={{ paddingLeft: spacing.safeX, paddingRight: spacing.safeX, paddingTop: spacing.safeY, paddingBottom: spacing.safeY }}>
         <SlideTitle
           variant="title"
           style={{ fontSize: fontSize.ctaMd, fontWeight: fontWeight.bold, lineHeight: lineHeight.default }}

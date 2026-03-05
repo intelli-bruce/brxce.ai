@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
+import { canvas, spacing } from '@/lib/studio/slide-tokens'
 
 export interface BaseSlideStyleProps {
   backgroundColor?: string
@@ -35,26 +36,29 @@ export function SlideBase({
 }) {
   return (
     <div
-      className="relative h-[1350px] w-[1080px] overflow-hidden"
-      style={{ backgroundColor, color: textColor, ...style }}
+      className="relative overflow-hidden"
+      style={{ width: canvas.width, height: canvas.height, backgroundColor, color: textColor, ...style }}
     >
       <div className={centerContent ? slideCenteredLayoutClass : 'h-full'}>{children}</div>
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/30" />
-      {footer === 'avatar' && (
-        <div className="absolute bottom-8 left-16 flex items-center gap-5">
-          <img
-            src="/bruce-avatar-rounded.png"
-            alt="Bruce"
-            className="h-[64px] w-[64px] rounded-full"
-          />
-          <span className="text-[26px] font-semibold tracking-wide text-white/70">@brxce.ai</span>
+      {footer !== 'none' && (
+        <div
+          className="absolute bottom-0 left-0 right-0 flex items-center"
+          style={{ height: spacing.safeY, paddingLeft: spacing.safeX, paddingRight: spacing.safeX }}
+        >
+          {slideNumber && (
+            <span className="text-[24px] tracking-[0.2em] text-white/40">{slideNumber}</span>
+          )}
+          {footer === 'avatar' && (
+            <div className="ml-auto flex items-center gap-4">
+              <span className="text-[24px] font-semibold tracking-wide text-white/65">@brxce.ai</span>
+              <img src="/bruce-avatar-rounded.png" alt="Bruce" className="h-[52px] w-[52px] rounded-full" />
+            </div>
+          )}
+          {footer === 'minimal' && (
+            <span className="ml-auto text-[24px] tracking-[0.38em] text-white/50">@brxce.ai</span>
+          )}
         </div>
-      )}
-      {footer === 'minimal' && (
-        <div className="absolute bottom-10 left-16 text-[28px] tracking-[0.38em] text-white/50">@brxce.ai</div>
-      )}
-      {footer !== 'none' && slideNumber && (
-        <div className="absolute bottom-10 right-12 text-[28px] tracking-[0.2em] text-white/40">{slideNumber}</div>
       )}
     </div>
   )

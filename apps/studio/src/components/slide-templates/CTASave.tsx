@@ -18,7 +18,7 @@ export const ctaSaveDefaultProps: CTASaveProps = {
 export function CTASave({ title, subtitle, tip, ...colors }: CTASaveProps) {
   return (
     <SlideBase {...colors}>
-      <div className="flex h-full flex-col justify-center" style={{ padding: spacing.containerLg }}>
+      <div className="flex h-full flex-col justify-center" style={{ paddingLeft: spacing.safeX, paddingRight: spacing.safeX, paddingTop: spacing.safeY, paddingBottom: spacing.safeY }}>
         <SlideTitle
           variant="hero"
           style={{ fontSize: fontSize.ctaXl, fontWeight: fontWeight.black, lineHeight: lineHeight.default }}
