@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { SLIDE_TEMPLATES } from "@/lib/studio/slide-templates";
+import { canvas } from "@/lib/studio/slide-tokens";
 
 const FIELD_ALIASES: Record<string, string[]> = {
   title: ["title", "heading", "question", "overline", "eventName", "statLabel"],
@@ -93,8 +94,11 @@ export default function RenderPage() {
   const props = resolveProps(slide, slideIndex, carousel.slides.length);
 
   return (
-    <div id="slide-root" style={{ width: 1080, height: 1350, margin: 0, padding: 0 }}>
-      <Comp {...props} />
-    </div>
+    <>
+      <style>{`nextjs-portal, [data-nextjs-toast], [data-next-mark] { display: none !important; }`}</style>
+      <div id="slide-root" style={{ width: canvas.width, height: canvas.height, margin: 0, padding: 0 }}>
+        <Comp {...props} />
+      </div>
+    </>
   );
 }

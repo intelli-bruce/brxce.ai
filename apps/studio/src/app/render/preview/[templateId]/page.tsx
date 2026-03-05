@@ -2,6 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { SLIDE_TEMPLATES } from "@/lib/studio/slide-templates";
+import { canvas } from "@/lib/studio/slide-tokens";
 
 export default function TemplatePreviewPage() {
   const params = useParams();
@@ -13,8 +14,11 @@ export default function TemplatePreviewPage() {
   const Comp = tpl.component;
 
   return (
-    <div id="slide-root" style={{ width: 1080, height: 1350, margin: 0, padding: 0 }}>
-      <Comp {...tpl.defaultProps} slideNumber="1/10" />
-    </div>
+    <>
+      <style>{`nextjs-portal, [data-nextjs-toast], [data-next-mark] { display: none !important; }`}</style>
+      <div id="slide-root" style={{ width: canvas.width, height: canvas.height, margin: 0, padding: 0 }}>
+        <Comp {...tpl.defaultProps} slideNumber="1/10" />
+      </div>
+    </>
   );
 }
