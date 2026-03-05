@@ -1,5 +1,5 @@
 import { SlideTitle, MutedText } from '@/components/slide-primitives'
-import { fontSize, fontWeight, lineHeight, spacing, gap, textOpacity } from '@/lib/studio/slide-tokens'
+import { fontSize, fontWeight, lineHeight, gap, textOpacity } from '@/lib/studio/slide-tokens'
 import { DEFAULT_COLORS, SlideBase, type BaseSlideStyleProps } from './SlideBase'
 
 function renderMarkdownBold(text: string, accentColor?: string) {
@@ -43,7 +43,7 @@ export function CTAQuestion({
     <SlideBase {...colors}>
       <div
         className="flex h-full flex-col items-center justify-center text-center"
-        style={{ paddingLeft: paddingOverride ?? spacing.safeX, paddingRight: paddingOverride ?? spacing.safeX, paddingTop: paddingOverride ?? spacing.safeY, paddingBottom: paddingOverride ?? spacing.safeY }}
+        style={{ padding: paddingOverride ?? 80 }}
       >
         <SlideTitle
           variant="title"

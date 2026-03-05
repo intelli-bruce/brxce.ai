@@ -13,12 +13,12 @@ type Ctx = { params: Promise<{ id: string }> }
 
 export const runtime = 'nodejs'
 
-async function renderSlide(id: string, slideIndex: number): Promise<Buffer> {
+async function renderSlide(id: string, slideIndex: number, scale: number = 1): Promise<Buffer> {
   const browser = await puppeteer.launch({ headless: true })
 
   try {
     const page = await browser.newPage()
-    await page.setViewport({ width: 1080, height: 1350, deviceScaleFactor: 1 })
+    await page.setViewport({ width: 1080, height: 1350, deviceScaleFactor: scale })
 
     const url = `http://localhost:3200/render/${id}?slide=${slideIndex}`
     await page.goto(url, { waitUntil: 'networkidle2', timeout: 60_000 })
@@ -48,13 +48,16 @@ async function zipPngs(files: Array<{ name: string; buffer: Buffer }>): Promise<
 }
 
 /**
- * GET /api/carousels/:id/render?slide=0   -> single slide PNG
- * GET /api/carousels/:id/render          -> all slides ZIP
+ * GET /api/carousels/:id/render?slide=0          -> single slide PNG (1x)
+ * GET /api/carousels/:id/render?slide=0&scale=2  -> single slide PNG (2x)
+ * GET /api/carousels/:id/render                  -> all slides ZIP (PNG 1x)
+ * GET /api/carousels/:id/render?scale=2          -> all slides ZIP (PNG 2x)
  */
 export async function GET(req: Request, ctx: Ctx) {
   const { id } = await ctx.params
   const { searchParams } = new URL(req.url)
   const slide = searchParams.get('slide')
+  const scale = Math.min(Math.max(Number(searchParams.get('scale') ?? '1'), 1), 3)
 
   const carousel = await getCarousel(id)
   if (!carousel) {
@@ -68,12 +71,12 @@ export async function GET(req: Request, ctx: Ctx) {
         return NextResponse.json({ error: 'invalid slide index' }, { status: 400 })
       }
 
-      const png = await renderSlide(id, slideIndex)
+      const png = await renderSlide(id, slideIndex, scale)
       return new NextResponse(png as unknown as BodyInit, {
         status: 200,
         headers: {
           'Content-Type': 'image/png',
-          'Content-Disposition': `inline; filename="slide-${String(slideIndex + 1).padStart(2, '0')}.png"`,
+          'Content-Disposition': `inline; filename="slide-${String(slideIndex + 1).padStart(2, '0')}${scale > 1 ? `@${scale}x` : ''}.png"`,
           'Cache-Control': 'no-store',
         },
       })
@@ -81,8 +84,8 @@ export async function GET(req: Request, ctx: Ctx) {
 
     const rendered = await Promise.all(
       carousel.slides.map(async (_s, idx) => ({
-        name: `slide-${String(idx + 1).padStart(2, '0')}.png`,
-        buffer: await renderSlide(id, idx),
+        name: `slide-${String(idx + 1).padStart(2, '0')}${scale > 1 ? `@${scale}x` : ''}.png`,
+        buffer: await renderSlide(id, idx, scale),
       }))
     )
 
@@ -91,7 +94,7 @@ export async function GET(req: Request, ctx: Ctx) {
       status: 200,
       headers: {
         'Content-Type': 'application/zip',
-        'Content-Disposition': `attachment; filename="${id}-slides.zip"`,
+        'Content-Disposition': `attachment; filename="${id}${scale > 1 ? `@${scale}x` : ''}.zip"`,
         'Cache-Control': 'no-store',
       },
     })

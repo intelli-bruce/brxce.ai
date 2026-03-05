@@ -25,6 +25,7 @@ export interface CarouselSlide {
 export interface Carousel {
   id: string;
   title: string;
+  caption?: string;
   slides: CarouselSlide[];
   createdAt: string;
   updatedAt: string;
@@ -78,12 +79,13 @@ export async function getCarousel(id: string): Promise<Carousel | null> {
 
 export async function updateCarousel(
   id: string,
-  patch: Partial<Pick<Carousel, "title" | "slides">>
+  patch: Partial<Pick<Carousel, "title" | "caption" | "slides">>
 ): Promise<Carousel | null> {
   const carousels = await loadCarousels();
   const idx = carousels.findIndex((c) => c.id === id);
   if (idx < 0) return null;
   if (patch.title !== undefined) carousels[idx].title = patch.title;
+  if (patch.caption !== undefined) carousels[idx].caption = patch.caption;
   if (patch.slides !== undefined) carousels[idx].slides = patch.slides;
   carousels[idx].updatedAt = new Date().toISOString();
   await saveCarousels(carousels);
