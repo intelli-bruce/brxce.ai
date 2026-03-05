@@ -1,8 +1,4 @@
-import { readFile, writeFile, mkdir } from "fs/promises";
-import { join } from "path";
-
-const DATA_DIR = join(process.cwd(), ".data");
-const CAROUSELS_FILE = join(DATA_DIR, "carousels.json");
+import { createSupabaseAdmin } from "@/lib/supabase-admin";
 
 export interface SlideContent {
   title?: string;
@@ -35,68 +31,77 @@ function uid(prefix: string) {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-async function ensureDir() {
-  await mkdir(DATA_DIR, { recursive: true });
+function rowToCarousel(row: any): Carousel {
+  return {
+    id: row.id,
+    title: row.title,
+    caption: row.caption ?? undefined,
+    slides: row.slides as CarouselSlide[],
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
 }
 
 export async function loadCarousels(): Promise<Carousel[]> {
-  await ensureDir();
-  try {
-    const raw = await readFile(CAROUSELS_FILE, "utf-8");
-    return JSON.parse(raw) as Carousel[];
-  } catch {
-    return [];
-  }
-}
-
-export async function saveCarousels(carousels: Carousel[]): Promise<void> {
-  await ensureDir();
-  await writeFile(CAROUSELS_FILE, JSON.stringify(carousels, null, 2), "utf-8");
+  const sb = createSupabaseAdmin();
+  const { data, error } = await sb
+    .from("carousels")
+    .select("*")
+    .order("updated_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map(rowToCarousel);
 }
 
 export async function createCarousel(data: {
   title: string;
   slides: Omit<CarouselSlide, "id">[];
 }): Promise<Carousel> {
-  const carousels = await loadCarousels();
-  const now = new Date().toISOString();
-  const carousel: Carousel = {
-    id: uid("carousel"),
-    title: data.title,
-    slides: data.slides.map((s) => ({ ...s, id: uid("slide") })),
-    createdAt: now,
-    updatedAt: now,
-  };
-  carousels.unshift(carousel);
-  await saveCarousels(carousels);
-  return carousel;
+  const sb = createSupabaseAdmin();
+  const id = uid("carousel");
+  const slides = data.slides.map((s) => ({ ...s, id: uid("slide") }));
+
+  const { data: row, error } = await sb
+    .from("carousels")
+    .insert({ id, title: data.title, slides })
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  return rowToCarousel(row);
 }
 
 export async function getCarousel(id: string): Promise<Carousel | null> {
-  const carousels = await loadCarousels();
-  return carousels.find((c) => c.id === id) ?? null;
+  const sb = createSupabaseAdmin();
+  const { data, error } = await sb
+    .from("carousels")
+    .select("*")
+    .eq("id", id)
+    .single();
+  if (error) return null;
+  return rowToCarousel(data);
 }
 
 export async function updateCarousel(
   id: string,
   patch: Partial<Pick<Carousel, "title" | "caption" | "slides">>
 ): Promise<Carousel | null> {
-  const carousels = await loadCarousels();
-  const idx = carousels.findIndex((c) => c.id === id);
-  if (idx < 0) return null;
-  if (patch.title !== undefined) carousels[idx].title = patch.title;
-  if (patch.caption !== undefined) carousels[idx].caption = patch.caption;
-  if (patch.slides !== undefined) carousels[idx].slides = patch.slides;
-  carousels[idx].updatedAt = new Date().toISOString();
-  await saveCarousels(carousels);
-  return carousels[idx];
+  const sb = createSupabaseAdmin();
+  const update: Record<string, any> = { updated_at: new Date().toISOString() };
+  if (patch.title !== undefined) update.title = patch.title;
+  if (patch.caption !== undefined) update.caption = patch.caption;
+  if (patch.slides !== undefined) update.slides = patch.slides;
+
+  const { data, error } = await sb
+    .from("carousels")
+    .update(update)
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) return null;
+  return rowToCarousel(data);
 }
 
 export async function deleteCarousel(id: string): Promise<boolean> {
-  const carousels = await loadCarousels();
-  const idx = carousels.findIndex((c) => c.id === id);
-  if (idx < 0) return false;
-  carousels.splice(idx, 1);
-  await saveCarousels(carousels);
-  return true;
+  const sb = createSupabaseAdmin();
+  const { error } = await sb.from("carousels").delete().eq("id", id);
+  return !error;
 }
