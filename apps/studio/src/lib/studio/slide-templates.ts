@@ -64,6 +64,18 @@ import {
   hookRoadmapDefaultProps,
   HookSelfQualify,
   hookSelfQualifyDefaultProps,
+  HookVS,
+  hookVSDefaultProps,
+  HookMyth,
+  hookMythDefaultProps,
+  HookResult,
+  hookResultDefaultProps,
+  HookControversial,
+  hookControversialDefaultProps,
+  HookPainPoint,
+  hookPainPointDefaultProps,
+  HookListPreview,
+  hookListPreviewDefaultProps,
 } from '@/components/slide-templates'
 
 export type PropSchemaType = 'string' | 'number' | 'boolean' | 'color' | 'image' | 'string[]' | 'object[]|string[]'
@@ -141,6 +153,12 @@ const RAW_SLIDE_TEMPLATES: SlideTemplateInfo[] = [
   { id: 'hook-teaser', name: 'HookTeaser', category: 'hook', description: '티저/예고형', component: HookTeaser, propsSchema: { overline: { type: 'string', label: '오버라인' }, title: { type: 'string', label: '제목', required: true }, teaser: { type: 'string', label: '티저 문구' } }, defaultProps: hookTeaserDefaultProps },
   { id: 'hook-roadmap', name: 'HookRoadmap', category: 'hook', description: '목차/로드맵', component: HookRoadmap, propsSchema: { title: { type: 'string', label: '제목' }, items: { type: 'string[]', label: '항목' }, subtitle: { type: 'string', label: '하단 안내' } }, defaultProps: hookRoadmapDefaultProps },
   { id: 'hook-self-qualify', name: 'HookSelfQualify', category: 'hook', description: '타겟 셀프체크', component: HookSelfQualify, propsSchema: { title: { type: 'string', label: '제목' }, conditions: { type: 'string[]', label: '조건 목록' }, conclusion: { type: 'string', label: '결론' } }, defaultProps: hookSelfQualifyDefaultProps },
+  { id: 'hook-vs', name: 'HookVS', category: 'hook', description: 'A vs B 대결', component: HookVS, propsSchema: { leftLabel: { type: 'string', label: '왼쪽' }, rightLabel: { type: 'string', label: '오른쪽' }, title: { type: 'string', label: '제목' } }, defaultProps: hookVSDefaultProps },
+  { id: 'hook-myth', name: 'HookMyth', category: 'hook', description: '착각 깨기', component: HookMyth, propsSchema: { myth: { type: 'string', label: '착각' }, reveal: { type: 'string', label: '진실' }, label: { type: 'string', label: '라벨' } }, defaultProps: hookMythDefaultProps },
+  { id: 'hook-result', name: 'HookResult', category: 'hook', description: '결과 임팩트', component: HookResult, propsSchema: { result: { type: 'string', label: '결과' }, context: { type: 'string', label: '맥락' }, overline: { type: 'string', label: '오버라인' } }, defaultProps: hookResultDefaultProps },
+  { id: 'hook-controversial', name: 'HookControversial', category: 'hook', description: '논란/도발', component: HookControversial, propsSchema: { statement: { type: 'string', label: '주장' }, subtext: { type: 'string', label: '보조 텍스트' } }, defaultProps: hookControversialDefaultProps },
+  { id: 'hook-pain-point', name: 'HookPainPoint', category: 'hook', description: '공감 페인포인트', component: HookPainPoint, propsSchema: { painPoint: { type: 'string', label: '페인포인트' }, empathy: { type: 'string', label: '공감' }, transition: { type: 'string', label: '전환 문구' } }, defaultProps: hookPainPointDefaultProps },
+  { id: 'hook-list-preview', name: 'HookListPreview', category: 'hook', description: '리스트 미리보기', component: HookListPreview, propsSchema: { title: { type: 'string', label: '제목' }, items: { type: 'string[]', label: '항목' }, revealCount: { type: 'number', label: '공개 수', min: 1, max: 10, step: 1 }, overline: { type: 'string', label: '오버라인' } }, defaultProps: hookListPreviewDefaultProps },
 
   {
     id: 'body-text', name: 'BodyText', category: 'body', description: '설명형 본문', component: BodyText,
