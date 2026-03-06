@@ -1,19 +1,88 @@
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { fontWeight } from './slide-tokens'
 
+/* ── Code-block styling ────────────────────────────── */
+const codeBlockStyle: CSSProperties = {
+  display: 'block',
+  fontFamily: "'JetBrains Mono', 'Fira Code', 'SF Mono', monospace",
+  fontSize: '0.82em',
+  lineHeight: 1.6,
+  background: 'rgba(255,255,255,0.06)',
+  borderRadius: 12,
+  padding: '20px 24px',
+  margin: '16px 0',
+  whiteSpace: 'pre',
+  overflowX: 'auto',
+  color: 'inherit',
+}
+
+const inlineCodeStyle: CSSProperties = {
+  fontFamily: "'JetBrains Mono', 'Fira Code', 'SF Mono', monospace",
+  fontSize: '0.88em',
+  background: 'rgba(255,255,255,0.08)',
+  borderRadius: 6,
+  padding: '2px 8px',
+  color: 'inherit',
+}
+
+/* ── Markdown renderer ─────────────────────────────── */
+
 /**
- * Parse **bold** markdown in text and return React nodes.
- * Used across slide templates for both title and body fields.
+ * Parse markdown subset in text and return React nodes.
+ * Supports: **bold**, ```code blocks```, `inline code`
  */
 export function renderMarkdownBold(text: string, accentColor?: string): ReactNode[] {
-  return text.split(/(\*\*[^*]+\*\*)/g).map((part, idx) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
-      return (
-        <span key={`b-${idx}`} style={{ fontWeight: fontWeight.bold, color: accentColor }}>
-          {part.slice(2, -2)}
-        </span>
+  // Step 1: split by fenced code blocks (``` ... ```)
+  const blockParts = text.split(/(```[\s\S]*?```)/g)
+
+  const nodes: ReactNode[] = []
+
+  blockParts.forEach((block, blockIdx) => {
+    if (block.startsWith('```') && block.endsWith('```')) {
+      // Fenced code block — strip ``` delimiters and optional language tag
+      const inner = block.slice(3, -3).replace(/^\w*\n?/, '')
+      nodes.push(
+        <code key={`cb-${blockIdx}`} style={codeBlockStyle}>
+          {inner.replace(/^\n|\n$/g, '')}
+        </code>
       )
+      return
     }
-    return <span key={`t-${idx}`}>{part}</span>
+
+    // Step 2: split by inline code (` ... `)
+    const inlineParts = block.split(/(`.+?`)/g)
+
+    inlineParts.forEach((part, inlineIdx) => {
+      if (part.startsWith('`') && part.endsWith('`')) {
+        nodes.push(
+          <code key={`ic-${blockIdx}-${inlineIdx}`} style={inlineCodeStyle}>
+            {part.slice(1, -1)}
+          </code>
+        )
+        return
+      }
+
+      // Step 3: split by **bold**
+      const boldParts = part.split(/(\*\*[^*]+\*\*)/g)
+
+      boldParts.forEach((seg, segIdx) => {
+        if (seg.startsWith('**') && seg.endsWith('**')) {
+          nodes.push(
+            <span
+              key={`b-${blockIdx}-${inlineIdx}-${segIdx}`}
+              style={{ fontWeight: fontWeight.bold, color: accentColor }}
+            >
+              {seg.slice(2, -2)}
+            </span>
+          )
+        } else if (seg) {
+          nodes.push(
+            <span key={`t-${blockIdx}-${inlineIdx}-${segIdx}`}>{seg}</span>
+          )
+        }
+      })
+    })
   })
+
+  return nodes
 }
