@@ -1,4 +1,4 @@
-import { Overline, MutedText } from '@/components/slide-primitives'
+import { Overline } from '@/components/slide-primitives'
 import { fontSize, fontWeight, lineHeight, spacing, gap } from '@/lib/studio/slide-tokens'
 import { DEFAULT_COLORS, SlideBase, type BaseSlideStyleProps } from './SlideBase'
 
@@ -23,66 +23,91 @@ export function CoverBeforeAfter({ beforeText, afterText, tag, subtitle, ...colo
 
   return (
     <SlideBase {...colors}>
-      <div
-        className="flex h-full flex-col justify-center"
-        style={{ paddingLeft: spacing.safeX, paddingRight: spacing.safeX, paddingTop: spacing.safeY, paddingBottom: spacing.safeY }}
-      >
+      <div className="flex h-full flex-col" style={{ position: 'relative' }}>
+        {/* Tag at top */}
         {tag && (
-          <Overline variant="tag" accentColor={accent} style={{ marginBottom: gap['3xl'] }}>
-            {tag}
-          </Overline>
+          <div style={{ position: 'absolute', top: spacing.safeY, left: 0, right: 0, zIndex: 10, textAlign: 'center' as const }}>
+            <Overline variant="tag" accentColor={accent}>
+              {tag}
+            </Overline>
+          </div>
         )}
 
-        {/* Split layout */}
-        <div style={{ display: 'flex', gap: gap.xl, flex: 0 }}>
-          {/* Before half */}
+        {/* Top half - BEFORE (dark, muted) */}
+        <div
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(255,255,255,0.03)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            paddingLeft: spacing.safeX,
+            paddingRight: spacing.safeX,
+            position: 'relative',
+          }}
+        >
+          <span style={{ fontSize: fontSize.captionLg, fontWeight: fontWeight.bold, color: `${muted}80`, letterSpacing: '0.2em', marginBottom: gap.lg }}>
+            BEFORE
+          </span>
           <div
             style={{
-              flex: 1,
-              backgroundColor: 'rgba(255,255,255,0.04)',
-              borderRadius: 20,
-              padding: `${gap['3xl']}px ${gap['2xl']}px`,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              borderTop: `4px solid ${muted}40`,
+              fontSize: fontSize.coverCompact,
+              fontWeight: fontWeight.black,
+              lineHeight: lineHeight.tight,
+              color: `${muted}90`,
+              whiteSpace: 'pre-line' as const,
+              textDecoration: 'line-through',
+              textDecorationColor: `${muted}40`,
+              textDecorationThickness: 3,
             }}
           >
-            <span style={{ fontSize: fontSize.captionLg, fontWeight: fontWeight.bold, color: muted, letterSpacing: '0.15em', marginBottom: gap.xl }}>
-              BEFORE
-            </span>
-            <div style={{ fontSize: fontSize.bodyLg, fontWeight: fontWeight.bold, lineHeight: lineHeight.relaxed, color: muted, whiteSpace: 'pre-line' as const }}>
-              {beforeText}
-            </div>
-          </div>
-
-          {/* After half */}
-          <div
-            style={{
-              flex: 1,
-              backgroundColor: `${accent}10`,
-              borderRadius: 20,
-              padding: `${gap['3xl']}px ${gap['2xl']}px`,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              borderTop: `4px solid ${accent}`,
-            }}
-          >
-            <span style={{ fontSize: fontSize.captionLg, fontWeight: fontWeight.bold, color: accent, letterSpacing: '0.15em', marginBottom: gap.xl }}>
-              AFTER
-            </span>
-            <div style={{ fontSize: fontSize.bodyLg, fontWeight: fontWeight.bold, lineHeight: lineHeight.relaxed, color: colors.textColor || '#f5f5f5', whiteSpace: 'pre-line' as const }}>
-              {afterText}
-            </div>
+            {beforeText}
           </div>
         </div>
 
-        {subtitle && (
-          <MutedText size="md" mutedColor={muted} style={{ marginTop: gap['3xl'], fontSize: fontSize.bodySm, textAlign: 'center' as const }}>
-            {subtitle}
-          </MutedText>
-        )}
+        {/* Divider line */}
+        <div style={{ height: 3, backgroundColor: accent, position: 'relative', zIndex: 5 }}>
+          <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', backgroundColor: colors.backgroundColor || '#0a0a0a', padding: '4px 24px', borderRadius: 20 }}>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <polyline points="19 12 12 19 5 12" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Bottom half - AFTER (highlighted) */}
+        <div
+          style={{
+            flex: 1,
+            backgroundColor: `${accent}08`,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            paddingLeft: spacing.safeX,
+            paddingRight: spacing.safeX,
+          }}
+        >
+          <span style={{ fontSize: fontSize.captionLg, fontWeight: fontWeight.bold, color: accent, letterSpacing: '0.2em', marginBottom: gap.lg }}>
+            AFTER
+          </span>
+          <div
+            style={{
+              fontSize: fontSize.coverCompact,
+              fontWeight: fontWeight.black,
+              lineHeight: lineHeight.tight,
+              color: colors.textColor || '#f5f5f5',
+              whiteSpace: 'pre-line' as const,
+            }}
+          >
+            {afterText}
+          </div>
+
+          {subtitle && (
+            <div style={{ marginTop: gap['2xl'], fontSize: fontSize.bodySm, color: `${muted}80` }}>
+              {subtitle}
+            </div>
+          )}
+        </div>
       </div>
     </SlideBase>
   )
