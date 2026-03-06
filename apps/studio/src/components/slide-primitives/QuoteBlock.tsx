@@ -28,13 +28,6 @@ const DEFAULT_ACCENT = '#ff6b35'
 const DEFAULT_TEXT = '#f5f5f5'
 const DEFAULT_MUTED = '#a3a3a3'
 
-const MARK_STYLE: CSSProperties = {
-  fontSize: fontSize.displayLg,
-  fontWeight: fontWeight.black,
-  lineHeight: lineHeight.none,
-  position: 'absolute',
-}
-
 export function QuoteBlock({
   text,
   author,
@@ -45,25 +38,28 @@ export function QuoteBlock({
 }: QuoteBlockProps) {
   const markColor = `${accentColor}${accentOpacity.text}`
 
+  const markStyle: CSSProperties = {
+    fontSize: fontSize.displayLg,
+    fontWeight: fontWeight.black,
+    lineHeight: '0.5',
+    color: markColor,
+    height: 100,
+    overflow: 'visible',
+  }
+
   return (
     <div style={tokenStyle({ position: 'relative' }, style)}>
-      {/* Opening quote mark */}
-      <div
-        style={tokenStyle(MARK_STYLE, {
-          color: markColor,
-          left: -16,
-          top: -56,
-        })}
-      >
+      {/* Opening mark — above text, left aligned */}
+      <div style={markStyle}>
         {'\u201C'}
       </div>
 
       {/* Quote text */}
       <div
         style={{
-          fontSize: fontSize.subtitleLg,
-          fontWeight: fontWeight.semibold,
-          lineHeight: lineHeight.quote,
+          fontSize: fontSize.bodyMd,
+          fontWeight: fontWeight.medium,
+          lineHeight: lineHeight.relaxed,
           color: textColor,
           whiteSpace: 'pre-line',
         }}
@@ -71,14 +67,8 @@ export function QuoteBlock({
         {text}
       </div>
 
-      {/* Closing quote mark */}
-      <div
-        style={tokenStyle(MARK_STYLE, {
-          color: markColor,
-          right: 32,
-          bottom: -96,
-        })}
-      >
+      {/* Closing mark — below text, right aligned */}
+      <div style={{ ...markStyle, textAlign: 'right' }}>
         {'\u201D'}
       </div>
 
@@ -89,7 +79,7 @@ export function QuoteBlock({
             fontSize: fontSize.captionLg,
             color: mutedColor,
             textAlign: 'right',
-            marginTop: 56,
+            marginTop: 24,
           }}
         >
           {`\u2014 ${author}`}

@@ -1,0 +1,9 @@
+{
+  "composition": "SocialPost",
+  "props": {
+    "title": "에이전틱 워크플로우",
+    "message": "AI가 스스로 판단하고, 계획하고, 실행한다.\n자동화와는 차원이 다른 이야기.",
+    "icon": "🤖",
+    "layout": "centered"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "composition": "Quote",
+  "props": {
+    "text": "AI가 당신의 일자리를 빼앗는 게 아니라, AI를 활용하는 사람이 당신의 일자리를 가져갈 것이다.",
+    "author": "Jensen Huang",
+    "authorRole": "CEO, NVIDIA"
+  }
+}

@@ -16,7 +16,7 @@ export const hookProblemDefaultProps: HookProblemProps = {
 export function HookProblem({ title, points, ...colors }: HookProblemProps) {
   return (
     <SlideBase {...colors}>
-      <div style={{ paddingLeft: spacing.safeX, paddingRight: spacing.safeX, paddingTop: spacing.safeY, paddingBottom: spacing.safeY }}>
+      <div className="flex h-full flex-col justify-center" style={{ paddingLeft: spacing.safeX, paddingRight: spacing.safeX, paddingTop: spacing.safeY, paddingBottom: spacing.safeY }}>
         <SlideTitle
           variant="title"
           style={{ fontSize: fontSize.hookMd, fontWeight: fontWeight.bold, lineHeight: lineHeight.default }}

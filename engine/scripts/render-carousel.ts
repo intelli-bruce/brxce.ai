@@ -153,7 +153,7 @@ async function renderSlides(
   // Remotion 번들
   console.log('\n📦 번들링...')
   const bundleLocation = await bundle({
-    entryPoint: path.resolve(__dirname, '../index.ts'),
+    entryPoint: path.resolve(__dirname, '../index.tsx'),
     webpackOverride: (config: Record<string, unknown>) => config,
   })
 

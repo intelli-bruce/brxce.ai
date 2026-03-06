@@ -149,9 +149,9 @@ function TemplateCard({ template }: { template: SlideTemplateInfo }) {
       {...attributes}
       className="min-w-[216px] max-w-[216px] cursor-grab rounded-[14px] border-2 border-white/[0.06] bg-[#0d0d0d] overflow-hidden hover:border-[#ff6b35]/40 transition-all hover:-translate-y-[3px] group"
     >
-      {/* preview scaled down */}
-      <div className="overflow-hidden relative" style={{ width: Math.round(canvas.width * 0.2), height: Math.round(canvas.height * 0.2) }}>
-        <div className="origin-top-left scale-[0.2] pointer-events-none" style={{ width: canvas.width, height: canvas.height }}>
+      {/* preview scaled down — centered */}
+      <div className="overflow-hidden relative flex items-center justify-center" style={{ width: Math.round(canvas.width * 0.2), height: Math.round(canvas.height * 0.2) }}>
+        <div className="pointer-events-none" style={{ width: canvas.width, height: canvas.height, transform: 'scale(0.2)', transformOrigin: 'center center' }}>
           <Comp {...template.defaultProps} />
         </div>
       </div>
@@ -233,9 +233,9 @@ function CarouselSlideCard({
       >
         ✕
       </button>
-      <div className="h-[178px] overflow-hidden relative bg-[#0d0d0d]">
+      <div className="h-[178px] overflow-hidden relative bg-[#0d0d0d] flex items-center justify-center">
         {Comp ? (
-          <div className="origin-top-left scale-[0.1315] pointer-events-none" style={{ width: canvas.width, height: canvas.height }}>
+          <div className="pointer-events-none" style={{ width: canvas.width, height: canvas.height, transform: 'scale(0.1315)', transformOrigin: 'center center' }}>
             <Comp {...resolveSlideProps(slide)} />
           </div>
         ) : (
@@ -597,8 +597,8 @@ export default function TemplatesPage() {
               <div className="border-t border-[#2a2a2a] p-5">
                 <div className="flex gap-6">
                   {/* Live preview */}
-                  <div className="shrink-0 rounded-xl overflow-hidden border border-[#2a2a2a]" style={{ width: Math.round(canvas.width * 0.2), height: Math.round(canvas.height * 0.2) }}>
-                    <div className="origin-top-left scale-[0.2] pointer-events-none" style={{ width: canvas.width, height: canvas.height }}>
+                  <div className="shrink-0 rounded-xl overflow-hidden border border-[#2a2a2a] flex items-center justify-center" style={{ width: Math.round(canvas.width * 0.2), height: Math.round(canvas.height * 0.2) }}>
+                    <div className="pointer-events-none" style={{ width: canvas.width, height: canvas.height, transform: 'scale(0.2)', transformOrigin: 'center center' }}>
                       <Comp {...resolveSlideProps(sl)} />
                     </div>
                   </div>

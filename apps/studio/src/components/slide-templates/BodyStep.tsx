@@ -23,16 +23,16 @@ export function BodyStep({ title, steps, ...colors }: BodyStepProps) {
   return (
     <SlideBase {...colors}>
       <div
-        className="flex h-full flex-col"
+        className="flex h-full flex-col justify-center"
         style={{ paddingLeft: spacing.safeX, paddingRight: spacing.safeX, paddingBottom: spacing.bottomLg, paddingTop: spacing.topMd }}
       >
         <SlideTitle variant="title">
           {title}
         </SlideTitle>
-        <div style={{ marginTop: gap['3xl'], display: 'flex', flex: 1, flexDirection: 'column', justifyContent: 'space-between', gap: gap.xl }}>
+        <div style={{ marginTop: gap['3xl'], display: 'flex', flexDirection: 'column', gap: gap['2xl'] }}>
           {normalizedSteps.map((step, idx) => (
             <SlideCard
-              key={step.title + idx}
+              key={`step-${idx}-${step.title || ''}`}
               variant="stepCard"
               style={{ display: 'flex', alignItems: 'center', gap: gap.xl, paddingLeft: spacing.cardMdH, paddingRight: spacing.cardMdH, paddingTop: spacing.cardMdV, paddingBottom: spacing.cardMdV }}
             >
