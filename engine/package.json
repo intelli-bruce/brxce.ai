@@ -12,7 +12,7 @@
     "remotion": "4.0.403",
     "@remotion/cli": "4.0.403",
     "@remotion/renderer": "4.0.403",
-    "@remotion/captions": "4.0.407",
+    "@remotion/captions": "4.0.403",
     "@remotion/transitions": "4.0.403",
     "react": "18.3.1",
     "react-dom": "18.3.1",

@@ -94,15 +94,34 @@ export default function StudioEditor({ initialProject }: Props) {
 
   async function handleRender() {
     setSaving(true);
-    const sb = createSupabaseBrowser();
-    await sb
-      .from("studio_projects")
-      .update({ status: "rendering", updated_at: new Date().toISOString() })
-      .eq("id", project.id);
     setProject((p) => ({ ...p, status: "rendering" }));
-    setSaving(false);
     setRenderToast(true);
-    setTimeout(() => setRenderToast(false), 3000);
+
+    try {
+      const res = await fetch("/api/render", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ project_id: project.id }),
+      });
+      const data = await res.json();
+
+      if (res.ok && data.output_urls) {
+        setProject((p) => ({
+          ...p,
+          status: "rendered",
+          output_urls: data.output_urls,
+        }));
+      } else {
+        setProject((p) => ({ ...p, status: "failed" }));
+        console.error("Render failed:", data.error, data.detail);
+      }
+    } catch (err) {
+      setProject((p) => ({ ...p, status: "failed" }));
+      console.error("Render request failed:", err);
+    } finally {
+      setSaving(false);
+      setTimeout(() => setRenderToast(false), 3000);
+    }
   }
 
   function handleSlideNav(dir: -1 | 1) {
