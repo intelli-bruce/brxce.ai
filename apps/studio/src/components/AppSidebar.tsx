@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname, useSearchParams, useRouter } from "next/navigation"
 import { createSupabaseBrowser } from "@/lib/supabase-browser"
 import {
   BarChart3,
@@ -115,11 +115,28 @@ const navSections: NavSection[] = [
 
 export function AppSidebar() {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const router = useRouter()
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/"
-    return pathname.startsWith(href)
+    // query param이 있는 경우 (e.g. ?tab=video)
+    if (href.includes("?")) {
+      const [hrefPath, hrefQuery] = href.split("?")
+      if (!pathname.startsWith(hrefPath)) return false
+      const params = new URLSearchParams(hrefQuery)
+      for (const [key, value] of params.entries()) {
+        if (searchParams.get(key) !== value) return false
+      }
+      return true
+    }
+    // query param 없는 일반 경로 — 같은 pathname에 tab param이 있으면 비활성
+    if (pathname.startsWith(href)) {
+      const tab = searchParams.get("tab")
+      if (tab && pathname === href.split("?")[0]) return false
+      return true
+    }
+    return false
   }
 
   return (
