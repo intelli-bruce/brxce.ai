@@ -73,67 +73,95 @@ export default function PreviewPanel({ type, template, width, height, scenes, se
   );
 }
 
+/* ====== Shared: Media background ====== */
+function MediaBg({ src, children }: { src: string; children: React.ReactNode }) {
+  const isImage = /\.(jpg|jpeg|png|gif|webp|avif|svg)/i.test(src);
+  const isVideo = /\.(mp4|mov|webm|avi)/i.test(src);
+
+  return (
+    <div className="w-full h-full relative overflow-hidden">
+      {isImage && <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+      {isVideo && <video src={src} muted autoPlay loop playsInline className="absolute inset-0 w-full h-full object-cover" />}
+      {!isImage && !isVideo && src && <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+      <div className="absolute inset-0 bg-black/30" />
+      <div className="relative z-10 w-full h-full">{children}</div>
+    </div>
+  );
+}
+
 /* ====== DayInTheLife ====== */
 function DayInTheLifePreview({ props, bg, primary, font }: { props: Record<string, unknown>; bg: string; primary: string; font: string }) {
   type Clip = { file: string; time: string; label: string; emoji: string };
   const clips = (props.clips || []) as Clip[];
   const clipDuration = (props.clipDuration as number) || 180;
+  const firstClip = clips[0];
 
   if (clips.length === 0) return <EmptyState label="클립을 추가하세요" />;
 
-  return (
-    <div className="w-full h-full flex flex-col relative overflow-hidden" style={{ backgroundColor: bg, fontFamily: font }}>
-      <div className="absolute inset-0 bg-gradient-to-br from-[#0d1b2a] via-[#1b263b] to-[#415a77] opacity-70" />
-      <div className="absolute inset-0" style={{ backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.02) 2px, rgba(255,255,255,0.02) 4px)" }} />
-
-      {/* Clip timeline */}
-      <div className="relative z-10 flex-1 flex flex-col">
-        {/* Current clip info */}
-        <div className="flex items-start justify-between p-3">
-          <div className="flex items-center gap-1.5">
-            <span className="text-lg">{clips[0]?.emoji || "💻"}</span>
-            <div className="px-2 py-0.5 rounded bg-black/50 backdrop-blur-sm">
-              <span className="text-white font-mono font-bold text-xs">{clips[0]?.time || "08:00"}</span>
-            </div>
-          </div>
-          <div className="px-1.5 py-0.5 rounded bg-red-500/80 text-white text-[7px] font-bold flex items-center gap-1">
-            <div className="w-1 h-1 rounded-full bg-white" />REC
+  const content = (
+    <div className="w-full h-full flex flex-col" style={{ fontFamily: font }}>
+      {/* Top info */}
+      <div className="flex items-start justify-between p-3">
+        <div className="flex items-center gap-1.5">
+          <span className="text-lg">{firstClip?.emoji || "💻"}</span>
+          <div className="px-2 py-0.5 rounded bg-black/50 backdrop-blur-sm">
+            <span className="text-white font-mono font-bold text-xs">{firstClip?.time || "08:00"}</span>
           </div>
         </div>
-
-        <div className="flex-1" />
-
-        {/* Clip label */}
-        <div className="relative z-10 px-4 pb-2">
-          <p className="text-white text-xs font-semibold drop-shadow-lg">{clips[0]?.label || "클립 설명"}</p>
-        </div>
-
-        {/* Clip list bar */}
-        <div className="relative z-10 px-3 pb-2">
-          <div className="flex gap-1">
-            {clips.map((clip, i) => (
-              <div key={i} className="flex-1 rounded-sm overflow-hidden" style={{ height: 3 }}>
-                <div className="w-full h-full" style={{ backgroundColor: i === 0 ? primary : "rgba(255,255,255,0.2)" }} />
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-between mt-1">
-            <span className="text-[7px] text-white/30">{clips.length}개 클립</span>
-            <span className="text-[7px] text-white/30">{((clips.length * clipDuration) / 60).toFixed(0)}s</span>
-          </div>
+        <div className="px-1.5 py-0.5 rounded bg-red-500/80 text-white text-[7px] font-bold flex items-center gap-1">
+          <div className="w-1 h-1 rounded-full bg-white" />REC
         </div>
       </div>
 
-      {/* Clip thumbnails strip */}
-      <div className="relative z-10 flex gap-1 px-3 pb-2 overflow-hidden">
+      <div className="flex-1" />
+
+      {/* Clip label */}
+      <div className="px-4 pb-2">
+        <p className="text-white text-xs font-semibold drop-shadow-lg">{firstClip?.label || "클립 설명"}</p>
+      </div>
+
+      {/* Progress */}
+      <div className="px-3 pb-2">
+        <div className="flex gap-1">
+          {clips.map((_, i) => (
+            <div key={i} className="flex-1 rounded-sm overflow-hidden" style={{ height: 3 }}>
+              <div className="w-full h-full" style={{ backgroundColor: i === 0 ? primary : "rgba(255,255,255,0.2)" }} />
+            </div>
+          ))}
+        </div>
+        <div className="flex justify-between mt-1">
+          <span className="text-[7px] text-white/30">{clips.length}개 클립</span>
+          <span className="text-[7px] text-white/30">{((clips.length * clipDuration) / 60).toFixed(0)}s</span>
+        </div>
+      </div>
+
+      {/* Thumbnails */}
+      <div className="flex gap-1 px-3 pb-2 overflow-hidden">
         {clips.slice(0, 5).map((clip, i) => (
-          <div key={i} className="flex-shrink-0 w-10 h-10 rounded bg-black/40 border border-white/10 flex flex-col items-center justify-center">
-            <span className="text-[8px]">{clip.emoji}</span>
-            <span className="text-[6px] text-white/40 truncate max-w-[36px]">{clip.time || clip.label}</span>
+          <div key={i} className="flex-shrink-0 w-10 h-10 rounded overflow-hidden border border-white/10">
+            {clip.file ? (
+              <img src={clip.file} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-black/40 flex flex-col items-center justify-center">
+                <span className="text-[8px]">{clip.emoji}</span>
+              </div>
+            )}
           </div>
         ))}
         {clips.length > 5 && <div className="flex-shrink-0 w-10 h-10 rounded bg-black/20 flex items-center justify-center text-[8px] text-white/30">+{clips.length - 5}</div>}
       </div>
+    </div>
+  );
+
+  // If first clip has a media file, use it as background
+  if (firstClip?.file) {
+    return <MediaBg src={firstClip.file}>{content}</MediaBg>;
+  }
+
+  return (
+    <div className="w-full h-full relative overflow-hidden" style={{ backgroundColor: bg }}>
+      <div className="absolute inset-0 bg-gradient-to-br from-[#0d1b2a] via-[#1b263b] to-[#415a77] opacity-70" />
+      <div className="relative z-10 w-full h-full">{content}</div>
     </div>
   );
 }
@@ -153,10 +181,15 @@ function Demo60sPreview({ props, bg, primary, font }: { props: Record<string, un
       </div>
       <div className="flex-1 mx-3 rounded-lg bg-[#111] border border-[#222] flex flex-col items-center justify-center relative overflow-hidden">
         {demoVideo ? (
-          <div className="text-center">
-            <span className="text-lg">📹</span>
-            <p className="text-[8px] text-[#4ECDC4] mt-1 truncate max-w-[90%] px-2">{demoVideo.split("/").pop()}</p>
-          </div>
+          <>
+            <img src={demoVideo} alt="" className="absolute inset-0 w-full h-full object-cover opacity-60" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+            <div className="relative z-10 text-center">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-1.5 bg-black/40 backdrop-blur-sm" style={{ border: `1px solid ${primary}60` }}>
+                <span className="text-base ml-0.5">▶</span>
+              </div>
+              <p className="text-[8px] text-[#4ECDC4] mt-1 truncate max-w-[160px] px-2">{decodeURIComponent(demoVideo.split("/").pop() || "")}</p>
+            </div>
+          </>
         ) : (
           <div className="text-center">
             <div className="w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-1.5" style={{ backgroundColor: `${primary}20`, border: `1px solid ${primary}40` }}>
@@ -186,39 +219,41 @@ function ShortFormPreview({ props, bg, primary, font }: { props: Record<string, 
   const firstScene = scenes[0];
   const hasBg = backgrounds.some(b => b.file);
 
-  return (
-    <div className="w-full h-full flex flex-col relative" style={{ backgroundColor: bg, fontFamily: font }}>
-      <div className="absolute inset-0 bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460] opacity-60" />
-      
-      {/* BG indicator */}
+  const bgFile = backgrounds.find(b => b.file)?.file;
+
+  const inner = (
+    <div className="w-full h-full flex flex-col" style={{ fontFamily: font }}>
       {hasBg && (
-        <div className="relative z-10 px-3 pt-2">
+        <div className="px-3 pt-2">
           <span className="text-[7px] px-1.5 py-0.5 rounded bg-green-500/20 text-green-400">📹 배경 {backgrounds.filter(b => b.file).length}개</span>
         </div>
       )}
-
       <div className="flex-1" />
-
-      {/* Caption */}
-      <div className="relative z-10 px-4 pb-8 pt-3">
+      <div className="px-4 pb-8 pt-3">
         {firstScene ? (
           <div className="bg-black/40 backdrop-blur-sm rounded-lg px-3 py-2.5">
-            <p className="text-white text-center text-xs font-bold leading-relaxed">
-              {firstScene.text || "자막 텍스트"}
-            </p>
+            <p className="text-white text-center text-xs font-bold leading-relaxed">{firstScene.text || "자막 텍스트"}</p>
             <div className="text-center mt-1">
-              <span className="text-[7px] text-white/30">씬 {scenes.length}개 · {(scenes.reduce((s, sc) => s + sc.durationFrames, 0) / 60).toFixed(1)}s</span>
+              <span className="text-[7px] text-white/30">씬 {scenes.length}개 · {(scenes.reduce((s: number, sc: Scene) => s + sc.durationFrames, 0) / 60).toFixed(1)}s</span>
             </div>
           </div>
         ) : (
           <div className="text-center text-white/30 text-[9px]">씬을 추가하세요</div>
         )}
       </div>
-
-      <div className="relative z-10 h-6 bg-black/30 flex items-center justify-between px-3">
+      <div className="h-6 bg-black/30 flex items-center justify-between px-3">
         <span className="text-[7px] text-white/30">brxce.ai</span>
         <div className="flex gap-2"><span className="text-white/20 text-[8px]">❤️</span><span className="text-white/20 text-[8px]">💬</span></div>
       </div>
+    </div>
+  );
+
+  if (bgFile) return <MediaBg src={bgFile}>{inner}</MediaBg>;
+
+  return (
+    <div className="w-full h-full relative" style={{ backgroundColor: bg }}>
+      <div className="absolute inset-0 bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460] opacity-60" />
+      <div className="relative z-10 w-full h-full">{inner}</div>
     </div>
   );
 }
@@ -231,22 +266,20 @@ function TextOverVideoPreview({ props, bg, primary, font }: { props: Record<stri
   const texts = (props.texts || []) as TI[];
   const hasBg = backgrounds.some(b => b.file);
 
-  return (
-    <div className="w-full h-full flex flex-col relative" style={{ fontFamily: font }}>
-      <div className="absolute inset-0 bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460]" />
-      <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.6) 100%)" }} />
+  const bgFile = backgrounds.find(b => b.file)?.file;
 
-      {hasBg && (
-        <div className="relative z-10 px-3 pt-2">
+  const inner = (
+    <div className="w-full h-full flex flex-col" style={{ fontFamily: font }}>
+      {hasBg && !bgFile && (
+        <div className="px-3 pt-2">
           <span className="text-[7px] px-1.5 py-0.5 rounded bg-green-500/20 text-green-400">📹 배경 영상 설정됨</span>
         </div>
       )}
-
-      <div className="relative z-10 flex-1 flex items-center justify-center px-6">
+      <div className="flex-1 flex items-center justify-center px-6">
         <div className="text-center">
           {texts.length > 0 ? (
             <>
-              <p className="text-white font-bold text-xs leading-relaxed drop-shadow-lg">{texts[0].text || "텍스트"}</p>
+              <p className="text-white font-bold text-xs leading-relaxed drop-shadow-lg" style={{ textShadow: "0 2px 10px rgba(0,0,0,0.8)" }}>{texts[0].text || "텍스트"}</p>
               {texts.length > 1 && <p className="text-white/30 text-[8px] mt-2">+ {texts.length - 1}개 텍스트</p>}
             </>
           ) : (
@@ -255,11 +288,20 @@ function TextOverVideoPreview({ props, bg, primary, font }: { props: Record<stri
           <div className="w-10 h-0.5 rounded-full mx-auto mt-2 opacity-50" style={{ backgroundColor: primary }} />
         </div>
       </div>
-
-      <div className="relative z-10 px-3 pb-2 flex justify-between">
+      <div className="px-3 pb-2 flex justify-between">
         <span className="text-white/15 text-[7px]">TEXT OVER VIDEO</span>
         <span className="text-white/15 text-[7px]">{texts.length} texts</span>
       </div>
+    </div>
+  );
+
+  if (bgFile) return <MediaBg src={bgFile}>{inner}</MediaBg>;
+
+  return (
+    <div className="w-full h-full relative" style={{ backgroundColor: bg }}>
+      <div className="absolute inset-0 bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460]" />
+      <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.6) 100%)" }} />
+      <div className="relative z-10 w-full h-full">{inner}</div>
     </div>
   );
 }
