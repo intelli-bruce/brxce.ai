@@ -1,388 +1,481 @@
 "use client";
 
 import { useState } from "react";
-import type { VideoScene, CaptionConfig } from "@engine/shared/types";
 
 interface Props {
-  scenes: VideoScene[];
-  onChange: (scenes: VideoScene[]) => void;
+  scenes: unknown[];
+  onChange: (scenes: unknown[]) => void;
   selectedIndex: number;
   onSelect: (index: number) => void;
   template: string;
+  onOpenMediaPicker?: (callback: (url: string) => void) => void;
 }
 
-function newScene(template: string): VideoScene {
-  return {
-    id: crypto.randomUUID(),
-    text: "",
-    durationFrames: 180,
-  };
-}
-
+/** 
+ * Template-specific video editor.
+ * Instead of generic VideoScene, each template edits its OWN Remotion props structure.
+ * The `scenes` array in studio_projects stores the template's native props as scenes[0].
+ */
 export default function VideoSceneEditor({
   scenes,
   onChange,
   selectedIndex,
   onSelect,
   template,
+  onOpenMediaPicker,
 }: Props) {
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  // scenes[0] stores the full Remotion props for the template
+  const props = (scenes[0] || {}) as Record<string, unknown>;
 
-  function addScene() {
-    const updated = [...scenes, newScene(template)];
-    onChange(updated);
-    onSelect(updated.length - 1);
+  function updateProps(patch: Record<string, unknown>) {
+    const updated = { ...props, ...patch };
+    onChange([updated]);
   }
-
-  function removeScene(i: number) {
-    if (scenes.length <= 1) return;
-    const updated = scenes.filter((_, idx) => idx !== i);
-    onChange(updated);
-    if (selectedIndex >= updated.length) onSelect(updated.length - 1);
-    else if (selectedIndex === i) onSelect(Math.max(0, i - 1));
-  }
-
-  function moveScene(from: number, to: number) {
-    if (to < 0 || to >= scenes.length) return;
-    const updated = [...scenes];
-    const [item] = updated.splice(from, 1);
-    updated.splice(to, 0, item);
-    onChange(updated);
-    onSelect(to);
-  }
-
-  function updateScene(i: number, patch: Partial<VideoScene>) {
-    const updated = scenes.map((s, idx) => (idx === i ? { ...s, ...patch } : s));
-    onChange(updated);
-  }
-
-  const selected = scenes[selectedIndex];
-  const sceneLabel = getSceneLabel(template, selectedIndex, scenes.length);
 
   return (
     <div className="space-y-4">
-      {/* Scene list */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-[#888]">
-          {getListTitle(template)} ({scenes.length})
-        </h3>
-        <button onClick={addScene}
-          className="text-xs px-2.5 py-1 rounded bg-[#222] text-[#ccc] hover:bg-[#333] border-none cursor-pointer">
-          + 추가
-        </button>
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-xs px-2 py-0.5 rounded bg-[#FF6B35]/15 text-[#FF6B35] font-bold">{template}</span>
+        <h3 className="text-sm font-semibold text-[#888]">프로젝트 설정</h3>
       </div>
 
-      <div className="flex flex-col gap-1 max-h-[200px] overflow-y-auto">
-        {scenes.map((scene, i) => (
-          <div key={scene.id} draggable
-            onDragStart={() => setDragIndex(i)}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={() => { if (dragIndex !== null && dragIndex !== i) moveScene(dragIndex, i); setDragIndex(null); }}
-            onClick={() => onSelect(i)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer text-sm transition-colors ${
-              selectedIndex === i
-                ? "bg-[#FF6B35]/10 border border-[#FF6B35]/30 text-[#fafafa]"
-                : "bg-[#111] border border-transparent text-[#888] hover:bg-[#1a1a1a]"
-            }`}>
-            <span className="text-[10px] text-[#555] select-none cursor-grab">⠿</span>
-            <span className="text-[10px] font-bold text-[#555] w-5">{getSceneTag(template, i)}</span>
-            <span className="flex-1 truncate">{scene.text || getSceneLabel(template, i, scenes.length)}</span>
-            <span className="text-[10px] text-[#555]">{Math.round(scene.durationFrames / 60 * 10) / 10}s</span>
-            {scenes.length > 1 && (
-              <button onClick={(e) => { e.stopPropagation(); removeScene(i); }}
-                className="text-[10px] text-[#555] hover:text-red-400 bg-transparent border-none cursor-pointer p-0">✕</button>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* Selected scene editor — template-specific */}
-      {selected && (
-        <div className="p-4 bg-[#111] rounded-lg border border-[#222] space-y-3">
-          <h4 className="text-xs font-semibold text-[#666]">
-            {sceneLabel} 편집
-          </h4>
-          
-          {template === "ShortFormVideo" && (
-            <ShortFormFields scene={selected} index={selectedIndex} onUpdate={(p) => updateScene(selectedIndex, p)} />
-          )}
-          {template === "VSReel" && (
-            <VSReelFields scene={selected} index={selectedIndex} onUpdate={(p) => updateScene(selectedIndex, p)} />
-          )}
-          {template === "DayInTheLife" && (
-            <DayInTheLifeFields scene={selected} index={selectedIndex} onUpdate={(p) => updateScene(selectedIndex, p)} />
-          )}
-          {template === "NewsBreaking" && (
-            <NewsBreakingFields scene={selected} index={selectedIndex} totalScenes={scenes.length} onUpdate={(p) => updateScene(selectedIndex, p)} />
-          )}
-          {template === "Demo60s" && (
-            <Demo60sFields scene={selected} index={selectedIndex} totalScenes={scenes.length} onUpdate={(p) => updateScene(selectedIndex, p)} />
-          )}
-          {template === "TextOverVideo" && (
-            <TextOverVideoFields scene={selected} index={selectedIndex} onUpdate={(p) => updateScene(selectedIndex, p)} />
-          )}
-          {!["ShortFormVideo", "VSReel", "DayInTheLife", "NewsBreaking", "Demo60s", "TextOverVideo"].includes(template) && (
-            <GenericFields scene={selected} index={selectedIndex} onUpdate={(p) => updateScene(selectedIndex, p)} />
-          )}
-        </div>
-      )}
-
-      {/* Total duration */}
-      <div className="flex justify-between text-[10px] text-[#555] px-1">
-        <span>총 길이</span>
-        <span>{(scenes.reduce((sum, s) => sum + s.durationFrames, 0) / 60).toFixed(1)}초 ({scenes.reduce((sum, s) => sum + s.durationFrames, 0)} frames)</span>
-      </div>
+      {template === "DayInTheLife" && <DayInTheLifeEditor props={props} onChange={updateProps} onMediaPick={onOpenMediaPicker} />}
+      {template === "Demo60s" && <Demo60sEditor props={props} onChange={updateProps} onMediaPick={onOpenMediaPicker} />}
+      {template === "ShortFormVideo" && <ShortFormEditor props={props} onChange={updateProps} onMediaPick={onOpenMediaPicker} />}
+      {template === "TextOverVideo" && <TextOverVideoEditor props={props} onChange={updateProps} onMediaPick={onOpenMediaPicker} />}
+      {template === "VSReel" && <VSReelEditor props={props} onChange={updateProps} onMediaPick={onOpenMediaPicker} />}
+      {template === "NewsBreaking" && <NewsBreakingEditor props={props} onChange={updateProps} />}
     </div>
   );
 }
 
-/* ====== Helpers ====== */
+/* ====== Shared UI Components ====== */
 
-function getListTitle(template: string): string {
-  switch (template) {
-    case "DayInTheLife": return "클립";
-    case "NewsBreaking": return "뉴스 항목";
-    case "Demo60s": return "섹션";
-    default: return "씬";
-  }
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="p-4 bg-[#111] rounded-lg border border-[#222] space-y-3">
+      <h4 className="text-xs font-bold text-[#555] uppercase tracking-wider">{title}</h4>
+      {children}
+    </div>
+  );
 }
 
-function getSceneTag(template: string, index: number): string {
-  switch (template) {
-    case "NewsBreaking": return index === 0 ? "📰" : `${index}`;
-    case "Demo60s": return index === 0 ? "🎣" : "📹";
-    case "DayInTheLife": return "📹";
-    default: return `${index + 1}`;
-  }
-}
-
-function getSceneLabel(template: string, index: number, total: number): string {
-  switch (template) {
-    case "NewsBreaking": return index === 0 ? "헤드라인" : `포인트 ${index}`;
-    case "Demo60s": return index === 0 ? "Hook 텍스트" : index === total - 1 ? "CTA" : `데모 ${index}`;
-    case "DayInTheLife": return `클립 ${index + 1}`;
-    case "VSReel": return `비교 항목 ${index + 1}`;
-    default: return `씬 ${index + 1}`;
-  }
-}
-
-/* ====== Template-specific Form Components ====== */
-
-function FieldLabel({ children }: { children: React.ReactNode }) {
+function Label({ children }: { children: React.ReactNode }) {
   return <label className="block text-xs text-[#666] mb-1">{children}</label>;
 }
 
 function TextInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
-  return (
-    <input type="text" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
-      className="w-full p-2 rounded-lg bg-[#0a0a0a] border border-[#333] text-sm text-[#fafafa] outline-none focus:border-[#555]" />
-  );
+  return <input type="text" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+    className="w-full p-2 rounded-lg bg-[#0a0a0a] border border-[#333] text-sm text-[#fafafa] outline-none focus:border-[#555]" />;
 }
 
 function TextArea({ value, onChange, rows, placeholder }: { value: string; onChange: (v: string) => void; rows?: number; placeholder?: string }) {
-  return (
-    <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={rows || 3} placeholder={placeholder}
-      className="w-full p-2.5 rounded-lg bg-[#0a0a0a] border border-[#333] text-sm text-[#fafafa] outline-none focus:border-[#555] resize-none" />
-  );
+  return <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={rows || 2} placeholder={placeholder}
+    className="w-full p-2.5 rounded-lg bg-[#0a0a0a] border border-[#333] text-sm text-[#fafafa] outline-none focus:border-[#555] resize-none" />;
 }
 
-function NumberField({ label, value, onChange, min, suffix }: { label: string; value: number; onChange: (v: number) => void; min?: number; suffix?: string }) {
+function NumberSlider({ label, value, onChange, min, max, step, suffix }: { label: string; value: number; onChange: (v: number) => void; min: number; max: number; step?: number; suffix?: string }) {
   return (
     <div>
-      <FieldLabel>{label}</FieldLabel>
+      <Label>{label}</Label>
       <div className="flex items-center gap-2">
-        <input type="number" value={value} onChange={(e) => onChange(Math.max(min ?? 0, Number(e.target.value)))} min={min ?? 0}
-          className="flex-1 p-2 rounded-lg bg-[#0a0a0a] border border-[#333] text-sm text-[#fafafa] outline-none focus:border-[#555]" />
-        {suffix && <span className="text-[10px] text-[#555]">{suffix}</span>}
+        <input type="range" min={min} max={max} step={step || 1} value={value} onChange={(e) => onChange(Number(e.target.value))} className="flex-1 accent-[#FF6B35]" />
+        <span className="text-xs text-[#888] font-mono w-16 text-right">{value}{suffix || ""}</span>
       </div>
     </div>
   );
 }
 
-function SelectField({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: { value: string; label: string }[] }) {
+function MediaSlot({ label, file, onPick, onClear }: { label: string; file: string; onPick: () => void; onClear: () => void }) {
   return (
-    <div>
-      <FieldLabel>{label}</FieldLabel>
-      <select value={value} onChange={(e) => onChange(e.target.value)}
-        className="w-full p-2 rounded-lg bg-[#0a0a0a] border border-[#333] text-sm text-[#fafafa] outline-none cursor-pointer">
-        {options.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-      </select>
+    <div className="p-3 rounded-lg bg-[#0a0a0a] border border-[#333]">
+      <Label>{label}</Label>
+      {file ? (
+        <div className="flex items-center gap-2 mt-1">
+          <span className="text-xs text-[#4ECDC4] truncate flex-1">📹 {file}</span>
+          <button onClick={onClear} className="text-[10px] text-[#555] hover:text-red-400 bg-transparent border-none cursor-pointer">✕</button>
+        </div>
+      ) : (
+        <button onClick={onPick}
+          className="w-full mt-1 px-3 py-2 rounded-lg border border-dashed border-[#444] text-xs text-[#666] hover:border-[#FF6B35] hover:text-[#FF6B35] bg-transparent cursor-pointer transition-colors">
+          + 영상 파일 선택
+        </button>
+      )}
     </div>
   );
 }
 
-function DurationField({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+function ToggleField({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
   return (
-    <div>
-      <FieldLabel>길이</FieldLabel>
-      <div className="flex items-center gap-2">
-        <input type="range" min={30} max={600} step={30} value={value} onChange={(e) => onChange(Number(e.target.value))}
-          className="flex-1 accent-[#FF6B35]" />
-        <span className="text-xs text-[#888] font-mono w-12 text-right">{(value / 60).toFixed(1)}s</span>
-      </div>
+    <div className="flex items-center justify-between">
+      <span className="text-xs text-[#888]">{label}</span>
+      <button onClick={() => onChange(!value)}
+        className={`w-10 h-5 rounded-full transition-colors border-none cursor-pointer ${value ? "bg-[#FF6B35]" : "bg-[#333]"}`}>
+        <div className={`w-4 h-4 rounded-full bg-white transition-transform ${value ? "translate-x-5" : "translate-x-0.5"}`} />
+      </button>
     </div>
   );
 }
 
-/* ====== ShortFormVideo ====== */
-function ShortFormFields({ scene, index, onUpdate }: { scene: VideoScene; index: number; onUpdate: (p: Partial<VideoScene>) => void }) {
-  const caption: CaptionConfig = (scene.captionConfig || { position: "bottom" }) as CaptionConfig;
+/* ====== DayInTheLife: 클립 기반 타임랩스 ====== */
+function DayInTheLifeEditor({ props, onChange, onMediaPick }: { props: Record<string, unknown>; onChange: (p: Record<string, unknown>) => void; onMediaPick?: (cb: (url: string) => void) => void }) {
+  type Clip = { file: string; time: string; label: string; emoji: string };
+  const clips = (props.clips || []) as Clip[];
+  const clipDuration = (props.clipDuration as number) || 180;
+  const transitionDuration = (props.transitionDuration as number) || 30;
 
-  function updateCaption(patch: Partial<CaptionConfig>) {
-    onUpdate({ captionConfig: { ...caption, ...patch, position: patch.position ?? caption.position ?? "bottom" } });
+  function updateClip(i: number, patch: Partial<Clip>) {
+    const updated = clips.map((c, idx) => idx === i ? { ...c, ...patch } : c);
+    onChange({ ...props, clips: updated });
+  }
+
+  function addClip() {
+    onChange({ ...props, clips: [...clips, { file: "", time: "", label: "", emoji: "💻" }] });
+  }
+
+  function removeClip(i: number) {
+    onChange({ ...props, clips: clips.filter((_, idx) => idx !== i) });
+  }
+
+  const totalDuration = clips.length * clipDuration + (clips.length - 1) * transitionDuration;
+
+  return (
+    <>
+      <Section title="📹 클립 목록">
+        {clips.map((clip, i) => (
+          <div key={i} className="p-3 rounded-lg bg-[#0a0a0a] border border-[#222] space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-[#666]">클립 {i + 1}</span>
+              <button onClick={() => removeClip(i)} className="text-[10px] text-[#555] hover:text-red-400 bg-transparent border-none cursor-pointer">삭제</button>
+            </div>
+            <MediaSlot label="영상 파일" file={clip.file}
+              onPick={() => onMediaPick?.((url) => updateClip(i, { file: url }))}
+              onClear={() => updateClip(i, { file: "" })} />
+            <div className="grid grid-cols-3 gap-2">
+              <div><Label>시간</Label><TextInput value={clip.time} onChange={(v) => updateClip(i, { time: v })} placeholder="08:00" /></div>
+              <div><Label>라벨</Label><TextInput value={clip.label} onChange={(v) => updateClip(i, { label: v })} placeholder="코딩 중" /></div>
+              <div><Label>이모지</Label><TextInput value={clip.emoji} onChange={(v) => updateClip(i, { emoji: v })} placeholder="💻" /></div>
+            </div>
+          </div>
+        ))}
+        <button onClick={addClip}
+          className="w-full px-3 py-2 rounded-lg border border-dashed border-[#444] text-xs text-[#666] hover:border-[#FF6B35] hover:text-[#FF6B35] bg-transparent cursor-pointer transition-colors">
+          + 클립 추가
+        </button>
+      </Section>
+
+      <Section title="⚙️ 타이밍">
+        <NumberSlider label="클립 길이" value={clipDuration} onChange={(v) => onChange({ ...props, clipDuration: v })} min={60} max={300} step={30} suffix={` (${(clipDuration/60).toFixed(1)}s)`} />
+        <NumberSlider label="전환 시간" value={transitionDuration} onChange={(v) => onChange({ ...props, transitionDuration: v })} min={0} max={60} step={10} suffix={` (${(transitionDuration/60).toFixed(1)}s)`} />
+        <div className="text-[10px] text-[#555]">총 길이: {(totalDuration / 60).toFixed(1)}초 ({clips.length}개 클립)</div>
+      </Section>
+
+      <Section title="🎬 아웃트로">
+        <ToggleField label="아웃트로 표시" value={!!props.showOutro} onChange={(v) => onChange({ ...props, showOutro: v })} />
+        {!!props.showOutro && (
+          <div className="grid grid-cols-2 gap-2">
+            <div><Label>텍스트</Label><TextInput value={(props.outroText as string) || ""} onChange={(v) => onChange({ ...props, outroText: v })} placeholder="Claude Code" /></div>
+            <div><Label>이모지</Label><TextInput value={(props.outroEmoji as string) || ""} onChange={(v) => onChange({ ...props, outroEmoji: v })} placeholder="🤖" /></div>
+          </div>
+        )}
+      </Section>
+    </>
+  );
+}
+
+/* ====== Demo60s: 스크린캐스트 데모 ====== */
+function Demo60sEditor({ props, onChange, onMediaPick }: { props: Record<string, unknown>; onChange: (p: Record<string, unknown>) => void; onMediaPick?: (cb: (url: string) => void) => void }) {
+  return (
+    <>
+      <Section title="🎣 Hook">
+        <div><Label>Hook 텍스트</Label><TextArea value={(props.hookText as string) || ""} onChange={(v) => onChange({ ...props, hookText: v })} placeholder="60초 만에 만든다" /></div>
+        <NumberSlider label="Hook 길이" value={(props.hookDuration as number) || 180} onChange={(v) => onChange({ ...props, hookDuration: v })} min={60} max={300} step={30} suffix={` (${((props.hookDuration as number || 180)/60).toFixed(1)}s)`} />
+      </Section>
+
+      <Section title="📹 데모 영상">
+        <MediaSlot label="스크린캐스트 / 녹화 영상" file={(props.demoVideo as string) || ""}
+          onPick={() => onMediaPick?.((url) => onChange({ ...props, demoVideo: url }))}
+          onClear={() => onChange({ ...props, demoVideo: "" })} />
+        <NumberSlider label="영상 시작 지점 (프레임)" value={(props.demoStartFrom as number) || 0} onChange={(v) => onChange({ ...props, demoStartFrom: v })} min={0} max={3600} step={60} suffix=" frames" />
+        <NumberSlider label="데모 길이" value={(props.demoDuration as number) || 3000} onChange={(v) => onChange({ ...props, demoDuration: v })} min={600} max={3600} step={60} suffix={` (${((props.demoDuration as number || 3000)/60).toFixed(1)}s)`} />
+      </Section>
+
+      <Section title="📢 CTA">
+        <div><Label>CTA 문구</Label><TextArea value={(props.ctaText as string) || ""} onChange={(v) => onChange({ ...props, ctaText: v })} placeholder="'템플릿' 댓글 달면 공유해드림" /></div>
+        <div><Label>CTA 키워드 (하이라이트)</Label><TextInput value={(props.ctaKeyword as string) || ""} onChange={(v) => onChange({ ...props, ctaKeyword: v })} placeholder="템플릿" /></div>
+        <NumberSlider label="CTA 길이" value={(props.ctaDuration as number) || 420} onChange={(v) => onChange({ ...props, ctaDuration: v })} min={120} max={600} step={60} suffix={` (${((props.ctaDuration as number || 420)/60).toFixed(1)}s)`} />
+      </Section>
+
+      <Section title="🎨 스타일">
+        <NumberSlider label="Hook 폰트 크기" value={(props.hookFontSize as number) || 72} onChange={(v) => onChange({ ...props, hookFontSize: v })} min={32} max={96} suffix="px" />
+        <div className="flex items-center gap-2">
+          <Label>액센트 색상</Label>
+          <input type="color" value={(props.accentColor as string) || "#FFD700"} onChange={(e) => onChange({ ...props, accentColor: e.target.value })}
+            className="w-8 h-8 rounded border border-[#333] cursor-pointer bg-transparent" />
+        </div>
+        <ToggleField label="로고 표시" value={props.showLogo !== false} onChange={(v) => onChange({ ...props, showLogo: v })} />
+      </Section>
+    </>
+  );
+}
+
+/* ====== ShortFormVideo: TTS + 자막 + 배경영상 ====== */
+function ShortFormEditor({ props, onChange, onMediaPick }: { props: Record<string, unknown>; onChange: (p: Record<string, unknown>) => void; onMediaPick?: (cb: (url: string) => void) => void }) {
+  type Scene = { id: string; text: string; durationFrames: number; audioFile?: string };
+  type BG = { file: string; startFrom: number; startFrame: number; durationFrames: number };
+  const scenes = (props.scenes || []) as Scene[];
+  const backgrounds = (props.backgrounds || []) as BG[];
+
+  function updateScene(i: number, patch: Partial<Scene>) {
+    const updated = scenes.map((s, idx) => idx === i ? { ...s, ...patch } : s);
+    onChange({ ...props, scenes: updated });
+  }
+  function addScene() {
+    onChange({ ...props, scenes: [...scenes, { id: crypto.randomUUID(), text: "", durationFrames: 180 }] });
+  }
+  function removeScene(i: number) {
+    if (scenes.length <= 1) return;
+    onChange({ ...props, scenes: scenes.filter((_, idx) => idx !== i) });
+  }
+  function addBg() {
+    const totalFrames = scenes.reduce((s, sc) => s + sc.durationFrames, 0);
+    onChange({ ...props, backgrounds: [...backgrounds, { file: "", startFrom: 0, startFrame: 0, durationFrames: totalFrames }] });
+  }
+  function updateBg(i: number, patch: Partial<BG>) {
+    const updated = backgrounds.map((b, idx) => idx === i ? { ...b, ...patch } : b);
+    onChange({ ...props, backgrounds: updated });
+  }
+  function removeBg(i: number) {
+    onChange({ ...props, backgrounds: backgrounds.filter((_, idx) => idx !== i) });
   }
 
   return (
     <>
-      <div>
-        <FieldLabel>자막 텍스트</FieldLabel>
-        <TextArea value={scene.text} onChange={(v) => onUpdate({ text: v })} placeholder="화면에 표시될 텍스트" />
-      </div>
-      <DurationField value={scene.durationFrames} onChange={(v) => onUpdate({ durationFrames: v })} />
-      
-      <div className="pt-2 border-t border-[#222]">
-        <span className="text-[10px] text-[#555] font-bold uppercase tracking-wider">자막 설정</span>
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <SelectField label="스타일" value={caption.style || "karaoke"} onChange={(v) => updateCaption({ style: v as CaptionConfig["style"] })}
-          options={[{ value: "karaoke", label: "🎤 카라오케" }, { value: "boxed", label: "📦 박스" }, { value: "typewriter", label: "⌨️ 타자기" }]} />
-        <SelectField label="위치" value={caption.position || "bottom"} onChange={(v) => updateCaption({ position: v as CaptionConfig["position"] })}
-          options={[{ value: "top", label: "↑ 상단" }, { value: "center", label: "↕ 중앙" }, { value: "bottom", label: "↓ 하단" }]} />
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <NumberField label="폰트 크기" value={caption.fontSize || 52} onChange={(v) => updateCaption({ fontSize: v })} min={20} suffix="px" />
-        <div>
-          <FieldLabel>하이라이트 색상</FieldLabel>
-          <div className="flex items-center gap-2">
-            <input type="color" value={caption.highlightColor || "#FFD700"} onChange={(e) => updateCaption({ highlightColor: e.target.value })}
-              className="w-8 h-8 rounded border border-[#333] cursor-pointer bg-transparent" />
-            <span className="text-xs text-[#888] font-mono">{caption.highlightColor || "#FFD700"}</span>
+      <Section title="📹 배경 영상">
+        {backgrounds.map((bg, i) => (
+          <div key={i} className="p-3 rounded-lg bg-[#0a0a0a] border border-[#222] space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-[#666]">배경 {i + 1}</span>
+              <button onClick={() => removeBg(i)} className="text-[10px] text-[#555] hover:text-red-400 bg-transparent border-none cursor-pointer">삭제</button>
+            </div>
+            <MediaSlot label="영상 파일" file={bg.file}
+              onPick={() => onMediaPick?.((url) => updateBg(i, { file: url }))}
+              onClear={() => updateBg(i, { file: "" })} />
+            <div className="grid grid-cols-2 gap-2">
+              <NumberSlider label="시작 지점" value={bg.startFrom} onChange={(v) => updateBg(i, { startFrom: v })} min={0} max={3600} step={30} suffix=" fr" />
+              <NumberSlider label="길이" value={bg.durationFrames} onChange={(v) => updateBg(i, { durationFrames: v })} min={60} max={3600} step={60} suffix={` (${(bg.durationFrames/60).toFixed(1)}s)`} />
+            </div>
+          </div>
+        ))}
+        <button onClick={addBg}
+          className="w-full px-3 py-2 rounded-lg border border-dashed border-[#444] text-xs text-[#666] hover:border-[#FF6B35] hover:text-[#FF6B35] bg-transparent cursor-pointer transition-colors">
+          + 배경 영상 추가
+        </button>
+      </Section>
+
+      <Section title="💬 씬 (자막 텍스트)">
+        {scenes.map((scene, i) => (
+          <div key={scene.id} className="p-3 rounded-lg bg-[#0a0a0a] border border-[#222] space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-[#666]">씬 {i + 1}</span>
+              {scenes.length > 1 && <button onClick={() => removeScene(i)} className="text-[10px] text-[#555] hover:text-red-400 bg-transparent border-none cursor-pointer">삭제</button>}
+            </div>
+            <TextArea value={scene.text} onChange={(v) => updateScene(i, { text: v })} placeholder="자막 텍스트" />
+            <NumberSlider label="길이" value={scene.durationFrames} onChange={(v) => updateScene(i, { durationFrames: v })} min={30} max={600} step={30} suffix={` (${(scene.durationFrames/60).toFixed(1)}s)`} />
+          </div>
+        ))}
+        <button onClick={addScene}
+          className="w-full px-3 py-2 rounded-lg border border-dashed border-[#444] text-xs text-[#666] hover:border-[#FF6B35] hover:text-[#FF6B35] bg-transparent cursor-pointer transition-colors">
+          + 씬 추가
+        </button>
+      </Section>
+
+      <Section title="⚙️ 설정">
+        <NumberSlider label="영상 스케일" value={(props.videoScale as number) || 1.15} onChange={(v) => onChange({ ...props, videoScale: v })} min={0.5} max={2} step={0.05} suffix="x" />
+        <ToggleField label="아웃트로 표시" value={!!props.showOutro} onChange={(v) => onChange({ ...props, showOutro: v })} />
+      </Section>
+    </>
+  );
+}
+
+/* ====== TextOverVideo: 배경영상 + 텍스트 오버레이 ====== */
+function TextOverVideoEditor({ props, onChange, onMediaPick }: { props: Record<string, unknown>; onChange: (p: Record<string, unknown>) => void; onMediaPick?: (cb: (url: string) => void) => void }) {
+  type BG = { file: string; startFrom?: number };
+  type TI = { text: string; startFrame: number; durationFrames: number };
+  const backgrounds = (props.backgrounds || []) as BG[];
+  const texts = (props.texts || []) as TI[];
+
+  function updateBg(i: number, patch: Partial<BG>) {
+    const updated = backgrounds.map((b, idx) => idx === i ? { ...b, ...patch } : b);
+    onChange({ ...props, backgrounds: updated });
+  }
+  function addBg() { onChange({ ...props, backgrounds: [...backgrounds, { file: "" }] }); }
+  function removeBg(i: number) { onChange({ ...props, backgrounds: backgrounds.filter((_, idx) => idx !== i) }); }
+
+  function updateText(i: number, patch: Partial<TI>) {
+    const updated = texts.map((t, idx) => idx === i ? { ...t, ...patch } : t);
+    onChange({ ...props, texts: updated });
+  }
+  function addText() {
+    const lastEnd = texts.length > 0 ? texts[texts.length - 1].startFrame + texts[texts.length - 1].durationFrames : 0;
+    onChange({ ...props, texts: [...texts, { text: "", startFrame: lastEnd, durationFrames: 180 }] });
+  }
+  function removeText(i: number) { onChange({ ...props, texts: texts.filter((_, idx) => idx !== i) }); }
+
+  return (
+    <>
+      <Section title="📹 배경 영상">
+        {backgrounds.map((bg, i) => (
+          <div key={i} className="space-y-2">
+            <MediaSlot label={`배경 ${i + 1}`} file={bg.file}
+              onPick={() => onMediaPick?.((url) => updateBg(i, { file: url }))}
+              onClear={() => updateBg(i, { file: "" })} />
+            {backgrounds.length > 1 && <button onClick={() => removeBg(i)} className="text-[10px] text-[#555] hover:text-red-400 bg-transparent border-none cursor-pointer">삭제</button>}
+          </div>
+        ))}
+        <button onClick={addBg} className="w-full px-3 py-2 rounded-lg border border-dashed border-[#444] text-xs text-[#666] hover:border-[#FF6B35] hover:text-[#FF6B35] bg-transparent cursor-pointer transition-colors">+ 배경 추가</button>
+      </Section>
+
+      <Section title="✍️ 텍스트 시퀀스">
+        {texts.map((ti, i) => (
+          <div key={i} className="p-3 rounded-lg bg-[#0a0a0a] border border-[#222] space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-[#666]">텍스트 {i + 1}</span>
+              <button onClick={() => removeText(i)} className="text-[10px] text-[#555] hover:text-red-400 bg-transparent border-none cursor-pointer">삭제</button>
+            </div>
+            <TextArea value={ti.text} onChange={(v) => updateText(i, { text: v })} placeholder="오버레이할 텍스트" />
+            <div className="grid grid-cols-2 gap-2">
+              <NumberSlider label="시작" value={ti.startFrame} onChange={(v) => updateText(i, { startFrame: v })} min={0} max={3600} step={30} suffix={` (${(ti.startFrame/60).toFixed(1)}s)`} />
+              <NumberSlider label="길이" value={ti.durationFrames} onChange={(v) => updateText(i, { durationFrames: v })} min={30} max={600} step={30} suffix={` (${(ti.durationFrames/60).toFixed(1)}s)`} />
+            </div>
+          </div>
+        ))}
+        <button onClick={addText} className="w-full px-3 py-2 rounded-lg border border-dashed border-[#444] text-xs text-[#666] hover:border-[#FF6B35] hover:text-[#FF6B35] bg-transparent cursor-pointer transition-colors">+ 텍스트 추가</button>
+      </Section>
+
+      <Section title="⚙️ 스타일">
+        <NumberSlider label="폰트 크기" value={(props.fontSize as number) || 52} onChange={(v) => onChange({ ...props, fontSize: v })} min={24} max={96} suffix="px" />
+        <NumberSlider label="영상 스케일" value={(props.videoScale as number) || 1.15} onChange={(v) => onChange({ ...props, videoScale: v })} min={0.5} max={2} step={0.05} suffix="x" />
+      </Section>
+    </>
+  );
+}
+
+/* ====== VSReel: A vs B 비교 ====== */
+function VSReelEditor({ props, onChange, onMediaPick }: { props: Record<string, unknown>; onChange: (p: Record<string, unknown>) => void; onMediaPick?: (cb: (url: string) => void) => void }) {
+  type Logo = { type: string; file: string; label?: string };
+  type BG = { file: string; startFrom: number };
+  type TI = { text: string; startFrame: number; durationFrames: number };
+  const logoLeft = (props.logoLeft || { type: "image", file: "" }) as Logo;
+  const logoRight = (props.logoRight || { type: "image", file: "" }) as Logo;
+  const backgrounds = (props.backgrounds || []) as BG[];
+  const texts = (props.texts || []) as TI[];
+
+  function updateText(i: number, patch: Partial<TI>) {
+    const updated = texts.map((t, idx) => idx === i ? { ...t, ...patch } : t);
+    onChange({ ...props, texts: updated });
+  }
+  function addText() {
+    const lastEnd = texts.length > 0 ? texts[texts.length - 1].startFrame + texts[texts.length - 1].durationFrames : 0;
+    onChange({ ...props, texts: [...texts, { text: "", startFrame: lastEnd, durationFrames: 180 }] });
+  }
+  function removeText(i: number) { onChange({ ...props, texts: texts.filter((_, idx) => idx !== i) }); }
+
+  return (
+    <>
+      <Section title="🆚 비교 대상">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Label>왼쪽 (A)</Label>
+            <MediaSlot label="로고 이미지" file={logoLeft.file}
+              onPick={() => onMediaPick?.((url) => onChange({ ...props, logoLeft: { ...logoLeft, file: url } }))}
+              onClear={() => onChange({ ...props, logoLeft: { ...logoLeft, file: "" } })} />
+            <TextInput value={logoLeft.label || ""} onChange={(v) => onChange({ ...props, logoLeft: { ...logoLeft, label: v } })} placeholder="라벨 (예: Claude)" />
+          </div>
+          <div className="space-y-2">
+            <Label>오른쪽 (B)</Label>
+            <MediaSlot label="로고 이미지" file={logoRight.file}
+              onPick={() => onMediaPick?.((url) => onChange({ ...props, logoRight: { ...logoRight, file: url } }))}
+              onClear={() => onChange({ ...props, logoRight: { ...logoRight, file: "" } })} />
+            <TextInput value={logoRight.label || ""} onChange={(v) => onChange({ ...props, logoRight: { ...logoRight, label: v } })} placeholder="라벨 (예: OpenClaw)" />
           </div>
         </div>
-      </div>
+        <MediaSlot label="헤더 이미지 (선택 — 로고 대신 전체 헤더)" file={(props.headerImage as string) || ""}
+          onPick={() => onMediaPick?.((url) => onChange({ ...props, headerImage: url }))}
+          onClear={() => onChange({ ...props, headerImage: "" })} />
+      </Section>
+
+      <Section title="📹 배경 영상 (하단)">
+        {backgrounds.map((bg, i) => (
+          <MediaSlot key={i} label={`배경 ${i + 1}`} file={bg.file}
+            onPick={() => onMediaPick?.((url) => {
+              const updated = backgrounds.map((b, idx) => idx === i ? { ...b, file: url } : b);
+              onChange({ ...props, backgrounds: updated });
+            })}
+            onClear={() => {
+              const updated = backgrounds.map((b, idx) => idx === i ? { ...b, file: "" } : b);
+              onChange({ ...props, backgrounds: updated });
+            }} />
+        ))}
+        <button onClick={() => onChange({ ...props, backgrounds: [...backgrounds, { file: "", startFrom: 0 }] })}
+          className="w-full px-3 py-2 rounded-lg border border-dashed border-[#444] text-xs text-[#666] hover:border-[#FF6B35] hover:text-[#FF6B35] bg-transparent cursor-pointer transition-colors">
+          + 배경 추가
+        </button>
+      </Section>
+
+      <Section title="✍️ 텍스트 시퀀스">
+        {texts.map((ti, i) => (
+          <div key={i} className="p-3 rounded-lg bg-[#0a0a0a] border border-[#222] space-y-2">
+            <TextArea value={ti.text} onChange={(v) => updateText(i, { text: v })} placeholder="비교 포인트 텍스트" />
+            <div className="grid grid-cols-2 gap-2">
+              <NumberSlider label="시작" value={ti.startFrame} onChange={(v) => updateText(i, { startFrame: v })} min={0} max={3600} step={30} suffix={` (${(ti.startFrame/60).toFixed(1)}s)`} />
+              <NumberSlider label="길이" value={ti.durationFrames} onChange={(v) => updateText(i, { durationFrames: v })} min={30} max={600} step={30} suffix={` (${(ti.durationFrames/60).toFixed(1)}s)`} />
+            </div>
+            <button onClick={() => removeText(i)} className="text-[10px] text-[#555] hover:text-red-400 bg-transparent border-none cursor-pointer">삭제</button>
+          </div>
+        ))}
+        <button onClick={addText} className="w-full px-3 py-2 rounded-lg border border-dashed border-[#444] text-xs text-[#666] hover:border-[#FF6B35] hover:text-[#FF6B35] bg-transparent cursor-pointer transition-colors">+ 텍스트 추가</button>
+      </Section>
     </>
   );
 }
 
-/* ====== VSReel ====== */
-function VSReelFields({ scene, index, onUpdate }: { scene: VideoScene; index: number; onUpdate: (p: Partial<VideoScene>) => void }) {
-  // Use text field for main comparison text, we store extra in captionConfig as a workaround
-  return (
-    <>
-      <div>
-        <FieldLabel>비교 텍스트</FieldLabel>
-        <TextArea value={scene.text} onChange={(v) => onUpdate({ text: v })} rows={2} placeholder="예: IDE 코딩 vs 터미널 코딩" />
-      </div>
-      <DurationField value={scene.durationFrames} onChange={(v) => onUpdate({ durationFrames: v })} />
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <FieldLabel>왼쪽 (A)</FieldLabel>
-          <TextInput value={scene.captionConfig?.backgroundColor || ""} onChange={(v) => onUpdate({ captionConfig: { position: "bottom" as const, ...scene.captionConfig, backgroundColor: v } })} placeholder="Option A" />
-        </div>
-        <div>
-          <FieldLabel>오른쪽 (B)</FieldLabel>
-          <TextInput value={scene.captionConfig?.fontColor || ""} onChange={(v) => onUpdate({ captionConfig: { position: "bottom" as const, ...scene.captionConfig, fontColor: v } })} placeholder="Option B" />
-        </div>
-      </div>
-    </>
-  );
-}
-
-/* ====== DayInTheLife ====== */
-function DayInTheLifeFields({ scene, index, onUpdate }: { scene: VideoScene; index: number; onUpdate: (p: Partial<VideoScene>) => void }) {
-  return (
-    <>
-      <div>
-        <FieldLabel>클립 설명</FieldLabel>
-        <TextArea value={scene.text} onChange={(v) => onUpdate({ text: v })} rows={2} placeholder="이 클립에서 무엇을 하는지" />
-      </div>
-      <DurationField value={scene.durationFrames} onChange={(v) => onUpdate({ durationFrames: v })} />
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <FieldLabel>시간</FieldLabel>
-          <TextInput value={scene.captionConfig?.backgroundColor || ""} onChange={(v) => onUpdate({ captionConfig: { position: "bottom" as const, ...scene.captionConfig, backgroundColor: v } })} placeholder="08:00" />
-        </div>
-        <div>
-          <FieldLabel>이모지</FieldLabel>
-          <TextInput value={scene.captionConfig?.fontColor || ""} onChange={(v) => onUpdate({ captionConfig: { position: "bottom" as const, ...scene.captionConfig, fontColor: v } })} placeholder="💻" />
-        </div>
-      </div>
-    </>
-  );
-}
-
-/* ====== NewsBreaking ====== */
-function NewsBreakingFields({ scene, index, totalScenes, onUpdate }: { scene: VideoScene; index: number; totalScenes: number; onUpdate: (p: Partial<VideoScene>) => void }) {
-  const isHeadline = index === 0;
+/* ====== NewsBreaking: 뉴스 속보 ====== */
+function NewsBreakingEditor({ props, onChange }: { props: Record<string, unknown>; onChange: (p: Record<string, unknown>) => void }) {
+  const points = (props.points || []) as string[];
 
   return (
     <>
-      <div>
-        <FieldLabel>{isHeadline ? "🔴 헤드라인" : `📌 포인트 ${index}`}</FieldLabel>
-        <TextArea value={scene.text} onChange={(v) => onUpdate({ text: v })} rows={isHeadline ? 3 : 2}
-          placeholder={isHeadline ? "속보 헤드라인을 입력하세요" : "핵심 포인트"} />
-      </div>
-      <DurationField value={scene.durationFrames} onChange={(v) => onUpdate({ durationFrames: v })} />
-      {isHeadline && (
-        <div>
-          <FieldLabel>출처</FieldLabel>
-          <TextInput value={scene.captionConfig?.backgroundColor || ""} onChange={(v) => onUpdate({ captionConfig: { position: "bottom" as const, ...scene.captionConfig, backgroundColor: v } })} placeholder="출처 (예: TechCrunch)" />
-        </div>
-      )}
-    </>
-  );
-}
+      <Section title="📰 헤드라인">
+        <TextArea value={(props.headline as string) || ""} onChange={(v) => onChange({ ...props, headline: v })} rows={3} placeholder="속보 헤드라인" />
+        <div><Label>출처</Label><TextInput value={(props.source as string) || ""} onChange={(v) => onChange({ ...props, source: v })} placeholder="TechCrunch, The Verge..." /></div>
+      </Section>
 
-/* ====== Demo60s ====== */
-function Demo60sFields({ scene, index, totalScenes, onUpdate }: { scene: VideoScene; index: number; totalScenes: number; onUpdate: (p: Partial<VideoScene>) => void }) {
-  const isHook = index === 0;
-  const isCta = index === totalScenes - 1 && totalScenes > 1;
+      <Section title="📌 요약 포인트">
+        {points.map((pt, i) => (
+          <div key={i} className="flex gap-2">
+            <span className="text-xs text-[#FF6B35] font-bold mt-2">{i + 1}</span>
+            <TextInput value={pt} onChange={(v) => { const updated = [...points]; updated[i] = v; onChange({ ...props, points: updated }); }} placeholder={`포인트 ${i + 1}`} />
+            <button onClick={() => onChange({ ...props, points: points.filter((_, idx) => idx !== i) })}
+              className="text-[10px] text-[#555] hover:text-red-400 bg-transparent border-none cursor-pointer">✕</button>
+          </div>
+        ))}
+        <button onClick={() => onChange({ ...props, points: [...points, ""] })}
+          className="w-full px-3 py-2 rounded-lg border border-dashed border-[#444] text-xs text-[#666] hover:border-[#FF6B35] hover:text-[#FF6B35] bg-transparent cursor-pointer transition-colors">
+          + 포인트 추가
+        </button>
+      </Section>
 
-  return (
-    <>
-      <div>
-        <FieldLabel>{isHook ? "🎣 Hook 텍스트" : isCta ? "📢 CTA 문구" : "📹 데모 설명"}</FieldLabel>
-        <TextArea value={scene.text} onChange={(v) => onUpdate({ text: v })} rows={2}
-          placeholder={isHook ? "60초 만에 만든다" : isCta ? "댓글 달면 공유해드림" : "데모 설명"} />
-      </div>
-      <DurationField value={scene.durationFrames} onChange={(v) => onUpdate({ durationFrames: v })} />
-      {isCta && (
-        <div>
-          <FieldLabel>CTA 키워드</FieldLabel>
-          <TextInput value={scene.captionConfig?.highlightColor || ""} onChange={(v) => onUpdate({ captionConfig: { position: "bottom" as const, ...scene.captionConfig, highlightColor: v } })} placeholder="템플릿" />
-        </div>
-      )}
-    </>
-  );
-}
+      <Section title="💬 MY TAKE">
+        <TextArea value={(props.opinion as string) || ""} onChange={(v) => onChange({ ...props, opinion: v })} placeholder="이 뉴스에 대한 내 해석/의견" />
+      </Section>
 
-/* ====== TextOverVideo ====== */
-function TextOverVideoFields({ scene, index, onUpdate }: { scene: VideoScene; index: number; onUpdate: (p: Partial<VideoScene>) => void }) {
-  return (
-    <>
-      <div>
-        <FieldLabel>오버레이 텍스트</FieldLabel>
-        <TextArea value={scene.text} onChange={(v) => onUpdate({ text: v })} rows={3} placeholder="배경 위에 표시할 텍스트" />
-      </div>
-      <DurationField value={scene.durationFrames} onChange={(v) => onUpdate({ durationFrames: v })} />
-      <div className="grid grid-cols-2 gap-3">
-        <SelectField label="텍스트 위치" value={scene.captionConfig?.position || "center"} onChange={(v) => onUpdate({ captionConfig: { ...scene.captionConfig, position: v as CaptionConfig["position"] } })}
-          options={[{ value: "top", label: "↑ 상단" }, { value: "center", label: "↕ 중앙" }, { value: "bottom", label: "↓ 하단" }]} />
-        <NumberField label="폰트 크기" value={scene.captionConfig?.fontSize || 48} onChange={(v) => onUpdate({ captionConfig: { position: scene.captionConfig?.position ?? "bottom", ...scene.captionConfig, fontSize: v } })} min={20} suffix="px" />
-      </div>
-    </>
-  );
-}
-
-/* ====== Generic ====== */
-function GenericFields({ scene, index, onUpdate }: { scene: VideoScene; index: number; onUpdate: (p: Partial<VideoScene>) => void }) {
-  return (
-    <>
-      <div>
-        <FieldLabel>텍스트</FieldLabel>
-        <TextArea value={scene.text} onChange={(v) => onUpdate({ text: v })} />
-      </div>
-      <DurationField value={scene.durationFrames} onChange={(v) => onUpdate({ durationFrames: v })} />
+      <Section title="⏱️ 타이밍">
+        <NumberSlider label="알림 길이" value={(props.alertDuration as number) || 120} onChange={(v) => onChange({ ...props, alertDuration: v })} min={30} max={300} step={30} suffix={` (${((props.alertDuration as number || 120)/60).toFixed(1)}s)`} />
+        <NumberSlider label="헤드라인 길이" value={(props.headlineDuration as number) || 180} onChange={(v) => onChange({ ...props, headlineDuration: v })} min={60} max={600} step={30} suffix={` (${((props.headlineDuration as number || 180)/60).toFixed(1)}s)`} />
+        <NumberSlider label="포인트 길이" value={(props.pointsDuration as number) || 300} onChange={(v) => onChange({ ...props, pointsDuration: v })} min={60} max={600} step={30} suffix={` (${((props.pointsDuration as number || 300)/60).toFixed(1)}s)`} />
+        <NumberSlider label="의견 길이" value={(props.opinionDuration as number) || 180} onChange={(v) => onChange({ ...props, opinionDuration: v })} min={60} max={600} step={30} suffix={` (${((props.opinionDuration as number || 180)/60).toFixed(1)}s)`} />
+      </Section>
     </>
   );
 }

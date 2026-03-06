@@ -41,6 +41,7 @@ export default function StudioEditor({ initialProject }: Props) {
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [showMediaPicker, setShowMediaPicker] = useState(false);
+  const [mediaPickerCallback, setMediaPickerCallback] = useState<((url: string) => void) | null>(null);
   const [renderToast, setRenderToast] = useState(false);
   const [titleEditing, setTitleEditing] = useState(false);
   const [titleValue, setTitleValue] = useState(project.title);
@@ -289,11 +290,15 @@ export default function StudioEditor({ initialProject }: Props) {
           {/* Bottom: Scene Editor */}
           <div className="p-5 bg-[#1a1a1a] rounded-xl border border-[#222]">
             <VideoSceneEditor
-              scenes={scenes as VideoScene[]}
+              scenes={scenes}
               onChange={updateScenes}
               selectedIndex={selectedIndex}
               onSelect={setSelectedIndex}
               template={project.template}
+              onOpenMediaPicker={(callback) => {
+                setMediaPickerCallback(() => callback);
+                setShowMediaPicker(true);
+              }}
             />
           </div>
         </div>
@@ -377,8 +382,16 @@ export default function StudioEditor({ initialProject }: Props) {
       {/* Media Picker Modal */}
       <MediaPickerModal
         open={showMediaPicker}
-        onClose={() => setShowMediaPicker(false)}
-        onSelect={handleMediaSelect}
+        onClose={() => { setShowMediaPicker(false); setMediaPickerCallback(null); }}
+        onSelect={(url) => {
+          if (mediaPickerCallback) {
+            mediaPickerCallback(url);
+            setMediaPickerCallback(null);
+          } else {
+            handleMediaSelect(url);
+          }
+          setShowMediaPicker(false);
+        }}
         accept={project.type === "image" ? "image" : "all"}
       />
 
