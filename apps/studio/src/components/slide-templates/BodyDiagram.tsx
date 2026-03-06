@@ -1,3 +1,4 @@
+import { renderMarkdownBold } from '@/lib/studio/render-markdown'
 import { SlideTitle, DiagramFlow } from '@/components/slide-primitives'
 import { fontSize, fontWeight, lineHeight, spacing, gap } from '@/lib/studio/slide-tokens'
 import { DEFAULT_COLORS, SlideBase, type BaseSlideStyleProps } from './SlideBase'
@@ -18,7 +19,7 @@ export function BodyDiagram({ title, nodes, ...colors }: BodyDiagramProps) {
     <SlideBase {...colors}>
       <div className="flex h-full flex-col justify-center" style={{ paddingLeft: spacing.safeX, paddingRight: spacing.safeX, paddingTop: spacing.safeY, paddingBottom: spacing.safeY }}>
         <SlideTitle variant="title" style={{ fontSize: fontSize.headingLg, fontWeight: fontWeight.bold }}>
-          {title}
+          {renderMarkdownBold(title, colors.accentColor)}
         </SlideTitle>
         <DiagramFlow
           nodes={nodes}

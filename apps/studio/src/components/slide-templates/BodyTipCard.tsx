@@ -1,3 +1,4 @@
+import { renderMarkdownBold } from '@/lib/studio/render-markdown'
 import { MutedText } from '@/components/slide-primitives'
 import { fontSize, fontWeight, lineHeight, spacing, gap } from '@/lib/studio/slide-tokens'
 import { DEFAULT_COLORS, SlideBase, type BaseSlideStyleProps } from './SlideBase'
@@ -15,19 +16,6 @@ export const bodyTipCardDefaultProps: BodyTipCardProps = {
   body: '"좋은 코드 짜줘"보다\n"TypeScript로 JWT 인증 미들웨어 작성해줘.\nExpress 5, 에러 핸들링 포함."\n\n구체적일수록 결과가 정확합니다.',
   tipNumber: 'TIP 03',
   ...DEFAULT_COLORS,
-}
-
-function renderMarkdownBold(text: string, accentColor?: string) {
-  return text.split(/(\*\*[^*]+\*\*)/g).map((part, idx) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
-      return (
-        <span key={`b-${idx}`} style={{ fontWeight: fontWeight.bold, color: accentColor }}>
-          {part.slice(2, -2)}
-        </span>
-      )
-    }
-    return <span key={`t-${idx}`}>{part}</span>
-  })
 }
 
 export function BodyTipCard({ emoji, title, body, tipNumber, ...colors }: BodyTipCardProps) {
@@ -53,7 +41,7 @@ export function BodyTipCard({ emoji, title, body, tipNumber, ...colors }: BodyTi
 
         {/* Title */}
         <div style={{ fontSize: fontSize.headingLg, fontWeight: fontWeight.bold, lineHeight: lineHeight.default, color: colors.textColor || '#f5f5f5', whiteSpace: 'pre-line' as const }}>
-          {title}
+          {renderMarkdownBold(title, accent)}
         </div>
 
         {/* Body */}

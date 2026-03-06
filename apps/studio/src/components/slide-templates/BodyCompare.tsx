@@ -1,3 +1,4 @@
+import { renderMarkdownBold } from '@/lib/studio/render-markdown'
 import { SlideTitle, SlideCard, BulletList } from '@/components/slide-primitives'
 import { fontSize, fontWeight, lineHeight, spacing, gap, layout, textOpacity, accentOpacity } from '@/lib/studio/slide-tokens'
 import { DEFAULT_COLORS, SlideBase, type BaseSlideStyleProps } from './SlideBase'
@@ -54,7 +55,7 @@ export function BodyCompare({ title, beforeTitle, beforeDesc, beforeItems, after
         style={{ paddingLeft: spacing.safeX, paddingRight: spacing.safeX, paddingBottom: spacing.bottomLg, paddingTop: spacing.topMd }}
       >
         <SlideTitle variant="title" style={{ fontSize: fontSize.headingLg }}>
-          {title}
+          {renderMarkdownBold(title, colors.accentColor)}
         </SlideTitle>
         <div style={{ marginTop: gap['4xl'], display: 'grid', gridTemplateColumns: '1fr 1fr', gap: gap['3xl'] }}>
           <SlideCard

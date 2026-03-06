@@ -1,3 +1,4 @@
+import { renderMarkdownBold } from '@/lib/studio/render-markdown'
 import { SlideTitle, AccentBar, NumberBadge, SlideCard, MutedText } from '@/components/slide-primitives'
 import { fontSize, fontWeight, lineHeight, spacing, gap, accentOpacity } from '@/lib/studio/slide-tokens'
 import { DEFAULT_COLORS, SlideBase, type BaseSlideStyleProps } from './SlideBase'
@@ -21,7 +22,7 @@ export function BodyList({ title, items, ...colors }: BodyListProps) {
         style={{ paddingLeft: spacing.safeX, paddingRight: spacing.safeX, paddingBottom: spacing.bottomLg, paddingTop: spacing.topMd }}
       >
         <SlideTitle variant="title">
-          {title}
+          {renderMarkdownBold(title, colors.accentColor)}
         </SlideTitle>
         <AccentBar
           variant="narrow"

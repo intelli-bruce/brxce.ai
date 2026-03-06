@@ -12,6 +12,7 @@ import {
   accentOpacity,
   tokenStyle,
 } from '@/lib/studio/slide-tokens'
+import { renderMarkdownBold } from '@/lib/studio/render-markdown'
 
 export interface QuoteBlockProps {
   /** The quoted text */
@@ -64,7 +65,7 @@ export function QuoteBlock({
           whiteSpace: 'pre-line',
         }}
       >
-        {text}
+        {renderMarkdownBold(text, accentColor)}
       </div>
 
       {/* Closing mark — below text, right aligned */}

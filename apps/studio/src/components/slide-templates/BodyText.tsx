@@ -1,5 +1,6 @@
 import { SlideTitle, AccentBar, MutedText } from '@/components/slide-primitives'
 import { fontSize, fontWeight, lineHeight, spacing, gap } from '@/lib/studio/slide-tokens'
+import { renderMarkdownBold } from '@/lib/studio/render-markdown'
 import { DEFAULT_COLORS, SlideBase, type BaseSlideStyleProps } from './SlideBase'
 
 export interface BodyTextProps extends BaseSlideStyleProps {
@@ -19,20 +20,6 @@ export const bodyTextDefaultProps: BodyTextProps = {
   ...DEFAULT_COLORS,
 }
 
-function renderMarkdownBold(text: string, accentColor?: string) {
-  return text.split(/(\*\*[^*]+\*\*)/g).map((part, idx) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
-      const content = part.slice(2, -2)
-      return (
-        <span key={`bold-${idx}`} style={{ fontWeight: fontWeight.bold, color: accentColor }}>
-          {content}
-        </span>
-      )
-    }
-    return <span key={`text-${idx}`}>{part}</span>
-  })
-}
-
 export function BodyText({
   heading, body,
   headingFontSize, bodyFontSize, showAccentBar, headingBodyGap, paddingX,
@@ -49,7 +36,7 @@ export function BodyText({
           <AccentBar variant="narrow" accentColor={colors.accentColor} style={{ marginBottom: gap['4xl'] }} />
         )}
         <SlideTitle variant="title" style={headingFontSize != null ? { fontSize: headingFontSize } : undefined}>
-          {heading}
+          {renderMarkdownBold(heading, colors.accentColor)}
         </SlideTitle>
         <MutedText
           size="lg"

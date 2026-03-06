@@ -1,5 +1,6 @@
 import { MutedText } from '@/components/slide-primitives'
 import { fontSize, fontWeight, lineHeight, spacing, gap } from '@/lib/studio/slide-tokens'
+import { renderMarkdownBold } from '@/lib/studio/render-markdown'
 import { DEFAULT_COLORS, SlideBase, type BaseSlideStyleProps } from './SlideBase'
 
 export interface BodyNumberedProps extends BaseSlideStyleProps {
@@ -15,19 +16,6 @@ export const bodyNumberedDefaultProps: BodyNumberedProps = {
   body: '정보가 많으면 전달력이 떨어집니다.\n슬라이드당 핵심 메시지 하나에 집중하세요.\n나머지는 다음 장에서.',
   totalLabel: '/07',
   ...DEFAULT_COLORS,
-}
-
-function renderMarkdownBold(text: string, accentColor?: string) {
-  return text.split(/(\*\*[^*]+\*\*)/g).map((part, idx) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
-      return (
-        <span key={`b-${idx}`} style={{ fontWeight: fontWeight.bold, color: accentColor }}>
-          {part.slice(2, -2)}
-        </span>
-      )
-    }
-    return <span key={`t-${idx}`}>{part}</span>
-  })
 }
 
 export function BodyNumbered({ number, title, body, totalLabel, ...colors }: BodyNumberedProps) {
@@ -53,7 +41,7 @@ export function BodyNumbered({ number, title, body, totalLabel, ...colors }: Bod
 
         {/* Title */}
         <div style={{ marginTop: gap['2xl'], fontSize: fontSize.headingLg, fontWeight: fontWeight.bold, lineHeight: lineHeight.default, color: colors.textColor || '#f5f5f5', whiteSpace: 'pre-line' as const }}>
-          {title}
+          {renderMarkdownBold(title, accent)}
         </div>
 
         {/* Body */}

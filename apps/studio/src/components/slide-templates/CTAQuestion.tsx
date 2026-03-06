@@ -1,20 +1,7 @@
 import { SlideTitle, MutedText } from '@/components/slide-primitives'
 import { fontSize, fontWeight, lineHeight, gap, spacing, textOpacity } from '@/lib/studio/slide-tokens'
+import { renderMarkdownBold } from '@/lib/studio/render-markdown'
 import { DEFAULT_COLORS, SlideBase, type BaseSlideStyleProps } from './SlideBase'
-
-function renderMarkdownBold(text: string, accentColor?: string) {
-  return text.split(/(\*\*[^*]+\*\*)/g).map((part, idx) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
-      const content = part.slice(2, -2)
-      return (
-        <span key={`bold-${idx}`} style={{ fontWeight: fontWeight.bold, color: accentColor }}>
-          {content}
-        </span>
-      )
-    }
-    return <span key={`text-${idx}`}>{part}</span>
-  })
-}
 
 export interface CTAQuestionProps extends BaseSlideStyleProps {
   question: string

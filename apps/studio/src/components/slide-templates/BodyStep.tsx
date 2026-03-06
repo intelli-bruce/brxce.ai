@@ -1,3 +1,4 @@
+import { renderMarkdownBold } from '@/lib/studio/render-markdown'
 import { SlideTitle, NumberBadge, SlideCard, MutedText } from '@/components/slide-primitives'
 import { fontSize, fontWeight, lineHeight, spacing, gap } from '@/lib/studio/slide-tokens'
 import { DEFAULT_COLORS, SlideBase, type BaseSlideStyleProps } from './SlideBase'
@@ -27,7 +28,7 @@ export function BodyStep({ title, steps, ...colors }: BodyStepProps) {
         style={{ paddingLeft: spacing.safeX, paddingRight: spacing.safeX, paddingBottom: spacing.bottomLg, paddingTop: spacing.topMd }}
       >
         <SlideTitle variant="title">
-          {title}
+          {renderMarkdownBold(title, colors.accentColor)}
         </SlideTitle>
         <div style={{ marginTop: gap['3xl'], display: 'flex', flexDirection: 'column', gap: gap['2xl'] }}>
           {normalizedSteps.map((step, idx) => (

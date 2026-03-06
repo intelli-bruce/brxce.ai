@@ -1,3 +1,4 @@
+import { renderMarkdownBold } from '@/lib/studio/render-markdown'
 import { MutedText } from '@/components/slide-primitives'
 import { fontSize, fontWeight, lineHeight, spacing, gap } from '@/lib/studio/slide-tokens'
 import { DEFAULT_COLORS, SlideBase, type BaseSlideStyleProps } from './SlideBase'
@@ -35,7 +36,7 @@ export function BodyTimeline({ title, items, ...colors }: BodyTimelineProps) {
       >
         {/* Title */}
         <div style={{ fontSize: fontSize.headingLg, fontWeight: fontWeight.bold, lineHeight: lineHeight.default, color: text, marginBottom: gap['3xl'] }}>
-          {title}
+          {renderMarkdownBold(title, colors.accentColor)}
         </div>
 
         {/* Timeline */}
