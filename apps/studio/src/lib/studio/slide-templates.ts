@@ -32,8 +32,18 @@ import {
   coverGradientDefaultProps,
   CoverMinimal,
   coverMinimalDefaultProps,
+  CoverNumbered,
+  coverNumberedDefaultProps,
+  CoverBeforeAfter,
+  coverBeforeAfterDefaultProps,
   CoverSplit,
   coverSplitDefaultProps,
+  CTADM,
+  ctaDMDefaultProps,
+  CTAShare,
+  ctaShareDefaultProps,
+  CTAChecklistScore,
+  ctaChecklistScoreDefaultProps,
   CTAFollow,
   ctaFollowDefaultProps,
   CTALink,
@@ -50,6 +60,10 @@ import {
   hookStatDefaultProps,
   HookTeaser,
   hookTeaserDefaultProps,
+  HookRoadmap,
+  hookRoadmapDefaultProps,
+  HookSelfQualify,
+  hookSelfQualifyDefaultProps,
 } from '@/components/slide-templates'
 
 export type PropSchemaType = 'string' | 'number' | 'boolean' | 'color' | 'image' | 'string[]' | 'object[]|string[]'
@@ -101,6 +115,8 @@ const RAW_SLIDE_TEMPLATES: SlideTemplateInfo[] = [
   { id: 'cover-minimal', name: 'CoverMinimal', category: 'cover', description: '미니멀, 여백 중심', component: CoverMinimal, propsSchema: { title: { type: 'string', label: '제목', required: true }, subtitle: { type: 'string', label: '부제목' }, issue: { type: 'string', label: '이슈 라벨' } }, defaultProps: coverMinimalDefaultProps },
   { id: 'cover-split', name: 'CoverSplit', category: 'cover', description: '좌우 분할 (이미지 + 텍스트)', component: CoverSplit, propsSchema: { title: { type: 'string', label: '제목', required: true }, subtitle: { type: 'string', label: '부제목' }, imageUrl: { type: 'image', label: '좌측 이미지' } }, defaultProps: coverSplitDefaultProps },
   { id: 'cover-gradient', name: 'CoverGradient', category: 'cover', description: '그라디언트 배경 + 타이틀', component: CoverGradient, propsSchema: { title: { type: 'string', label: '제목', required: true }, subtitle: { type: 'string', label: '부제목' }, gradientFrom: { type: 'color', label: '그라디언트 시작' }, gradientTo: { type: 'color', label: '그라디언트 끝' } }, defaultProps: coverGradientDefaultProps },
+  { id: 'cover-numbered', name: 'CoverNumbered', category: 'cover', description: '넘버 시리즈 커버', component: CoverNumbered, propsSchema: { number: { type: 'string', label: '숫자' }, title: { type: 'string', label: '제목' }, subtitle: { type: 'string', label: '부제목' }, tag: { type: 'string', label: '태그' } }, defaultProps: coverNumberedDefaultProps },
+  { id: 'cover-before-after', name: 'CoverBeforeAfter', category: 'cover', description: 'Before/After 분할 커버', component: CoverBeforeAfter, propsSchema: { beforeText: { type: 'string', label: 'Before 텍스트' }, afterText: { type: 'string', label: 'After 텍스트' }, tag: { type: 'string', label: '태그' }, subtitle: { type: 'string', label: '하단 안내' } }, defaultProps: coverBeforeAfterDefaultProps },
 
   { id: 'hook-question', name: 'HookQuestion', category: 'hook', description: '질문형 훅', component: HookQuestion, propsSchema: { question: { type: 'string', label: '질문', required: true }, subQuestion: { type: 'string', label: '보조 질문' } }, defaultProps: hookQuestionDefaultProps },
   {
@@ -123,6 +139,8 @@ const RAW_SLIDE_TEMPLATES: SlideTemplateInfo[] = [
   },
   { id: 'hook-problem', name: 'HookProblem', category: 'hook', description: '문제 제기형', component: HookProblem, propsSchema: { title: { type: 'string', label: '제목' }, points: { type: 'string[]', label: '문제 목록' } }, defaultProps: hookProblemDefaultProps },
   { id: 'hook-teaser', name: 'HookTeaser', category: 'hook', description: '티저/예고형', component: HookTeaser, propsSchema: { overline: { type: 'string', label: '오버라인' }, title: { type: 'string', label: '제목', required: true }, teaser: { type: 'string', label: '티저 문구' } }, defaultProps: hookTeaserDefaultProps },
+  { id: 'hook-roadmap', name: 'HookRoadmap', category: 'hook', description: '목차/로드맵', component: HookRoadmap, propsSchema: { title: { type: 'string', label: '제목' }, items: { type: 'string[]', label: '항목' }, subtitle: { type: 'string', label: '하단 안내' } }, defaultProps: hookRoadmapDefaultProps },
+  { id: 'hook-self-qualify', name: 'HookSelfQualify', category: 'hook', description: '타겟 셀프체크', component: HookSelfQualify, propsSchema: { title: { type: 'string', label: '제목' }, conditions: { type: 'string[]', label: '조건 목록' }, conclusion: { type: 'string', label: '결론' } }, defaultProps: hookSelfQualifyDefaultProps },
 
   {
     id: 'body-text', name: 'BodyText', category: 'body', description: '설명형 본문', component: BodyText,
@@ -167,6 +185,9 @@ const RAW_SLIDE_TEMPLATES: SlideTemplateInfo[] = [
     },
     defaultProps: ctaQuestionDefaultProps,
   },
+  { id: 'cta-dm', name: 'CTADM', category: 'cta', description: 'DM 유도', component: CTADM, propsSchema: { title: { type: 'string', label: '제목' }, keyword: { type: 'string', label: '키워드' }, description: { type: 'string', label: '설명' }, prompt: { type: 'string', label: '해시태그' } }, defaultProps: ctaDMDefaultProps },
+  { id: 'cta-share', name: 'CTAShare', category: 'cta', description: '공유 유도', component: CTAShare, propsSchema: { title: { type: 'string', label: '제목' }, targetPerson: { type: 'string', label: '대상' }, reason: { type: 'string', label: '이유' }, prompt: { type: 'string', label: '해시태그' } }, defaultProps: ctaShareDefaultProps },
+  { id: 'cta-checklist-score', name: 'CTAChecklistScore', category: 'cta', description: '점수 카드', component: CTAChecklistScore, propsSchema: { title: { type: 'string', label: '제목' }, footer: { type: 'string', label: '하단 안내' }, prompt: { type: 'string', label: '해시태그' } }, defaultProps: ctaChecklistScoreDefaultProps },
 ]
 
 export const SLIDE_TEMPLATES: SlideTemplateInfo[] = RAW_SLIDE_TEMPLATES.map((template) => ({
