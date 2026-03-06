@@ -14,9 +14,73 @@ import { BeforeAfter, beforeAfterSchema } from './carousel/BeforeAfter'
 import { ListCarousel, listCarouselSchema } from './carousel/ListCarousel'
 import { QuoteCarousel, quoteCarouselSchema } from './carousel/QuoteCarousel'
 
+// Video templates
+import { DayInTheLife, dayInTheLifeSchema } from './video/DayInTheLife'
+import { Demo60s, demo60sSchema } from './video/Demo60s'
+import { ShortFormVideo, shortFormVideoSchema } from './video/ShortFormVideo'
+import { VSReel, vsReelSchema } from './video/VSReel'
+import { TextOverVideo, textOverVideoSchema } from './video/TextOverVideo'
+import { NewsBreaking, newsBreakingSchema } from './video/NewsBreaking'
+
 export const RemotionRoot: React.FC = () => {
   return (
     <>
+      {/* === Video === */}
+      <Composition
+        id="DayInTheLife"
+        component={DayInTheLife}
+        durationInFrames={60 * 60}
+        fps={60}
+        width={1080}
+        height={1920}
+        schema={dayInTheLifeSchema}
+      />
+      <Composition
+        id="Demo60s"
+        component={Demo60s}
+        durationInFrames={60 * 60}
+        fps={60}
+        width={1080}
+        height={1920}
+        schema={demo60sSchema}
+      />
+      <Composition
+        id="ShortFormVideo"
+        component={ShortFormVideo}
+        durationInFrames={60 * 60}
+        fps={60}
+        width={1080}
+        height={1920}
+        schema={shortFormVideoSchema}
+      />
+      <Composition
+        id="VSReel"
+        component={VSReel}
+        durationInFrames={60 * 30}
+        fps={60}
+        width={1080}
+        height={1920}
+        schema={vsReelSchema}
+      />
+      <Composition
+        id="TextOverVideo"
+        component={TextOverVideo}
+        durationInFrames={60 * 30}
+        fps={60}
+        width={1080}
+        height={1920}
+        schema={textOverVideoSchema}
+      />
+      <Composition
+        id="NewsBreaking"
+        component={NewsBreaking}
+        durationInFrames={60 * 30}
+        fps={60}
+        width={1080}
+        height={1920}
+        schema={newsBreakingSchema}
+      />
+
       {/* === Image === */}
       <Composition
         id="OgImage"
