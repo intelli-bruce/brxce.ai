@@ -1,5 +1,32 @@
 "use client";
 
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import VideoTab from "./video-tab";
+
+function TemplatesPageInner() {
+  const searchParams = useSearchParams();
+  const tab = searchParams.get("tab");
+
+  if (tab === "video") {
+    return <VideoTab />;
+  }
+
+  return <ImageTemplatesPage />;
+}
+
+export default function TemplatesPage() {
+  return (
+    <Suspense fallback={<div className="p-12 text-white/40">로딩 중...</div>}>
+      <TemplatesPageInner />
+    </Suspense>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   Image Templates (기존 코드)
+   ═══════════════════════════════════════════════════════ */
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   DndContext,
@@ -311,8 +338,8 @@ function BottomSheet({
   );
 }
 
-/* ─── Main Page ─── */
-export default function TemplatesPage() {
+/* ─── Main Page (Image Templates) ─── */
+function ImageTemplatesPage() {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
   );
