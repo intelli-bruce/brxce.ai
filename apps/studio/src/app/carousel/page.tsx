@@ -147,7 +147,7 @@ export default function CarouselListPage() {
                 <div className="flex gap-2.5 flex-wrap">
                   {c.slides.map((slide, idx) => (
                     <div
-                      key={slide.id}
+                      key={slide.id ?? `slide-${idx}`}
                       className="shrink-0 rounded-lg border border-[#1a1a1a] overflow-hidden bg-[#0a0a0a]"
                       style={{ width: THUMB_W, height: THUMB_H }}
                     >
