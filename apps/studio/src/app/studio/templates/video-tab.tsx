@@ -1,6 +1,9 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { VIDEO_TEMPLATES, type VideoTemplateInfo } from "@/lib/studio/video-templates";
+import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { Film, Clock, Monitor, Layers, ChevronRight, Play, Tag } from "lucide-react";
 
 function SourceBadge({ type }: { type: string }) {
@@ -18,9 +21,11 @@ function SourceBadge({ type }: { type: string }) {
   );
 }
 
-function VideoTemplateCard({ template }: { template: VideoTemplateInfo }) {
+function VideoTemplateCard({ template, onSelect, creating }: { template: VideoTemplateInfo; onSelect: (t: VideoTemplateInfo) => void; creating: boolean }) {
   return (
-    <div className="group border border-[#1a1a1a] rounded-2xl bg-[#0c0c0c] hover:bg-[#111] hover:border-[#2a2a2a] transition-all overflow-hidden">
+    <div
+      onClick={() => !creating && onSelect(template)}
+      className={`group border border-[#1a1a1a] rounded-2xl bg-[#0c0c0c] hover:bg-[#111] hover:border-[#ff6b35] transition-all overflow-hidden cursor-pointer ${creating ? 'opacity-50 pointer-events-none' : ''}`}>
       {/* Preview area — mockup */}
       <div className="relative aspect-[9/16] max-h-[320px] bg-gradient-to-br from-[#0a0a0a] to-[#141414] flex flex-col items-center justify-center overflow-hidden">
         {/* Phone frame mockup */}
@@ -131,6 +136,50 @@ function VideoTemplateCard({ template }: { template: VideoTemplateInfo }) {
 }
 
 export default function VideoTab() {
+  const router = useRouter();
+  const [creating, setCreating] = useState(false);
+
+  const handleSelect = async (template: VideoTemplateInfo) => {
+    setCreating(true);
+    try {
+      const supabase = createSupabaseBrowser();
+
+      // 템플릿 ID를 Remotion composition ID로 매핑
+      const TEMPLATE_MAP: Record<string, string> = {
+        'day-in-the-life': 'DayInTheLife',
+        'demo-60s': 'Demo60s',
+        'short-form-video': 'ShortFormVideo',
+        'vs-reel': 'VSReel',
+        'text-over-video': 'TextOverVideo',
+        'news-breaking': 'NewsBreaking',
+      };
+
+      const compositionId = TEMPLATE_MAP[template.id] || template.id;
+
+      const { data, error } = await supabase
+        .from("studio_projects")
+        .insert({
+          title: `${template.description} 프로젝트`,
+          type: "video",
+          template: compositionId,
+          width: template.width,
+          height: template.height,
+          fps: template.fps,
+          scenes: [],
+          style_config: { primaryColor: "#FF6B35", backgroundColor: "#0A0A0A" },
+        })
+        .select("id")
+        .single();
+
+      if (error) throw error;
+      router.push(`/studio/${data.id}`);
+    } catch (err) {
+      console.error("프로젝트 생성 실패:", err);
+      alert("프로젝트 생성에 실패했습니다.");
+      setCreating(false);
+    }
+  };
+
   return (
     <div className="pb-20">
       {/* Header */}
@@ -139,15 +188,14 @@ export default function VideoTab() {
           <div>
             <h1 className="text-[28px] font-black text-[#fafafa]">영상 템플릿</h1>
             <p className="text-sm text-white/40 mt-2 leading-relaxed">
-              Remotion 기반 영상 컴포지션 · 쇼츠/릴스용 1080×1920
+              템플릿을 클릭하면 프로젝트가 생성됩니다 · 쇼츠/릴스용 1080×1920
             </p>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-xs text-white/25">{VIDEO_TEMPLATES.length}개 템플릿</span>
             <button
-              className="px-5 py-2.5 text-sm font-semibold rounded-xl bg-[#ff6b35] text-white hover:bg-[#ff5522] transition"
-              disabled
-              title="프로젝트 생성 기능 준비 중"
+              onClick={() => router.push("/studio/new")}
+              className="px-5 py-2.5 text-sm font-semibold rounded-xl bg-[#ff6b35] text-white hover:bg-[#ff5522] transition border-none cursor-pointer"
             >
               + 새 프로젝트
             </button>
@@ -159,7 +207,7 @@ export default function VideoTab() {
       <div className="px-12 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {VIDEO_TEMPLATES.map((tpl) => (
-            <VideoTemplateCard key={tpl.id} template={tpl} />
+            <VideoTemplateCard key={tpl.id} template={tpl} onSelect={handleSelect} creating={creating} />
           ))}
         </div>
       </div>
