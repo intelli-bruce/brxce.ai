@@ -229,125 +229,150 @@ export default function StudioEditor({ initialProject }: Props) {
         </div>
       </div>
 
-      {/* Main layout: Editor | Preview+Style */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        {/* Left: Editor (3/5) */}
-        <div className="lg:col-span-3 space-y-4">
-          <div className="p-5 bg-[#1a1a1a] rounded-xl border border-[#222]">
-            {project.type === "video" && (
-              <VideoSceneEditor
-                scenes={scenes as VideoScene[]}
-                onChange={updateScenes}
-                selectedIndex={selectedIndex}
-                onSelect={setSelectedIndex}
-              />
-            )}
-            {project.type === "carousel" && (
-              <CarouselSlideEditor
-                slides={scenes as CarouselSlide[]}
-                onChange={updateScenes}
-                selectedIndex={selectedIndex}
-                onSelect={setSelectedIndex}
-              />
-            )}
-            {project.type === "image" && (
-              <ImageLayerEditor
-                layers={scenes as ImageLayer[]}
-                onChange={updateScenes}
-                selectedIndex={selectedIndex}
-                onSelect={setSelectedIndex}
-                template={project.template}
-              />
-            )}
+      {/* Main layout — Video: stacked / Others: side-by-side */}
+      {project.type === "video" ? (
+        /* ====== VIDEO LAYOUT: Preview + Editor stacked ====== */
+        <div className="space-y-6">
+          {/* Top: Preview (phone mockup) + Actions */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-1 flex justify-center">
+              <div className="w-full max-w-[280px]">
+                <div className="p-3 bg-[#1a1a1a] rounded-xl border border-[#222]">
+                  <PreviewPanel
+                    type={project.type}
+                    template={project.template}
+                    width={project.width}
+                    height={project.height}
+                    scenes={scenes}
+                    selectedIndex={selectedIndex}
+                    styleConfig={styleConfig}
+                    onSlideNav={handleSlideNav}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="lg:col-span-2 space-y-4">
+              {/* Style */}
+              <StylePanel config={styleConfig} onChange={updateStyleConfig} />
+              {/* Actions */}
+              <div className="p-4 bg-[#1a1a1a] rounded-xl border border-[#222] space-y-3">
+                <h3 className="text-sm font-semibold text-[#888]">액션</h3>
+                <button onClick={handleRender}
+                  disabled={project.status === "rendering" || scenes.length === 0}
+                  className="w-full px-4 py-2.5 bg-[#FF6B35] text-white rounded-lg text-sm font-medium border-none cursor-pointer hover:bg-[#e55a2b] disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                  {project.status === "rendering" ? "렌더링 중..." : "🎬 렌더링 시작"}
+                </button>
+              </div>
+              {/* Render results */}
+              {project.output_urls.length > 0 && (
+                <div className="p-4 bg-[#1a1a1a] rounded-xl border border-[#222]">
+                  <h3 className="text-sm font-semibold text-[#888] mb-2">렌더 결과</h3>
+                  {project.output_urls.map((url, i) => (
+                    <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+                      className="block text-sm text-[#4ECDC4] hover:underline truncate">결과 #{i + 1}</a>
+                  ))}
+                </div>
+              )}
+              {/* Meta */}
+              <div className="p-4 bg-[#1a1a1a] rounded-xl border border-[#222]">
+                <h3 className="text-sm font-semibold text-[#888] mb-2">메타</h3>
+                <div className="space-y-1 text-xs text-[#555]">
+                  <p>해상도: {project.width}x{project.height}{project.fps ? ` · ${project.fps}fps` : ""}</p>
+                  <p>생성: {new Date(project.created_at).toLocaleString("ko-KR")}</p>
+                  <p>수정: {new Date(project.updated_at).toLocaleString("ko-KR")}</p>
+                  <p className="truncate" title={project.id}>ID: {project.id}</p>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Media button (carousel & image only) */}
-          {project.type !== "video" && (
-            <button
-              onClick={() => setShowMediaPicker(true)}
-              className="w-full px-4 py-2.5 rounded-xl bg-[#1a1a1a] border border-[#222] hover:border-[#333] text-sm text-[#888] hover:text-[#fafafa] cursor-pointer transition-colors"
-            >
-              🖼️ 미디어 라이브러리에서 선택
-            </button>
-          )}
-        </div>
-
-        {/* Right: Preview + Style + Actions (2/5) */}
-        <div className="lg:col-span-2 space-y-4">
-          {/* Preview */}
-          <div className="p-4 bg-[#1a1a1a] rounded-xl border border-[#222]">
-            <PreviewPanel
-              type={project.type}
-              template={project.template}
-              width={project.width}
-              height={project.height}
-              scenes={scenes}
+          {/* Bottom: Scene Editor */}
+          <div className="p-5 bg-[#1a1a1a] rounded-xl border border-[#222]">
+            <VideoSceneEditor
+              scenes={scenes as VideoScene[]}
+              onChange={updateScenes}
               selectedIndex={selectedIndex}
-              styleConfig={styleConfig}
-              onSlideNav={handleSlideNav}
+              onSelect={setSelectedIndex}
+              template={project.template}
             />
           </div>
+        </div>
+      ) : (
+        /* ====== CAROUSEL/IMAGE LAYOUT: side-by-side ====== */
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          {/* Left: Editor (3/5) */}
+          <div className="lg:col-span-3 space-y-4">
+            <div className="p-5 bg-[#1a1a1a] rounded-xl border border-[#222]">
+              {project.type === "carousel" && (
+                <CarouselSlideEditor
+                  slides={scenes as CarouselSlide[]}
+                  onChange={updateScenes}
+                  selectedIndex={selectedIndex}
+                  onSelect={setSelectedIndex}
+                />
+              )}
+              {project.type === "image" && (
+                <ImageLayerEditor
+                  layers={scenes as ImageLayer[]}
+                  onChange={updateScenes}
+                  selectedIndex={selectedIndex}
+                  onSelect={setSelectedIndex}
+                  template={project.template}
+                />
+              )}
+            </div>
 
-          {/* Style */}
-          <StylePanel config={styleConfig} onChange={updateStyleConfig} />
-
-          {/* Actions */}
-          <div className="p-4 bg-[#1a1a1a] rounded-xl border border-[#222] space-y-3">
-            <h3 className="text-sm font-semibold text-[#888]">액션</h3>
-            <button
-              onClick={handleRender}
-              disabled={
-                project.status === "rendering" || scenes.length === 0
-              }
-              className="w-full px-4 py-2.5 bg-[#FF6B35] text-white rounded-lg text-sm font-medium border-none cursor-pointer hover:bg-[#e55a2b] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {project.status === "rendering"
-                ? "렌더링 중..."
-                : "렌더링 시작"}
+            {/* Media button */}
+            <button onClick={() => setShowMediaPicker(true)}
+              className="w-full px-4 py-2.5 rounded-xl bg-[#1a1a1a] border border-[#222] hover:border-[#333] text-sm text-[#888] hover:text-[#fafafa] cursor-pointer transition-colors">
+              🖼️ 미디어 라이브러리에서 선택
             </button>
           </div>
 
-          {/* Render results */}
-          {project.output_urls.length > 0 && (
+          {/* Right: Preview + Style + Actions (2/5) */}
+          <div className="lg:col-span-2 space-y-4">
             <div className="p-4 bg-[#1a1a1a] rounded-xl border border-[#222]">
-              <h3 className="text-sm font-semibold text-[#888] mb-2">
-                렌더 결과
-              </h3>
-              {project.output_urls.map((url, i) => (
-                <a
-                  key={i}
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block text-sm text-[#4ECDC4] hover:underline truncate"
-                >
-                  결과 #{i + 1}
-                </a>
-              ))}
+              <PreviewPanel
+                type={project.type}
+                template={project.template}
+                width={project.width}
+                height={project.height}
+                scenes={scenes}
+                selectedIndex={selectedIndex}
+                styleConfig={styleConfig}
+                onSlideNav={handleSlideNav}
+              />
             </div>
-          )}
-
-          {/* Meta */}
-          <div className="p-4 bg-[#1a1a1a] rounded-xl border border-[#222]">
-            <h3 className="text-sm font-semibold text-[#888] mb-2">메타</h3>
-            <div className="space-y-1 text-xs text-[#555]">
-              <p>
-                해상도: {project.width}x{project.height}
-                {project.fps ? ` · ${project.fps}fps` : ""}
-              </p>
-              <p>
-                생성: {new Date(project.created_at).toLocaleString("ko-KR")}
-              </p>
-              <p>
-                수정: {new Date(project.updated_at).toLocaleString("ko-KR")}
-              </p>
-              <p className="truncate" title={project.id}>
-                ID: {project.id}
-              </p>
+            <StylePanel config={styleConfig} onChange={updateStyleConfig} />
+            <div className="p-4 bg-[#1a1a1a] rounded-xl border border-[#222] space-y-3">
+              <h3 className="text-sm font-semibold text-[#888]">액션</h3>
+              <button onClick={handleRender}
+                disabled={project.status === "rendering" || scenes.length === 0}
+                className="w-full px-4 py-2.5 bg-[#FF6B35] text-white rounded-lg text-sm font-medium border-none cursor-pointer hover:bg-[#e55a2b] disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                {project.status === "rendering" ? "렌더링 중..." : "렌더링 시작"}
+              </button>
+            </div>
+            {project.output_urls.length > 0 && (
+              <div className="p-4 bg-[#1a1a1a] rounded-xl border border-[#222]">
+                <h3 className="text-sm font-semibold text-[#888] mb-2">렌더 결과</h3>
+                {project.output_urls.map((url, i) => (
+                  <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+                    className="block text-sm text-[#4ECDC4] hover:underline truncate">결과 #{i + 1}</a>
+                ))}
+              </div>
+            )}
+            <div className="p-4 bg-[#1a1a1a] rounded-xl border border-[#222]">
+              <h3 className="text-sm font-semibold text-[#888] mb-2">메타</h3>
+              <div className="space-y-1 text-xs text-[#555]">
+                <p>해상도: {project.width}x{project.height}{project.fps ? ` · ${project.fps}fps` : ""}</p>
+                <p>생성: {new Date(project.created_at).toLocaleString("ko-KR")}</p>
+                <p>수정: {new Date(project.updated_at).toLocaleString("ko-KR")}</p>
+                <p className="truncate" title={project.id}>ID: {project.id}</p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Media Picker Modal */}
       <MediaPickerModal
