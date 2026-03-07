@@ -78,85 +78,97 @@ body{background:#0f0f0f;color:#e0e0e0;font-family:-apple-system,'Apple SD Gothic
 .d-section{margin-top:10px;padding-top:8px;border-top:1px solid #1e1e1e}
 .d-section h4{font-size:10px;color:#555;margin-bottom:6px;font-weight:500}
 
-/* ─── Timeline ─── */
-.tl-panel{height:240px;min-height:100px;max-height:500px;background:#141414;flex-shrink:0;display:flex;flex-direction:column}
+/* ─── Timeline (Remotion-inspired) ─── */
+.tl-panel{height:280px;min-height:120px;max-height:500px;background:#0c0c0c;flex-shrink:0;display:flex;flex-direction:column;border-top:1px solid #222}
 
-.tl-toolbar{display:flex;align-items:center;gap:6px;padding:3px 12px;background:#1a1a1a;border-bottom:1px solid #2a2a2a;flex-shrink:0}
-.tl-toolbar label{font-size:9px;color:#555}
-.tl-toolbar input[type=range]{width:80px;accent-color:#2563eb}
-.tl-toolbar .snap-btn{font-size:9px}
+.tl-toolbar{display:flex;align-items:center;gap:8px;padding:6px 14px;background:#141414;border-bottom:1px solid #1e1e1e;flex-shrink:0}
+.tl-toolbar label{font-size:10px;color:#666}
+.tl-toolbar input[type=range]{width:90px;accent-color:#0a84ff;height:3px}
+.tl-toolbar .snap-btn{font-size:10px}
+.tl-toolbar .btn{font-size:10px;padding:3px 10px;border-radius:6px;border:1px solid #333;background:#1a1a1a;color:#aaa;transition:all .15s}
+.tl-toolbar .btn:hover{background:#222;color:#ddd;border-color:#444}
+.tl-toolbar .btn.active,.tl-toolbar .fmt-btn[style*="border-color:#60a5fa"]{background:#1e3a5f;color:#60a5fa;border-color:#2563eb}
 
-/* Ruler */
-.tl-ruler{height:20px;background:#1a1a1a;border-bottom:1px solid #2a2a2a;position:relative;overflow:hidden;cursor:pointer;flex-shrink:0}
-.tl-ruler-tick{position:absolute;bottom:0;border-left:1px solid #2a2a2a}
-.tl-ruler-label{position:absolute;top:2px;font-size:8px;color:#555;transform:translateX(3px);font-variant-numeric:tabular-nums}
+/* Ruler — Remotion style */
+.tl-ruler{height:26px;background:#111;border-bottom:1px solid #1e1e1e;position:relative;overflow:hidden;cursor:pointer;flex-shrink:0}
+.tl-ruler-tick{position:absolute;bottom:0;border-left:1px solid #282828}
+.tl-ruler-label{position:absolute;top:5px;font-size:9px;color:#555;transform:translateX(3px);font-variant-numeric:tabular-nums;font-family:'SF Mono',Menlo,monospace;letter-spacing:-0.3px}
 
 /* Scroll area */
 .tl-scroll{flex:1;overflow-x:auto;overflow-y:hidden;position:relative}
 .tl-track-area{position:relative;min-height:100%}
 
-/* Track headers */
-.tl-headers{position:absolute;left:0;top:0;bottom:0;width:56px;background:#1a1a1a;border-right:1px solid #2a2a2a;z-index:10;display:flex;flex-direction:column}
-.tl-h-item{padding:4px 6px;border-bottom:1px solid #222;font-size:9px;color:#555;display:flex;align-items:center;gap:4px}
+/* Track headers — Remotion sidebar */
+.tl-headers{position:absolute;left:0;top:0;bottom:0;width:64px;background:#111;border-right:1px solid #1e1e1e;z-index:10;display:flex;flex-direction:column}
+.tl-h-item{padding:0 8px;border-bottom:1px solid #1a1a1a;font-size:10px;color:#666;display:flex;align-items:center;gap:5px;font-weight:500;letter-spacing:0.2px}
+.tl-h-item:hover{color:#999}
 
-/* Playhead */
-.tl-playhead{position:absolute;top:0;width:2px;background:#ef4444;z-index:20;height:100%;cursor:col-resize}
-.tl-playhead::before{content:'';position:absolute;top:-1px;left:-5px;border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid #ef4444}
-.tl-playhead::after{content:'';position:absolute;top:0;bottom:0;left:-6px;width:14px;cursor:col-resize}
+/* Playhead — Remotion red pointer */
+.tl-playhead{position:absolute;top:0;width:2px;background:#ff3b30;z-index:20;height:100%;cursor:col-resize;filter:drop-shadow(0 0 4px rgba(255,59,48,.4))}
+.tl-playhead::before{content:'';position:absolute;top:-2px;left:-6px;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:8px solid #ff3b30;filter:drop-shadow(0 1px 3px rgba(255,59,48,.5))}
+.tl-playhead::after{content:'';position:absolute;top:0;bottom:0;left:-8px;width:18px;cursor:col-resize}
 
 /* Skim indicator */
-.tl-skim{position:absolute;top:0;width:1px;background:rgba(255,255,255,.3);z-index:15;pointer-events:none;height:100%;display:none}
+.tl-skim{position:absolute;top:0;width:1px;background:rgba(255,255,255,.2);z-index:15;pointer-events:none;height:100%;display:none}
 
-/* Tracks */
-.tl-track{position:relative;margin-left:56px;border-bottom:1px solid #1e1e1e}
-.tl-track.v1{height:48px}
-.tl-track.sub{height:24px}
-.tl-track.audio{height:32px}
+/* Tracks — Remotion spacing */
+.tl-track{position:relative;margin-left:64px;border-bottom:1px solid #161616}
+.tl-track.v1{height:56px}
+.tl-track.sub{height:30px}
+.tl-track.audio{height:36px}
 
-/* Clips */
-.tl-clip{position:absolute;top:3px;bottom:3px;border-radius:4px;cursor:pointer;overflow:hidden;transition:box-shadow .08s,transform .15s,opacity .15s;min-width:6px}
-.tl-clip:hover{box-shadow:0 0 0 1px rgba(255,255,255,.25)}
-.tl-clip.active{box-shadow:0 0 0 2px #fff}
-.tl-clip.dragging{opacity:.4;transform:scale(.95);z-index:30}
-.tl-clip.drag-over-left{border-left:3px solid #2563eb!important;border-radius:0 4px 4px 0}
-.tl-clip.drag-over-right{border-right:3px solid #2563eb!important;border-radius:4px 0 0 4px}
-.tl-drop-indicator{position:absolute;top:0;bottom:0;width:3px;background:#2563eb;border-radius:2px;z-index:25;pointer-events:none;display:none;box-shadow:0 0 8px rgba(37,99,235,.6)}
+/* Clips — Remotion rounded blocks */
+.tl-clip{position:absolute;top:4px;bottom:4px;border-radius:6px;cursor:pointer;overflow:hidden;transition:box-shadow .1s,transform .15s,opacity .15s;min-width:8px;border:1px solid rgba(255,255,255,.08)}
+.tl-clip:hover{box-shadow:0 0 0 1px rgba(255,255,255,.2);border-color:rgba(255,255,255,.15)}
+.tl-clip.active{box-shadow:0 0 0 2px rgba(255,255,255,.9);border-color:transparent}
+.tl-clip.dragging{opacity:.4;transform:scale(.97);z-index:30}
+.tl-clip.drag-over-left{border-left:3px solid #0a84ff!important;border-radius:0 6px 6px 0}
+.tl-clip.drag-over-right{border-right:3px solid #0a84ff!important;border-radius:6px 0 0 6px}
+.tl-drop-indicator{position:absolute;top:0;bottom:0;width:3px;background:#0a84ff;border-radius:2px;z-index:25;pointer-events:none;display:none;box-shadow:0 0 10px rgba(10,132,255,.5)}
 .tl-clip.blade-hover{box-shadow:none!important}
-.tl-clip-inner{padding:0 6px;width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;overflow:hidden;position:relative;z-index:1}
-.tl-clip-name{font-size:8px;color:rgba(255,255,255,.8);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tl-clip-sub{font-size:7px;color:rgba(255,255,255,.45);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tl-clip-dur{font-size:7px;color:rgba(255,255,255,.3);position:absolute;right:4px;top:2px}
-/* Trim handles */
-.tl-trim{position:absolute;top:0;bottom:0;width:7px;cursor:ew-resize;z-index:5}
-.tl-trim:hover{background:rgba(255,255,255,.12)}
-.tl-trim.left{left:0;border-radius:4px 0 0 4px}
-.tl-trim.right{right:0;border-radius:0 4px 4px 0}
+.tl-clip-inner{padding:0 8px;width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;overflow:hidden;position:relative;z-index:1}
+.tl-clip-name{font-size:10px;color:rgba(255,255,255,.9);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+.tl-clip-sub{font-size:9px;color:rgba(255,255,255,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.tl-clip-dur{font-size:9px;color:rgba(255,255,255,.4);position:absolute;right:6px;top:4px;font-family:'SF Mono',Menlo,monospace;font-variant-numeric:tabular-nums}
+/* Trim handles — Remotion style rounded edges */
+.tl-trim{position:absolute;top:0;bottom:0;width:8px;cursor:ew-resize;z-index:5;transition:background .1s}
+.tl-trim:hover{background:rgba(255,255,255,.15)}
+.tl-trim.left{left:0;border-radius:6px 0 0 6px}
+.tl-trim.left::after{content:'';position:absolute;top:50%;left:2px;transform:translateY(-50%);width:3px;height:14px;border-left:1px solid rgba(255,255,255,.3);border-right:1px solid rgba(255,255,255,.3)}
+.tl-trim.right{right:0;border-radius:0 6px 6px 0}
+.tl-trim.right::after{content:'';position:absolute;top:50%;right:2px;transform:translateY(-50%);width:3px;height:14px;border-left:1px solid rgba(255,255,255,.3);border-right:1px solid rgba(255,255,255,.3)}
 /* Blade cursor */
 .blade-cursor .tl-clip{cursor:crosshair!important}
 /* Blade line */
-.blade-line{position:absolute;top:0;bottom:0;width:2px;background:#fbbf24;z-index:6;pointer-events:none;display:none;box-shadow:0 0 6px rgba(251,191,36,.5)}
+.blade-line{position:absolute;top:0;bottom:0;width:2px;background:#fbbf24;z-index:6;pointer-events:none;display:none;box-shadow:0 0 8px rgba(251,191,36,.4)}
 
 /* Audio waveform track */
-.tl-audio-clip{position:absolute;top:2px;bottom:2px;border-radius:3px;overflow:hidden;opacity:.5}
+.tl-audio-clip{position:absolute;top:3px;bottom:3px;border-radius:5px;overflow:hidden;opacity:.45}
 .tl-audio-clip canvas{width:100%;height:100%}
 
-/* Subtitle clips */
-.tl-sub-clip{position:absolute;top:2px;bottom:2px;background:rgba(250,204,21,.15);border:1px solid rgba(250,204,21,.25);border-radius:3px;display:flex;align-items:center;padding:0 5px;font-size:7px;color:#d4a017;overflow:hidden;white-space:nowrap;cursor:pointer}
+/* Subtitle clips — Remotion caption style */
+.tl-sub-clip{position:absolute;top:3px;bottom:3px;background:rgba(250,204,21,.1);border:1px solid rgba(250,204,21,.2);border-radius:5px;display:flex;align-items:center;padding:0 7px;font-size:9px;color:#c9960f;overflow:hidden;white-space:nowrap;cursor:pointer;transition:background .1s}
+.tl-sub-clip:hover{background:rgba(250,204,21,.18)}
 
 /* Snap line */
 .snap-line{position:absolute;top:0;bottom:0;width:1px;background:#fbbf24;z-index:18;pointer-events:none;display:none}
 
-/* Colors */
-.s0{background:#2563eb}.s1{background:#7c3aed}.s2{background:#059669}.s3{background:#d97706}.s4{background:#dc2626}.s5{background:#0891b2}
+/* Colors — richer Remotion-style palette */
+.s0{background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%)}
+.s1{background:linear-gradient(135deg,#7c3aed 0%,#6d28d9 100%)}
+.s2{background:linear-gradient(135deg,#059669 0%,#047857 100%)}
+.s3{background:linear-gradient(135deg,#d97706 0%,#b45309 100%)}
+.s4{background:linear-gradient(135deg,#dc2626 0%,#b91c1c 100%)}
+.s5{background:linear-gradient(135deg,#0891b2 0%,#0e7490 100%)}
 
 /* Transition overlays */
-.tl-transition{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(45deg,transparent,transparent 2px,rgba(255,255,255,.06) 2px,rgba(255,255,255,.06) 4px);border-radius:3px;pointer-events:none;z-index:2}
+.tl-transition{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(45deg,transparent,transparent 2px,rgba(255,255,255,.05) 2px,rgba(255,255,255,.05) 4px);border-radius:5px;pointer-events:none;z-index:2}
 
 /* Format guide */
-.fmt-guide{position:absolute;top:0;bottom:0;border-right:2px dashed #f59e0b;z-index:16;pointer-events:none}
-.fmt-guide-label{position:absolute;top:2px;right:4px;font-size:8px;color:#f59e0b;background:#1a1a1a;padding:1px 4px;border-radius:2px;white-space:nowrap}
-.fmt-overflow{position:absolute;top:0;bottom:0;background:rgba(239,68,68,.08);z-index:1;pointer-events:none}
-.tl-clip.overflow{opacity:.35}
+.fmt-guide{position:absolute;top:0;bottom:0;border-right:2px dashed rgba(245,158,11,.6);z-index:16;pointer-events:none}
+.fmt-guide-label{position:absolute;top:4px;right:6px;font-size:9px;color:#f59e0b;background:#1a1a1a;padding:2px 6px;border-radius:4px;white-space:nowrap;font-family:'SF Mono',Menlo,monospace}
+.fmt-overflow{position:absolute;top:0;bottom:0;background:rgba(239,68,68,.06);z-index:1;pointer-events:none}
+.tl-clip.overflow{opacity:.3}
 
 /* Render dialog */
 .render-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:300;display:none;align-items:center;justify-content:center}
@@ -201,7 +213,7 @@ body{background:#0f0f0f;color:#e0e0e0;font-family:-apple-system,'Apple SD Gothic
 .proj-item .proj-del{color:#666;font-size:11px;padding:4px 8px;border-radius:4px;cursor:pointer}
 .proj-item .proj-del:hover{color:#f87171;background:#2a1a1a}
 
-::-webkit-scrollbar{height:6px;width:5px}::-webkit-scrollbar-track{background:#111}::-webkit-scrollbar-thumb{background:#333;border-radius:3px}
+::-webkit-scrollbar{height:8px;width:6px}::-webkit-scrollbar-track{background:#0c0c0c}::-webkit-scrollbar-thumb{background:#2a2a2a;border-radius:4px}::-webkit-scrollbar-thumb:hover{background:#3a3a3a}
 </style>
 </head>
 <body>
@@ -365,9 +377,9 @@ body{background:#0f0f0f;color:#e0e0e0;font-family:-apple-system,'Apple SD Gothic
   <div class="tl-scroll" id="tlScroll" onmousemove="onSkim(event)" onmouseleave="skimHide()">
     <div class="tl-track-area" id="trackArea">
       <div class="tl-headers">
-        <div class="tl-h-item" style="height:48px">🎬 V1</div>
-        <div class="tl-h-item" style="height:24px">💬 자막</div>
-        <div class="tl-h-item" style="height:32px">🔊 오디오</div>
+        <div class="tl-h-item" style="height:56px"><span style="font-size:12px">🎬</span> V1</div>
+        <div class="tl-h-item" style="height:30px"><span style="font-size:11px">💬</span> 자막</div>
+        <div class="tl-h-item" style="height:36px"><span style="font-size:11px">🔊</span> 오디오</div>
       </div>
       <div class="tl-track v1" id="videoTrack"></div>
       <div class="tl-track sub" id="subTrack"></div>
@@ -756,7 +768,7 @@ let pxPerSec=14;
 let tool='select'; // select, trim, blade
 let snapOn=true;
 let markInT=null,markOutT=null;
-const HDR=56; // header width
+const HDR=64; // header width
 let activeFormat=0; // 0=full, 15, 30, 60
 
 // Clip extra data
