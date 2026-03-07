@@ -424,6 +424,7 @@ let _hasInitialData=false;
 const API_BASE='http://localhost:8090';
 const VBASE=API_BASE;
 const srcDurs={};
+const srcFps={}; // source → fps mapping
 
 function apiUrl(path){
   if(/^https?:\/\//.test(path))return path;
@@ -1318,6 +1319,11 @@ function zoomFit(){
 /* ─── Export ─── */
 function exportSrt(){let s='',n=1;CLIPS.forEach((c,i)=>{const sub=SUBS[i];if(!sub)return;const st=starts[i],en=st+clipDur(i);s+=`${n}\n${srtT(st)} --> ${srtT(en)}\n${sub}\n\n`;n++});copy(s,'SRT 복사됨!')}
 function exportJson(){copy(JSON.stringify({clips:CLIPS.map((c,i)=>({...c,subtitle:SUBS[i]||'',subStyle:clipSubStyles[i],crop:clipCrops[i],zoom:clipZooms[i],speed:clipMeta[i].speed,transition:clipMeta[i].transition}))},null,2),'JSON 복사됨!')}
+function getMaxSourceFps(){
+  const fpsVals=Object.values(srcFps);
+  return fpsVals.length?Math.max(...fpsVals):30;
+}
+
 function renderVideo(){
   const maxDur=activeFormat||0;
   
@@ -1346,13 +1352,22 @@ function renderVideo(){
     accumulated+=(clipData.end-clipData.start)/(clipData.speed||1);
   }
 
+  const maxFps=getMaxSourceFps();
+  const fpsOptions=[30,60];
+  if(!fpsOptions.includes(maxFps))fpsOptions.push(maxFps);
+  fpsOptions.sort((a,b)=>a-b);
+  const defaultFps=maxFps>30?60:30;
+  
   const label=maxDur>0?`${maxDur}초 (${renderClips.length}클립)`:`전체 ${accumulated.toFixed(1)}초 (${renderClips.length}클립)`;
-  if(!confirm(`영상 추출: ${label}\n시작할까요?`))return;
+  const fpsSelect=fpsOptions.map(f=>`${f}fps${f===defaultFps?' (추천)':''}`).join(' / ');
+  const chosenFps=prompt(`영상 추출: ${label}\n\n출력 프레임레이트:\n${fpsSelect}\n\nfps 입력 (기본: ${defaultFps}):`,defaultFps);
+  if(chosenFps===null)return;
+  const outputFps=parseInt(chosenFps)||defaultFps;
   
   // Show dialog
   showRenderDialog(renderClips.length);
 
-  const payload={clips:renderClips,maxDuration:maxDur};
+  const payload={clips:renderClips,maxDuration:maxDur,fps:outputFps};
 
   fetch(apiUrl('/api/render'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
     .then(r=>r.json()).then(()=>pollRender(renderClips.length))
@@ -1771,6 +1786,7 @@ function loadVideoList(){
     }
     list.innerHTML='';
     data.videos.forEach((v,i)=>{
+      if(v.fps)srcFps[v.name]=v.fps;
       const item=document.createElement('div');
       item.className='src-item selected';
       item.draggable=true;
@@ -1779,7 +1795,7 @@ function loadVideoList(){
         <input type="checkbox" class="src-check" checked>
         <span class="src-idx">${i+1}</span>
         <span class="src-name">🎥 ${v.name}</span>
-        <span class="src-meta">${v.duration}s · ${v.size}MB</span>
+        <span class="src-meta">${v.duration}s · ${v.size}MB · ${v.fps||30}fps</span>
         <span class="src-drag">⠿</span>
         <span class="proj-del" title="목록에서 제거" onclick="event.stopPropagation();this.closest('.src-item').remove();reindexSrcList()">✕</span>
       `;

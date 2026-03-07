@@ -202,11 +202,13 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             stem = f.stem.split("_v")[0] if "_v" in f.stem else f.stem
             if f.suffix.lower() in exts and not f.name.startswith("_") and not f.name.startswith("edited_") and stem not in skip and not any(f.stem.startswith(s) for s in skip):
                 dur = get_video_duration(str(f))
+                fps = get_video_fps(str(f))
                 size_mb = f.stat().st_size / 1024 / 1024
                 videos.append({
                     "name": f.name,
                     "duration": round(dur, 1),
-                    "size": round(size_mb, 1)
+                    "size": round(size_mb, 1),
+                    "fps": fps
                 })
         self.send_json({"videos": videos})
 
@@ -272,6 +274,22 @@ def get_video_duration(path):
         return float(json.loads(r.stdout)["format"]["duration"])
     except:
         return 0.0
+
+
+def get_video_fps(path):
+    try:
+        r = subprocess.run(
+            ["ffprobe", "-v", "quiet", "-select_streams", "v:0",
+             "-show_entries", "stream=r_frame_rate", "-of", "csv=p=0", path],
+            capture_output=True, text=True
+        )
+        fps_str = r.stdout.strip().split(",")[0]  # e.g. "60/1" or "30000/1001"
+        if "/" in fps_str:
+            num, den = fps_str.split("/")
+            return round(int(num) / int(den))
+        return round(float(fps_str))
+    except:
+        return 30
 
 
 def run_analyze(files, options):
@@ -624,6 +642,7 @@ def generate_auto_subs(clips, language="ko"):
 
 def run_render(data):
     clips = data["clips"]
+    output_fps = data.get("fps", 30)
     tmp_dir = BASE / "_render_tmp"
     tmp_dir.mkdir(exist_ok=True)
     tmp_files = []
@@ -650,8 +669,8 @@ def run_render(data):
             if speed != 1:
                 filters.append(f"setpts={1/speed:.4f}*PTS")
 
-            # Normalize fps first (all clips must have same fps for concat)
-            filters.append("fps=30")
+            # Normalize fps (all clips must have same fps for concat)
+            filters.append(f"fps={output_fps}")
 
             # Scale to output
             filters.append(f"scale={W}:{H}:force_original_aspect_ratio=increase")
@@ -718,7 +737,7 @@ def run_render(data):
         merged = tmp_dir / "merged.mp4"
         cmd = ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(concat_file),
                "-c:v", "libx264", "-preset", "fast", "-crf", "18",
-               "-r", "30",  # force 30fps output
+               "-r", str(output_fps),
                "-pix_fmt", "yuv420p",
                str(merged)]
         print(f"[Render] Concat: {' '.join(cmd)}")
