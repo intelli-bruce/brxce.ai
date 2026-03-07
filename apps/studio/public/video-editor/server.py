@@ -650,6 +650,9 @@ def run_render(data):
             if speed != 1:
                 filters.append(f"setpts={1/speed:.4f}*PTS")
 
+            # Normalize fps first (all clips must have same fps for concat)
+            filters.append("fps=30")
+
             # Scale to output
             filters.append(f"scale={W}:{H}:force_original_aspect_ratio=increase")
             filters.append(f"crop={W}:{H}")
@@ -713,7 +716,11 @@ def run_render(data):
                 f.write(f"file '{tf}'\n")
 
         merged = tmp_dir / "merged.mp4"
-        cmd = ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(concat_file), "-c", "copy", str(merged)]
+        cmd = ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(concat_file),
+               "-c:v", "libx264", "-preset", "fast", "-crf", "18",
+               "-r", "30",  # force 30fps output
+               "-pix_fmt", "yuv420p",
+               str(merged)]
         print(f"[Render] Concat: {' '.join(cmd)}")
         r = subprocess.run(cmd, capture_output=True, text=True)
         if r.returncode != 0:
