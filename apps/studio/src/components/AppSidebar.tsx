@@ -19,6 +19,7 @@ import {
   Newspaper,
   Palette,
   Rocket,
+  Scissors,
   Smartphone,
   Theater,
   Video,
@@ -45,7 +46,7 @@ type NavLink = {
   href: string
   label: string
   icon: LucideIcon
-  children?: { href: string; label: string }[]
+  children?: { href: string; label: string; icon?: LucideIcon }[]
 }
 
 type NavSection = {
@@ -83,6 +84,7 @@ const navSections: NavSection[] = [
           { href: "/carousel", label: "캐러셀" },
           { href: "/studio/templates", label: "템플릿: 이미지" },
           { href: "/studio/templates?tab=video", label: "템플릿: 영상" },
+          { href: "/studio/video-edit", label: "영상 편집", icon: Scissors },
           { href: "/studio/references", label: "레퍼런스" },
         ],
       },
@@ -186,6 +188,7 @@ export function AppSidebar() {
                               isActive={isActive(child.href)}
                             >
                               <Link href={child.href}>
+                                {child.icon ? <child.icon className="size-4" /> : null}
                                 <span>{child.label}</span>
                               </Link>
                             </SidebarMenuSubButton>
