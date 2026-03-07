@@ -83,7 +83,7 @@ const navSections: NavSection[] = [
         children: [
           { href: "/carousel", label: "캐러셀" },
           { href: "/studio/templates", label: "템플릿: 이미지" },
-          { href: "/studio/templates?tab=video", label: "템플릿: 영상" },
+
           { href: "/studio/video-edit", label: "영상 편집", icon: Scissors },
           { href: "/studio/references", label: "레퍼런스" },
         ],
