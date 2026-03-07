@@ -1353,25 +1353,51 @@ function renderVideo(){
   }
 
   const maxFps=getMaxSourceFps();
-  const fpsOptions=[30,60];
-  if(!fpsOptions.includes(maxFps))fpsOptions.push(maxFps);
-  fpsOptions.sort((a,b)=>a-b);
   const defaultFps=maxFps>30?60:30;
-  
   const label=maxDur>0?`${maxDur}초 (${renderClips.length}클립)`:`전체 ${accumulated.toFixed(1)}초 (${renderClips.length}클립)`;
-  const fpsSelect=fpsOptions.map(f=>`${f}fps${f===defaultFps?' (추천)':''}`).join(' / ');
-  const chosenFps=prompt(`영상 추출: ${label}\n\n출력 프레임레이트:\n${fpsSelect}\n\nfps 입력 (기본: ${defaultFps}):`,defaultFps);
-  if(chosenFps===null)return;
-  const outputFps=parseInt(chosenFps)||defaultFps;
   
-  // Show dialog
-  showRenderDialog(renderClips.length);
+  showRenderConfirm(label,defaultFps,renderClips,maxDur);
+}
 
-  const payload={clips:renderClips,maxDuration:maxDur,fps:outputFps};
-
-  fetch(apiUrl('/api/render'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
-    .then(r=>r.json()).then(()=>pollRender(renderClips.length))
-    .catch(e=>{renderError('렌더 요청 실패: '+e)});
+function showRenderConfirm(label,defaultFps,renderClips,maxDur){
+  // Remove existing modal if any
+  document.getElementById('fpsModal')?.remove();
+  
+  const modal=document.createElement('div');
+  modal.id='fpsModal';
+  modal.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:400;display:flex;align-items:center;justify-content:center';
+  modal.innerHTML=`
+    <div style="background:#1e1e1e;border:1px solid #3a3a3a;border-radius:12px;padding:24px 32px;min-width:320px;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+      <h3 style="font-size:14px;color:#e0e0e0;margin:0 0 16px">🎬 영상 추출</h3>
+      <p style="font-size:12px;color:#999;margin:0 0 16px">${label}</p>
+      <label style="font-size:11px;color:#888;display:block;margin-bottom:6px">프레임레이트</label>
+      <select id="fpsSelect" style="width:100%;padding:8px 12px;background:#111;border:1px solid #333;color:#eee;border-radius:6px;font-size:13px;margin-bottom:20px">
+        <option value="24"${defaultFps===24?' selected':''}>24fps (영화)</option>
+        <option value="30"${defaultFps===30?' selected':''}>30fps</option>
+        <option value="60"${defaultFps===60?' selected':''}>60fps</option>
+      </select>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn" id="fpsCancel" style="padding:8px 20px;font-size:12px">취소</button>
+        <button class="btn pri" id="fpsOk" style="padding:8px 20px;font-size:12px">추출 시작</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  
+  // Default selection을 최대 fps에 가까운 값으로
+  const sel=document.getElementById('fpsSelect');
+  sel.value=String(defaultFps);
+  
+  document.getElementById('fpsCancel').onclick=()=>modal.remove();
+  document.getElementById('fpsOk').onclick=()=>{
+    const outputFps=parseInt(sel.value)||30;
+    modal.remove();
+    showRenderDialog(renderClips.length);
+    const payload={clips:renderClips,maxDuration:maxDur,fps:outputFps};
+    fetch(apiUrl('/api/render'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+      .then(r=>r.json()).then(()=>pollRender(renderClips.length))
+      .catch(e=>{renderError('렌더 요청 실패: '+e)});
+  };
 }
 
 let _renderStartTime=0;
