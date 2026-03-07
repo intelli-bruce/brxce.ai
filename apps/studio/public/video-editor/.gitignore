@@ -1,0 +1,15 @@
+# 영상 소스 파일
+*.MOV
+*.mov
+*.mp4
+*.avi
+*.mkv
+*.webm
+*.m4v
+
+# 프로젝트 데이터
+_projects/
+
+# 렌더링 출력
+edited_output*
+thread_output*
