@@ -1,0 +1,866 @@
+#!/usr/bin/env python3
+"""Editor server with render API endpoint."""
+import http.server
+import json
+import os
+import subprocess
+import sys
+import tempfile
+import shutil
+import threading
+import urllib.parse
+from pathlib import Path
+from PIL import Image, ImageDraw, ImageFont
+
+PORT = 8090
+BASE = Path(__file__).parent.resolve()
+W, H = 1080, 1920  # 9:16 vertical
+FONT_PATH = os.path.expanduser("~/Library/Fonts/NotoSansKR-Bold.ttf")
+
+# Track render status
+render_status = {"state": "idle", "progress": 0, "total": 0, "error": None, "output": None}
+render_lock = threading.Lock()
+
+# Track analyze status
+analyze_status = {"state": "idle", "progress": "", "error": None, "result": None}
+analyze_lock = threading.Lock()
+
+# Path to thread_video_cutter
+CUTTER_SCRIPT = Path(os.path.expanduser("~/clawd/skills/thread-video-cutter/thread_video_cutter.py"))
+
+
+class Handler(http.server.SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=str(BASE), **kwargs)
+
+    def end_headers(self):
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        super().end_headers()
+
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self.end_headers()
+
+    def do_POST(self):
+        if self.path == "/api/render":
+            self.handle_render()
+        elif self.path == "/api/analyze":
+            self.handle_analyze()
+        elif self.path == "/api/projects/save":
+            self.handle_project_save()
+        elif self.path == "/api/projects/delete":
+            self.handle_project_delete()
+        elif self.path == "/api/upload":
+            self.handle_upload()
+        else:
+            self.send_error(404)
+
+    def do_GET(self):
+        if self.path == "/api/render/status":
+            self.send_json(render_status)
+        elif self.path == "/api/analyze/status":
+            self.send_json(analyze_status)
+        elif self.path.startswith("/api/render/download"):
+            self.handle_download()
+        elif self.path == "/api/list-videos":
+            self.handle_list_videos()
+        elif self.path == "/api/projects":
+            self.handle_project_list()
+        elif self.path.startswith("/api/projects/load/"):
+            self.handle_project_load()
+        else:
+            super().do_GET()
+
+    def send_json(self, data):
+        body = json.dumps(data).encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", len(body))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def handle_project_list(self):
+        proj_dir = BASE / "_projects"
+        proj_dir.mkdir(exist_ok=True)
+        projects = []
+        for f in sorted(proj_dir.glob("*.json"), key=lambda x: x.stat().st_mtime, reverse=True):
+            try:
+                data = json.loads(f.read_text())
+                projects.append({
+                    "id": f.stem,
+                    "name": data.get("name", f.stem),
+                    "clipCount": len(data.get("clips", [])),
+                    "totalDuration": round(data.get("totalDuration", 0), 1),
+                    "updatedAt": f.stat().st_mtime,
+                    "sources": data.get("sources", [])
+                })
+            except:
+                pass
+        self.send_json({"projects": projects})
+
+    def handle_project_save(self):
+        length = int(self.headers.get("Content-Length", 0))
+        body = json.loads(self.rfile.read(length)) if length else {}
+        proj_dir = BASE / "_projects"
+        proj_dir.mkdir(exist_ok=True)
+        
+        pid = body.get("id") or f"project_{int(threading.Event().wait(0) or __import__('time').time()*1000)}"
+        body["id"] = pid
+        
+        fpath = proj_dir / f"{pid}.json"
+        fpath.write_text(json.dumps(body, ensure_ascii=False, indent=2))
+        self.send_json({"status": "saved", "id": pid})
+
+    def handle_project_load(self):
+        pid = self.path.split("/api/projects/load/")[1]
+        pid = urllib.parse.unquote(pid)
+        fpath = BASE / "_projects" / f"{pid}.json"
+        if not fpath.exists():
+            self.send_error(404, "Project not found")
+            return
+        data = json.loads(fpath.read_text())
+        self.send_json(data)
+
+    def handle_project_delete(self):
+        length = int(self.headers.get("Content-Length", 0))
+        body = json.loads(self.rfile.read(length)) if length else {}
+        pid = body.get("id")
+        if not pid:
+            self.send_json({"error": "No id"})
+            return
+        fpath = BASE / "_projects" / f"{pid}.json"
+        if fpath.exists():
+            fpath.unlink()
+        self.send_json({"status": "deleted"})
+
+    def handle_upload(self):
+        """Handle multipart file upload."""
+        content_type = self.headers.get("Content-Type", "")
+        if "multipart/form-data" not in content_type:
+            self.send_json({"error": "multipart required"})
+            return
+        
+        # Parse boundary
+        boundary = None
+        for part in content_type.split(";"):
+            part = part.strip()
+            if part.startswith("boundary="):
+                boundary = part.split("=", 1)[1].strip('"')
+        if not boundary:
+            self.send_json({"error": "no boundary"})
+            return
+        
+        length = int(self.headers.get("Content-Length", 0))
+        body = self.rfile.read(length)
+        
+        boundary_bytes = f"--{boundary}".encode()
+        parts = body.split(boundary_bytes)
+        
+        uploaded = []
+        for part in parts:
+            if b"Content-Disposition" not in part:
+                continue
+            # Split headers and content
+            header_end = part.find(b"\r\n\r\n")
+            if header_end < 0:
+                continue
+            header_section = part[:header_end].decode("utf-8", errors="replace")
+            file_data = part[header_end + 4:]
+            # Remove trailing \r\n
+            if file_data.endswith(b"\r\n"):
+                file_data = file_data[:-2]
+            
+            # Extract filename
+            filename = None
+            for line in header_section.split("\r\n"):
+                if "filename=" in line:
+                    fn_start = line.find('filename="')
+                    if fn_start >= 0:
+                        fn_start += 10
+                        fn_end = line.find('"', fn_start)
+                        filename = line[fn_start:fn_end]
+            
+            if filename and file_data:
+                safe_name = Path(filename).name
+                dest = BASE / safe_name
+                with open(dest, "wb") as f:
+                    f.write(file_data)
+                dur = get_video_duration(str(dest))
+                size_mb = dest.stat().st_size / 1024 / 1024
+                uploaded.append({"name": safe_name, "duration": round(dur, 1), "size": round(size_mb, 1)})
+        
+        self.send_json({"uploaded": uploaded})
+
+    def handle_list_videos(self):
+        """List video files in the base directory."""
+        exts = {".mov", ".mp4", ".avi", ".mkv", ".webm", ".m4v"}
+        videos = []
+        skip = {"thread_output", "thread_with_subs", "vlog_dev", "edited_output"}
+        for f in sorted(BASE.iterdir()):
+            stem = f.stem.split("_v")[0] if "_v" in f.stem else f.stem
+            if f.suffix.lower() in exts and not f.name.startswith("_") and not f.name.startswith("edited_") and stem not in skip and not any(f.stem.startswith(s) for s in skip):
+                dur = get_video_duration(str(f))
+                size_mb = f.stat().st_size / 1024 / 1024
+                videos.append({
+                    "name": f.name,
+                    "duration": round(dur, 1),
+                    "size": round(size_mb, 1)
+                })
+        self.send_json({"videos": videos})
+
+    def handle_analyze(self):
+        length = int(self.headers.get("Content-Length", 0))
+        body = json.loads(self.rfile.read(length)) if length else {}
+        
+        files = body.get("files", [])
+        options = body.get("options", {})
+        
+        if not files:
+            self.send_json({"error": "No files selected"})
+            return
+        
+        with analyze_lock:
+            analyze_status.update(state="analyzing", progress="준비 중...", error=None, result=None)
+        
+        self.send_json({"status": "started"})
+        
+        t = threading.Thread(target=run_analyze, args=(files, options), daemon=True)
+        t.start()
+
+    def handle_render(self):
+        length = int(self.headers.get("Content-Length", 0))
+        body = json.loads(self.rfile.read(length)) if length else {}
+
+        clips = body.get("clips", [])
+        if not clips:
+            self.send_json({"error": "No clips"})
+            return
+
+        with render_lock:
+            render_status.update(state="rendering", progress=0, total=len(clips), error=None, output=None)
+
+        self.send_json({"status": "started", "total": len(clips)})
+
+        # Run render in background
+        t = threading.Thread(target=run_render, args=(body,), daemon=True)
+        t.start()
+
+    def handle_download(self):
+        if not render_status.get("output") or not os.path.exists(render_status["output"]):
+            self.send_error(404, "No rendered file")
+            return
+        fpath = render_status["output"]
+        fsize = os.path.getsize(fpath)
+        self.send_response(200)
+        self.send_header("Content-Type", "video/mp4")
+        fname = os.path.basename(fpath)
+        self.send_header("Content-Disposition", f'attachment; filename="{fname}"')
+        self.send_header("Content-Length", fsize)
+        self.end_headers()
+        with open(fpath, "rb") as f:
+            shutil.copyfileobj(f, self.wfile)
+
+
+def get_video_duration(path):
+    try:
+        r = subprocess.run(
+            ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_format", path],
+            capture_output=True, text=True
+        )
+        return float(json.loads(r.stdout)["format"]["duration"])
+    except:
+        return 0.0
+
+
+def run_analyze(files, options):
+    """Run thread_video_cutter.py --dry-run to get clip analysis, then generate subtitles."""
+    try:
+        # Validate files exist
+        paths = []
+        for f in files:
+            p = BASE / f
+            if not p.exists():
+                raise FileNotFoundError(f"파일 없음: {f}")
+            paths.append(str(p))
+        
+        max_dur = options.get("maxDuration", 60)
+        clip_min = options.get("clipMin", 1.5)
+        clip_max = options.get("clipMax", 8)
+        scene_threshold = options.get("sceneThreshold", 0.3)
+        num_sources = len(paths)
+        
+        # Smart parameter tuning — same logic as manual editing
+        # 1. Calculate top-n per source to ensure even distribution
+        avg_clip_dur = (clip_min + clip_max) / 2
+        total_clips_needed = int(max_dur / avg_clip_dur) + 1
+        top_n = max(2, total_clips_needed // num_sources)
+        
+        # 2. Adjust clip-max based on target duration
+        if max_dur <= 15:
+            clip_max = min(clip_max, 3)
+        elif max_dur <= 30:
+            clip_max = min(clip_max, 4)
+        
+        with analyze_lock:
+            analyze_status["progress"] = f"장면 분석 중... ({num_sources}개 영상, 소스당 {top_n}클립)"
+        
+        # Run cutter with smart params
+        cmd = [
+            sys.executable, str(CUTTER_SCRIPT),
+            "--dry-run",
+            "-d", str(max_dur),
+            "--clip-min", str(clip_min),
+            "--clip-max", str(clip_max),
+            "--scene-threshold", str(scene_threshold),
+            "--top-n", str(top_n),
+            *paths
+        ]
+        
+        print(f"[Analyze] Smart params: top_n={top_n}, clip_max={clip_max}, target={max_dur}s")
+        print(f"[Analyze] Running: {' '.join(cmd[:12])}...")
+        r = subprocess.run(cmd, capture_output=True, text=True, cwd=str(BASE))
+        
+        if r.returncode != 0:
+            raise RuntimeError(f"분석 실패: {r.stderr[-500:]}")
+        
+        # Parse JSON from output
+        clips = []
+        subs = []
+        output = r.stdout.strip()
+        json_start = output.find("[")
+        if json_start >= 0:
+            json_str = output[json_start:]
+            try:
+                clips = json.loads(json_str)
+            except json.JSONDecodeError:
+                bracket_count = 0
+                for i, ch in enumerate(json_str):
+                    if ch == "[": bracket_count += 1
+                    elif ch == "]": bracket_count -= 1
+                    if bracket_count == 0:
+                        try:
+                            clips = json.loads(json_str[:i+1])
+                        except:
+                            pass
+                        break
+        
+        if not clips:
+            import re
+            for line in output.split("\n"):
+                m = re.match(r'\s*\d+\.\s+\[(.+?)\]\s+([\d.]+)s?\s*~\s*([\d.]+)s?\s*\(.*?score[=:]?\s*([\d.]+)', line)
+                if m:
+                    clips.append({
+                        "source": m.group(1).strip(),
+                        "start": float(m.group(2)),
+                        "end": float(m.group(3)),
+                        "score": float(m.group(4)),
+                        "source_idx": 0
+                    })
+        
+        print(f"[Analyze] Parsed {len(clips)} clips")
+        
+        # Post-processing: ensure all sources are represented
+        source_names = [Path(p).name for p in paths]
+        sources_in_clips = set(c["source"] for c in clips)
+        missing = [s for s in source_names if s not in sources_in_clips]
+        
+        if missing:
+            with analyze_lock:
+                analyze_status["progress"] = f"누락 소스 보충 중... ({len(missing)}개)"
+            
+            # Run additional analysis for missing sources
+            for ms in missing:
+                ms_path = str(BASE / ms)
+                cmd2 = [
+                    sys.executable, str(CUTTER_SCRIPT),
+                    "--dry-run", "-d", str(clip_max * 2),
+                    "--clip-min", str(clip_min), "--clip-max", str(clip_max),
+                    "--top-n", "2",
+                    ms_path
+                ]
+                r2 = subprocess.run(cmd2, capture_output=True, text=True, cwd=str(BASE))
+                out2 = r2.stdout.strip()
+                js2 = out2.find("[")
+                if js2 >= 0:
+                    try:
+                        extra = json.loads(out2[js2:])
+                        clips.extend(extra[:2])
+                        print(f"[Analyze] Added {min(2,len(extra))} clips from missing source: {ms}")
+                    except:
+                        pass
+        
+        # Re-interleave: distribute clips evenly across sources
+        with analyze_lock:
+            analyze_status["progress"] = "클립 배치 최적화 중..."
+        
+        # Group by source
+        by_source = {}
+        for c in clips:
+            by_source.setdefault(c["source"], []).append(c)
+        
+        # Round-robin interleave
+        interleaved = []
+        source_order = [Path(p).name for p in paths]  # respect user's ordering
+        source_iters = {s: iter(by_source.get(s, [])) for s in source_order}
+        
+        total_dur = 0
+        rounds = 0
+        max_rounds = 20
+        while total_dur < max_dur and rounds < max_rounds:
+            added = False
+            for s in source_order:
+                if total_dur >= max_dur:
+                    break
+                try:
+                    c = next(source_iters[s])
+                    dur = c["end"] - c["start"]
+                    if total_dur + dur <= max_dur + 2:  # small overflow ok
+                        interleaved.append(c)
+                        total_dur += dur
+                        added = True
+                except StopIteration:
+                    continue
+            if not added:
+                break
+            rounds += 1
+        
+        clips = interleaved
+        
+        # Assign source_idx
+        src_names = list(dict.fromkeys(c["source"] for c in clips))
+        for c in clips:
+            c["source_idx"] = src_names.index(c["source"]) if c["source"] in src_names else 0
+        
+        print(f"[Analyze] Final: {len(clips)} clips, {total_dur:.1f}s, {len(set(c['source'] for c in clips))} sources")
+        
+        # Assign source_idx
+        src_names = list(dict.fromkeys(c["source"] for c in clips))
+        for c in clips:
+            c["source_idx"] = src_names.index(c["source"]) if c["source"] in src_names else 0
+        
+        # Subtitle generation
+        sub_mode = options.get("subtitleMode", "0")
+        context = options.get("context", "")
+        
+        client_api_key = options.get("apiKey", "")
+        
+        if sub_mode == "context" and context:
+            with analyze_lock:
+                analyze_status["progress"] = "자막 생성 중 (AI)..."
+            try:
+                subs = generate_context_subs(clips, context, client_api_key)
+            except Exception as e:
+                print(f"[Analyze] Context subtitle failed: {e}")
+                subs = [""] * len(clips)
+        elif sub_mode == "whisper":
+            with analyze_lock:
+                analyze_status["progress"] = "자막 생성 중 (Whisper)..."
+            try:
+                subs = generate_auto_subs(clips, options.get("subLang", "ko"))
+            except Exception as e:
+                print(f"[Analyze] Whisper subtitle failed: {e}")
+                subs = [""] * len(clips)
+        else:
+            subs = [""] * len(clips)
+        
+        with analyze_lock:
+            analyze_status.update(
+                state="done",
+                progress="완료",
+                result={"clips": clips, "subs": subs}
+            )
+        print(f"[Analyze] ✅ Done: {len(clips)} clips")
+        
+    except Exception as e:
+        with analyze_lock:
+            analyze_status.update(state="error", error=str(e))
+        print(f"[Analyze] ❌ Error: {e}")
+
+
+def generate_context_subs(clips, context, api_key_from_client=""):
+    """Generate subtitles based on user context prompt using OpenAI/Anthropic API."""
+    import urllib.request
+    
+    clip_info = []
+    for i, c in enumerate(clips):
+        dur = c["end"] - c["start"]
+        clip_info.append(f"클립{i+1}: {c['source']} ({c['start']:.1f}~{c['end']:.1f}초, {dur:.1f}초)")
+    
+    prompt = f"""다음은 영상 편집 프로젝트의 클립 목록입니다.
+
+사용자 설명: {context}
+
+클립 목록:
+{chr(10).join(clip_info)}
+
+각 클립에 맞는 자막을 생성해주세요.
+규칙:
+- 각 클립당 정확히 1줄 자막
+- 짧고 임팩트 있게 (한 문장)
+- 사용자가 설명한 톤/분위기에 맞게
+- {len(clips)}줄을 정확히 출력 (클립 수와 동일)
+- 번호 없이 자막 텍스트만 한 줄씩 출력
+
+자막:"""
+
+    # Detect key type from client-provided key
+    client_key = api_key_from_client or ""
+    
+    # Try OpenAI API
+    api_key = client_key if client_key.startswith("sk-") and not client_key.startswith("sk-ant-") else os.environ.get("OPENAI_API_KEY", "")
+    if api_key and not api_key.startswith("sk-ant-"):
+        try:
+            data = json.dumps({
+                "model": "gpt-4o-mini",
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.8
+            }).encode()
+            req = urllib.request.Request(
+                "https://api.openai.com/v1/chat/completions",
+                data=data,
+                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+            )
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                result = json.loads(resp.read())
+                text = result["choices"][0]["message"]["content"].strip()
+                lines = [l.strip() for l in text.split("\n") if l.strip()]
+                # Pad or trim to match clip count
+                while len(lines) < len(clips):
+                    lines.append("")
+                return lines[:len(clips)]
+        except Exception as e:
+            print(f"[Subs] OpenAI API failed: {e}")
+    
+    # Try Anthropic API
+    api_key = client_key if client_key.startswith("sk-ant-") else os.environ.get("ANTHROPIC_API_KEY", "")
+    if api_key:
+        try:
+            data = json.dumps({
+                "model": "claude-sonnet-4-20250514",
+                "max_tokens": 1024,
+                "messages": [{"role": "user", "content": prompt}]
+            }).encode()
+            req = urllib.request.Request(
+                "https://api.anthropic.com/v1/messages",
+                data=data,
+                headers={
+                    "x-api-key": api_key,
+                    "anthropic-version": "2023-06-01",
+                    "Content-Type": "application/json"
+                }
+            )
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                result = json.loads(resp.read())
+                text = result["content"][0]["text"].strip()
+                lines = [l.strip() for l in text.split("\n") if l.strip()]
+                while len(lines) < len(clips):
+                    lines.append("")
+                return lines[:len(clips)]
+        except Exception as e:
+            print(f"[Subs] Anthropic API failed: {e}")
+    
+    # Fallback: use local LLM via ollama or openclaw
+    try:
+        # Try ollama
+        data = json.dumps({
+            "model": "llama3",
+            "prompt": prompt,
+            "stream": False
+        }).encode()
+        req = urllib.request.Request(
+            "http://localhost:11434/api/generate",
+            data=data,
+            headers={"Content-Type": "application/json"}
+        )
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            result = json.loads(resp.read())
+            text = result.get("response", "").strip()
+            lines = [l.strip() for l in text.split("\n") if l.strip()]
+            while len(lines) < len(clips):
+                lines.append("")
+            return lines[:len(clips)]
+    except Exception as e:
+        print(f"[Subs] Ollama failed: {e}")
+    
+    print("[Subs] No LLM available, generating placeholder subtitles")
+    return [f"" for _ in clips]
+
+
+def generate_auto_subs(clips, language="ko"):
+    """Generate subtitle text per clip using Whisper."""
+    subs = []
+    try:
+        import whisper
+        model = whisper.load_model("base")
+        
+        for i, clip in enumerate(clips):
+            src = BASE / Path(clip["source"]).name
+            # Extract clip audio to temp file
+            tmp_wav = BASE / f"_tmp_sub_{i}.wav"
+            subprocess.run([
+                "ffmpeg", "-y", "-ss", str(clip["start"]), "-t", str(clip["end"] - clip["start"]),
+                "-i", str(src), "-vn", "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1",
+                str(tmp_wav)
+            ], capture_output=True)
+            
+            if tmp_wav.exists():
+                result = model.transcribe(str(tmp_wav), language=language)
+                text = result.get("text", "").strip()
+                subs.append(text)
+                tmp_wav.unlink(missing_ok=True)
+            else:
+                subs.append("")
+    except ImportError:
+        print("[Analyze] Whisper not available, skipping auto-subtitle")
+        subs = [""] * len(clips)
+    except Exception as e:
+        print(f"[Analyze] Whisper error: {e}")
+        subs = [""] * len(clips)
+    
+    return subs
+
+
+def run_render(data):
+    clips = data["clips"]
+    tmp_dir = BASE / "_render_tmp"
+    tmp_dir.mkdir(exist_ok=True)
+    tmp_files = []
+
+    try:
+        for i, clip in enumerate(clips):
+            src = BASE / Path(clip["source"]).name
+            if not src.exists():
+                raise FileNotFoundError(f"Source not found: {src}")
+
+            speed = clip.get("speed", 1)
+            crop = clip.get("crop", {"x": 0, "y": 0, "w": 100, "h": 100})
+            zoom = clip.get("zoom", {"scale": 1, "panX": 0, "panY": 0})
+            start = clip["start"]
+            end = clip["end"]
+            dur = (end - start) / speed
+            tmp_out = tmp_dir / f"clip_{i:03d}.mp4"
+            tmp_files.append(tmp_out)
+
+            # Build filter chain
+            filters = []
+
+            # Speed
+            if speed != 1:
+                filters.append(f"setpts={1/speed:.4f}*PTS")
+
+            # Scale to output
+            filters.append(f"scale={W}:{H}:force_original_aspect_ratio=increase")
+            filters.append(f"crop={W}:{H}")
+
+            # Zoom
+            if zoom["scale"] != 1 or zoom["panX"] != 0 or zoom["panY"] != 0:
+                zw = int(W * zoom["scale"])
+                zh = int(H * zoom["scale"])
+                zx = max(0, int((zw - W) / 2 - (zoom["panX"] / 100) * W))
+                zy = max(0, int((zh - H) / 2 - (zoom["panY"] / 100) * H))
+                filters.append(f"scale={zw}:{zh}")
+                filters.append(f"crop={W}:{H}:{zx}:{zy}")
+
+            # Crop (mask with black)
+            has_crop = crop["x"] != 0 or crop["y"] != 0 or crop["w"] != 100 or crop["h"] != 100
+            if has_crop:
+                cx = int(crop["x"] / 100 * W)
+                cy = int(crop["y"] / 100 * H)
+                cw = int(crop["w"] / 100 * W)
+                ch = int(crop["h"] / 100 * H)
+                pre = ",".join(filters) + "," if filters else ""
+                fc = (
+                    f"{pre}split[orig][bg];"
+                    f"[bg]drawbox=x=0:y=0:w={W}:h={H}:c=black:t=fill[black];"
+                    f"[orig]crop={cw}:{ch}:{cx}:{cy}[cropped];"
+                    f"[black][cropped]overlay={cx}:{cy}"
+                )
+                cmd = [
+                    "ffmpeg", "-y",
+                    "-ss", f"{start:.3f}", "-t", f"{end-start:.3f}",
+                    "-i", str(src),
+                    "-filter_complex", fc,
+                    "-c:v", "libx264", "-preset", "fast", "-crf", "18",
+                    "-an", "-t", f"{dur:.3f}",
+                    str(tmp_out)
+                ]
+            else:
+                vf = ",".join(filters)
+                cmd = [
+                    "ffmpeg", "-y",
+                    "-ss", f"{start:.3f}", "-t", f"{end-start:.3f}",
+                    "-i", str(src),
+                    "-vf", vf,
+                    "-c:v", "libx264", "-preset", "fast", "-crf", "18",
+                    "-an", "-t", f"{dur:.3f}",
+                    str(tmp_out)
+                ]
+
+            print(f"[Render] Clip {i+1}/{len(clips)}: {' '.join(cmd)}")
+            r = subprocess.run(cmd, capture_output=True, text=True)
+            if r.returncode != 0:
+                raise RuntimeError(f"Clip {i+1} failed: {r.stderr[-500:]}")
+
+            with render_lock:
+                render_status["progress"] = i + 1
+
+        # Concat
+        concat_file = tmp_dir / "concat.txt"
+        with open(concat_file, "w") as f:
+            for tf in tmp_files:
+                f.write(f"file '{tf}'\n")
+
+        merged = tmp_dir / "merged.mp4"
+        cmd = ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(concat_file), "-c", "copy", str(merged)]
+        print(f"[Render] Concat: {' '.join(cmd)}")
+        r = subprocess.run(cmd, capture_output=True, text=True)
+        if r.returncode != 0:
+            raise RuntimeError(f"Concat failed: {r.stderr[-500:]}")
+
+        # Subtitles
+        subs = []
+        t_offset = 0
+        for i, clip in enumerate(clips):
+            speed = clip.get("speed", 1)
+            dur = (clip["end"] - clip["start"]) / speed
+            sub_text = clip.get("subtitle", "")
+            if sub_text:
+                sub_style = clip.get("subStyle", {"size": 16, "x": 50, "y": 80})
+                subs.append((t_offset, t_offset + dur, sub_text, sub_style))
+            t_offset += dur
+
+        max_dur = data.get("maxDuration", 0)
+        suffix = f"_{max_dur}s" if max_dur else ""
+        output = BASE / f"edited_output{suffix}.mp4"
+
+        if subs:
+            # Render each subtitle as a PNG image, then overlay with enable timing
+            sub_pngs = []
+            overlay_inputs = []
+            overlay_filters = []
+
+            for idx, (st, en, text, ss) in enumerate(subs):
+                font_size = int(ss.get("size", 16) * 3.5)
+                sx = ss.get("x", 50)
+                sy = ss.get("y", 80)
+
+                png_path = tmp_dir / f"sub_{idx:03d}.png"
+                img_w, img_h = render_subtitle_image(text, font_size, str(png_path), W, H)
+                sub_pngs.append(png_path)
+
+                # Position: center the PNG at (sx%, sy%) of frame
+                ox = int(sx / 100 * W - img_w / 2)
+                oy = int(sy / 100 * H - img_h / 2)
+                ox = max(0, min(W - img_w, ox))
+                oy = max(0, min(H - img_h, oy))
+
+                overlay_inputs.extend(["-i", str(png_path)])
+
+                # Build overlay chain
+                if idx == 0:
+                    prev = "0:v"
+                else:
+                    prev = f"v{idx}"
+                out_label = f"v{idx+1}"
+
+                overlay_filters.append(
+                    f"[{prev}][{idx+1}:v]overlay={ox}:{oy}:enable='between(t,{st:.3f},{en:.3f})'[{out_label}]"
+                )
+
+            fc = ";".join(overlay_filters)
+            final_label = f"v{len(subs)}"
+
+            cmd = [
+                "ffmpeg", "-y", "-i", str(merged),
+                *overlay_inputs,
+                "-filter_complex", fc,
+                "-map", f"[{final_label}]",
+                "-c:v", "libx264", "-preset", "fast", "-crf", "18",
+                str(output)
+            ]
+            print(f"[Render] PNG overlay subs: {len(subs)} entries")
+            r = subprocess.run(cmd, capture_output=True, text=True)
+            if r.returncode != 0:
+                raise RuntimeError(f"Subtitle burn failed: {r.stderr[-500:]}")
+        else:
+            shutil.copy2(merged, output)
+
+        with render_lock:
+            render_status.update(state="done", output=str(output))
+        print(f"[Render] ✅ Done: {output}")
+
+    except Exception as e:
+        with render_lock:
+            render_status.update(state="error", error=str(e))
+        print(f"[Render] ❌ Error: {e}")
+    finally:
+        # Cleanup tmp
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+def render_subtitle_image(text, font_size, out_path, frame_w=1080, frame_h=1920):
+    """Render a subtitle as a transparent PNG with rounded black background box."""
+    try:
+        font = ImageFont.truetype(FONT_PATH, font_size)
+    except:
+        font = ImageFont.load_default()
+    
+    # Measure text
+    dummy = Image.new("RGBA", (1, 1))
+    dd = ImageDraw.Draw(dummy)
+    bbox = dd.textbbox((0, 0), text, font=font)
+    tw = bbox[2] - bbox[0]
+    th = bbox[3] - bbox[1]
+    
+    # Padding and radius matching editor style
+    pad_h = int(font_size * 0.7)  # horizontal padding
+    pad_v = int(font_size * 0.35)  # vertical padding
+    radius = int(font_size * 0.4)  # border radius
+    
+    img_w = tw + pad_h * 2
+    img_h = th + pad_v * 2
+    
+    img = Image.new("RGBA", (img_w, img_h), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    
+    # Rounded rectangle background — rgba(0,0,0,0.6) = alpha 153
+    draw.rounded_rectangle(
+        [(0, 0), (img_w - 1, img_h - 1)],
+        radius=radius,
+        fill=(0, 0, 0, 153)
+    )
+    
+    # White bold text centered in box
+    tx = pad_h - bbox[0]
+    ty = pad_v - bbox[1]
+    draw.text((tx, ty), text, font=font, fill=(255, 255, 255, 255))
+    
+    img.save(out_path, "PNG")
+    return img_w, img_h
+
+
+def ass_time(s):
+    """Format seconds to ASS time: H:MM:SS.cc"""
+    h = int(s // 3600)
+    m = int(s % 3600 // 60)
+    sec = int(s % 60)
+    cs = int((s % 1) * 100)
+    return f"{h}:{m:02d}:{sec:02d}.{cs:02d}"
+
+def srt_time(s):
+    h = int(s // 3600)
+    m = int(s % 3600 // 60)
+    sec = int(s % 60)
+    ms = int((s % 1) * 1000)
+    return f"{h:02d}:{m:02d}:{sec:02d},{ms:03d}"
+
+
+if __name__ == "__main__":
+    import socketserver
+    socketserver.TCPServer.allow_reuse_address = True
+    server = http.server.HTTPServer(("", PORT), Handler)
+    server.allow_reuse_address = True
+    print(f"🎬 Editor server at http://localhost:{PORT}/editor.html")
+    server.serve_forever()
