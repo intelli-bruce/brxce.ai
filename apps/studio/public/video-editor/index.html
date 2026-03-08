@@ -2092,6 +2092,7 @@ function onTrackAreaClick(e){
   // If click target is a clip or inside a clip, ignore (clip has its own handler)
   if(e.target.closest('.tl-clip,.tl-sub-clip,.tl-audio-clip,.tl-trim'))return;
   // Deselect all clips
+  cur=-1;
   document.querySelectorAll('.tl-clip').forEach(el=>el.classList.remove('active'));
   // Hide subtitle overlay
   document.getElementById('subOv').classList.add('h');
@@ -2121,7 +2122,8 @@ function toggleSubtitleDisplay(){
 function updateMediaBtn(){
   const btn=document.getElementById('mediaBtn');
   if(!btn)return;
-  if(CLIPS.length&&cur>=0&&cur<CLIPS.length){
+  const hasSelection=cur>=0&&cur<CLIPS.length&&document.querySelector('.tl-clip.active');
+  if(hasSelection){
     btn.textContent='📎 미디어 수정';btn.title='현재 클립의 미디어 수정 또는 새 미디어 추가';
   } else {
     btn.textContent='📎 미디어 추가';btn.title='미디어 추가';
