@@ -204,8 +204,30 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 dest = BASE / safe_name
                 with open(dest, "wb") as f:
                     f.write(file_data)
-                dur = get_video_duration(str(dest))
-                size_mb = dest.stat().st_size / 1024 / 1024
+                
+                # Check if it's an image — convert to still video clip
+                img_exts = {".jpg", ".jpeg", ".png", ".heic", ".webp", ".gif", ".bmp", ".tiff"}
+                if Path(safe_name).suffix.lower() in img_exts:
+                    still_name = Path(safe_name).stem + "_still.mp4"
+                    still_path = BASE / still_name
+                    dur_sec = 4  # default 4 seconds for images
+                    subprocess.run([
+                        "ffmpeg", "-y", "-loop", "1", "-i", str(dest), "-t", str(dur_sec),
+                        "-vf", "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:black",
+                        "-c:v", "libx264", "-preset", "fast", "-crf", "20", "-pix_fmt", "yuv420p", "-r", "30",
+                        str(still_path)
+                    ], capture_output=True, timeout=30)
+                    if still_path.exists():
+                        safe_name = still_name
+                        dur = dur_sec
+                        size_mb = still_path.stat().st_size / 1024 / 1024
+                    else:
+                        dur = 0
+                        size_mb = dest.stat().st_size / 1024 / 1024
+                else:
+                    dur = get_video_duration(str(dest))
+                    size_mb = dest.stat().st_size / 1024 / 1024
+                
                 uploaded.append({"name": safe_name, "duration": round(dur, 1), "size": round(size_mb, 1)})
         
         self.send_json({"uploaded": uploaded})

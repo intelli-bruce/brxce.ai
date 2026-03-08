@@ -255,9 +255,9 @@ body{background:#0f0f0f;color:#e0e0e0;font-family:-apple-system,'Apple SD Gothic
   <button class="btn" onclick="undo()" title="Cmd+Z">↩</button>
   <span class="info" id="totalInfo">--</span>
   <div style="margin-left:auto;display:flex;gap:4px">
-    <button class="btn" id="subToggleBtn" onclick="toggleSubtitleDisplay()" title="자막 표시 on/off">💬 자막</button>
-    <button class="btn" onclick="uploadExternalVideo()" title="외부 영상 업로드">📎 영상 추가</button>
-    <input type="file" id="extVideoUpload" accept="video/*" multiple style="display:none" onchange="handleExtUpload(this.files)">
+    <button class="btn on" id="subToggleBtn" onclick="toggleSubtitleDisplay()" title="자막 표시 on/off">💬 자막</button>
+    <button class="btn" id="mediaBtn" onclick="uploadExternalVideo()" title="미디어 추가/수정">📎 미디어 추가</button>
+    <input type="file" id="extVideoUpload" accept="video/*,image/*" multiple style="display:none" onchange="handleExtUpload(this.files)">
     <div class="sep"></div>
     <button class="btn" onclick="goToProjects()">📂 프로젝트</button>
     <button class="btn" onclick="saveProject()">💾 저장</button>
@@ -1087,6 +1087,7 @@ function sel(i){
   applyCropToVideo();syncZoomUI();if(cropMode)updateCropOverlay();
   checkLetterbox();
   scrollToClip(i);
+  updateMediaBtn();
 }
 
 function scrollToClip(i){
@@ -2092,13 +2093,29 @@ function toggleSubtitleDisplay(){
   subtitlesVisible=!subtitlesVisible;
   const btn=document.getElementById('subToggleBtn');
   btn.classList.toggle('on',subtitlesVisible);
-  // Toggle subtitle overlay visibility
-  document.getElementById('subOv').style.display=subtitlesVisible?'':'none';
   // Toggle subtitle track visibility
-  document.getElementById('subTrack').style.display=subtitlesVisible?'':'none';
+  const subTrack=document.getElementById('subTrack');
+  if(subTrack)subTrack.style.display=subtitlesVisible?'':'none';
+  // Refresh current subtitle display
+  const ov=document.getElementById('subOv'),tx=document.getElementById('subTx');
+  if(subtitlesVisible){
+    const sub=SUBS[cur]||'';
+    if(sub){tx.textContent=sub;ov.classList.remove('h')}else{ov.classList.add('h')}
+  } else {
+    ov.classList.add('h');
+  }
 }
 
-/* ─── External Video Upload & Source Change ─── */
+/* ─── External Media Upload & Source Change ─── */
+function updateMediaBtn(){
+  const btn=document.getElementById('mediaBtn');
+  if(!btn)return;
+  if(CLIPS.length&&cur>=0&&cur<CLIPS.length){
+    btn.textContent='📎 미디어 수정';btn.title='현재 클립의 미디어 수정 또는 새 미디어 추가';
+  } else {
+    btn.textContent='📎 미디어 추가';btn.title='미디어 추가';
+  }
+}
 function uploadExternalVideo(){
   document.getElementById('extVideoUpload').click();
 }
@@ -2106,17 +2123,16 @@ function handleExtUpload(fileList){
   if(!fileList||!fileList.length)return;
   const fd=new FormData();
   for(const f of fileList)fd.append('files',f);
-  const btn=document.querySelector('[onclick="uploadExternalVideo()"]');
+  const btn=document.getElementById('mediaBtn');
   btn.disabled=true;btn.textContent='⏳ 업로드 중...';
   fetch(apiUrl('/api/upload'),{method:'POST',body:fd})
     .then(r=>r.json()).then(data=>{
-      btn.disabled=false;btn.textContent='📎 영상 추가';
+      btn.disabled=false;updateMediaBtn();
       document.getElementById('extVideoUpload').value='';
       if(!data.uploaded||!data.uploaded.length)return;
-      // Show modal to choose: add as new clip or change current clip source
       showUploadResultModal(data.uploaded);
     }).catch(e=>{
-      btn.disabled=false;btn.textContent='📎 영상 추가';
+      btn.disabled=false;updateMediaBtn();
       alert('업로드 실패: '+e);
     });
 }
