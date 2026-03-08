@@ -1267,6 +1267,7 @@ function playC(i,offsetSec){
   document.querySelectorAll('.tl-clip').forEach((e,j)=>e.classList.toggle('active',j===i));
   updateDetail();
   showSubAtTime(gTime);
+  applyZoomToVideo();applyCropToVideo();checkLetterbox();
 
   const startPlayback=()=>{
     if(gen!==_playGen)return; // stale
@@ -1725,7 +1726,7 @@ function copy(t,msg){navigator.clipboard.writeText(t).then(()=>alert(msg)).catch
         vid.currentTime=CLIPS[i].start+(gTime-starts[i])*(clipMeta[i]?.speed||1);
         showSubAtTime(gTime);
         // highlight
-        if(cur!==i){cur=i;document.querySelectorAll('.tl-clip').forEach((e,j)=>e.classList.toggle('active',j===i));updateDetail()}
+        if(cur!==i){cur=i;document.querySelectorAll('.tl-clip').forEach((e,j)=>e.classList.toggle('active',j===i));updateDetail();applyZoomToVideo();applyCropToVideo();checkLetterbox()}
         break;
       }
     }
