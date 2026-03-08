@@ -471,7 +471,9 @@ function applyCropToVideo(){
 
 function applyZoomToVideo(){
   const vid=document.getElementById('vid');
-  const z=zoomOf(cur);
+  if(cur<0||cur>=clipZooms.length)return;
+  const z=clipZooms[cur];
+  if(!z||z.scale===undefined){vid.style.transform='';return}
   if(z.scale===1&&z.panX===0&&z.panY===0){
     vid.style.transform='';
     vid.style.transformOrigin='center center';
@@ -480,6 +482,7 @@ function applyZoomToVideo(){
     vid.style.transform=`scale(${z.scale}) translate(${z.panX}%, ${z.panY}%)`;
   }
   updateZoomInfo();
+  console.log(`[zoom] clip=${cur} scale=${z.scale} panX=${z.panX} panY=${z.panY}`,clipZooms.map((z,i)=>`${i}:${z.scale}`).join(' '));
 }
 
 function updateCropOverlay(){
@@ -1322,18 +1325,7 @@ function onSkim(e){
   const t=Math.max(0,(x-HDR)/pxPerSec);
   const sk=document.getElementById('tlSkim');
   sk.style.display='block';sk.style.left=(HDR+t*pxPerSec)+'px';
-  // Preview skim
-  for(let i=0;i<CLIPS.length;i++){
-    const end=starts[i]+clipDur(i);
-    if(t<=end+0.01){
-      const vid=document.getElementById('vid');
-      const src=VBASE+'/'+CLIPS[i].source.split('/').pop();
-      if(vid.dataset.src!==src){vid.src=src;vid.dataset.src=src}
-      vid.currentTime=CLIPS[i].start+(t-starts[i])*(clipMeta[i]?.speed||1);
-      showSubAtTime(t);
-      break;
-    }
-  }
+  // Preview always shows playhead position, not hover position
 }
 function skimHide(){document.getElementById('tlSkim').style.display='none'}
 
