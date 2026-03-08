@@ -545,7 +545,12 @@ function onZoomChange(){
 }
 
 function resetZoom(){
-  clipZooms[cur]={scale:1,panX:0,panY:0};
+  if(zoomAllMode){
+    // 전체 적용 ON이면 모든 클립 초기화
+    for(let i=0;i<clipZooms.length;i++)clipZooms[i]={scale:1,panX:0,panY:0};
+  } else {
+    clipZooms[cur]={scale:1,panX:0,panY:0};
+  }
   syncZoomUI();applyZoomToVideo();
 }
 
