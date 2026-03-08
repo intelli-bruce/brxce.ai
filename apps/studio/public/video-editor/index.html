@@ -1161,11 +1161,13 @@ function sel(i){
   updateDetail();
   const c=CLIPS[i],vid=document.getElementById('vid');
   const src=VBASE+'/'+c.source.split('/').pop();
-  // Always go to clip start when directly selecting a clip
+  // Set gTime to clip start and move playhead there
   gTime=starts[i];
   if(vid.dataset.src!==src){vid.src=src;vid.dataset.src=src;vid.onloadedmetadata=()=>{srcDurs[src]=vid.duration;vid.currentTime=c.start}}
   else vid.currentTime=c.start;
-  updatePlayhead();updateTC();
+  // Update playhead position to match gTime
+  document.getElementById('tlPlayhead').style.left=(HDR+gTime*pxPerSec)+'px';
+  updateTC();
   deselectSub();
   showSubAtTime(gTime);
   syncSubUI();applySubStyle();
@@ -1213,14 +1215,19 @@ function delCur(){if(CLIPS.length<=1)return;save();CLIPS.splice(cur,1);SUBS.spli
 function togglePlay(){playing?stopP():startP()}
 function startP(){
   playing=true;document.getElementById('playBtn').textContent='⏸';document.getElementById('playBtn').classList.add('playing');playSpeed=1;updateSpeedBadge();
-  // Find clip at current gTime and start from exact position
+  
+  // Derive actual gTime from playhead DOM position (most reliable source)
+  const phLeft=parseFloat(document.getElementById('tlPlayhead').style.left)||0;
+  const derivedGTime=Math.max(0,Math.min(total,(phLeft-HDR)/pxPerSec));
+  gTime=derivedGTime;
+  
+  // Find clip and offset from gTime
   let startIdx=0,offset=0;
   for(let i=0;i<CLIPS.length;i++){
     const end=starts[i]+clipDur(i);
     if(gTime<end-0.01){startIdx=i;offset=gTime-starts[i];break}
     if(i===CLIPS.length-1){startIdx=i;offset=clipDur(i)}
   }
-  console.log(`[startP] gTime=${gTime.toFixed(2)} startIdx=${startIdx} offset=${offset.toFixed(2)} clipStart=${starts[startIdx]?.toFixed(2)}`);
   playC(startIdx,offset);
 }
 function stopP(){
