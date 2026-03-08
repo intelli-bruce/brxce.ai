@@ -1148,10 +1148,15 @@ function sel(i){
   updateDetail();
   const c=CLIPS[i],vid=document.getElementById('vid');
   const src=VBASE+'/'+c.source.split('/').pop();
-  if(vid.dataset.src!==src){vid.src=src;vid.dataset.src=src;vid.onloadedmetadata=()=>{srcDurs[src]=vid.duration;vid.currentTime=c.start}}
-  else vid.currentTime=c.start;
+  const clipOffset=gTime-starts[i];
+  const seekTime=(clipOffset>0&&clipOffset<clipDur(i))?c.start+clipOffset*(clipMeta[i]?.speed||1):c.start;
+  if(vid.dataset.src!==src){vid.src=src;vid.dataset.src=src;vid.onloadedmetadata=()=>{srcDurs[src]=vid.duration;vid.currentTime=seekTime}}
+  else vid.currentTime=seekTime;
+  // Only reset gTime if it's outside this clip's range (clicked directly on clip)
+  if(gTime<starts[i]||gTime>starts[i]+clipDur(i)){gTime=starts[i]}
+  updatePlayhead();updateTC();
   deselectSub();
-  showSubAtTime(starts[i]);
+  showSubAtTime(gTime);
   syncSubUI();applySubStyle();
   applyCropToVideo();syncZoomUI();applyZoomToVideo();if(cropMode)updateCropOverlay();
   checkLetterbox();
