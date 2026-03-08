@@ -1116,9 +1116,7 @@ function sel(i){
   const src=VBASE+'/'+c.source.split('/').pop();
   if(vid.dataset.src!==src){vid.src=src;vid.dataset.src=src;vid.onloadedmetadata=()=>{srcDurs[src]=vid.duration;vid.currentTime=c.start}}
   else vid.currentTime=c.start;
-  const sub=SUBS[i]||'';
-  const ov=document.getElementById('subOv'),tx=document.getElementById('subTx');
-  if(sub&&subtitlesVisible){tx.textContent=sub;ov.classList.remove('h')}else ov.classList.add('h');
+  showSubAtTime(starts[i]);
   syncSubUI();applySubStyle();
   applyCropToVideo();syncZoomUI();if(cropMode)updateCropOverlay();
   checkLetterbox();
@@ -1236,9 +1234,7 @@ function playC(i,offsetSec){
   cur=i;
   document.querySelectorAll('.tl-clip').forEach((e,j)=>e.classList.toggle('active',j===i));
   updateDetail();
-  const sub=SUBS[i]||'';
-  const ov=document.getElementById('subOv'),tx=document.getElementById('subTx');
-  if(sub&&subtitlesVisible){tx.textContent=sub;ov.classList.remove('h')}else ov.classList.add('h');
+  showSubAtTime(gTime);
 
   const startPlayback=()=>{
     if(gen!==_playGen)return; // stale
@@ -1301,10 +1297,7 @@ function onSkim(e){
       const src=VBASE+'/'+CLIPS[i].source.split('/').pop();
       if(vid.dataset.src!==src){vid.src=src;vid.dataset.src=src}
       vid.currentTime=CLIPS[i].start+(t-starts[i])*(clipMeta[i]?.speed||1);
-      // Show subtitle
-      const sub=SUBS[i]||'';
-      const ov=document.getElementById('subOv'),tx=document.getElementById('subTx');
-      if(sub&&subtitlesVisible){tx.textContent=sub;ov.classList.remove('h')}else ov.classList.add('h');
+      showSubAtTime(t);
       break;
     }
   }
@@ -1698,10 +1691,7 @@ function copy(t,msg){navigator.clipboard.writeText(t).then(()=>alert(msg)).catch
         const src=VBASE+'/'+CLIPS[i].source.split('/').pop();
         if(vid.dataset.src!==src){vid.src=src;vid.dataset.src=src}
         vid.currentTime=CLIPS[i].start+(gTime-starts[i])*(clipMeta[i]?.speed||1);
-        // subtitle
-        const sub=SUBS[i]||'';
-        const ov=document.getElementById('subOv'),tx=document.getElementById('subTx');
-        if(sub&&subtitlesVisible){tx.textContent=sub;ov.classList.remove('h')}else ov.classList.add('h');
+        showSubAtTime(gTime);
         // highlight
         if(cur!==i){cur=i;document.querySelectorAll('.tl-clip').forEach((e,j)=>e.classList.toggle('active',j===i));updateDetail()}
         break;
@@ -1750,6 +1740,8 @@ document.addEventListener('keydown',e=>{
   if((k==='Delete'||k==='Backspace')&&CLIPS.length>1){e.preventDefault();delCur()}
   if(k==='KeyZ'&&(e.metaKey||e.ctrlKey)){e.preventDefault();undo()}
   if(k==='KeyZ'&&e.shiftKey){e.preventDefault();zoomFit()}
+  if(k==='Minus'||k==='NumpadSubtract'){e.preventDefault();zoomOut()}
+  if(k==='Equal'||k==='NumpadAdd'){e.preventDefault();zoomIn()}
 });
 
 let currentProjectId=null;
@@ -2136,8 +2128,31 @@ function getSubAtTime(t){
   }
   return null;
 }
+function showSubAtTime(t){
+  const ov=document.getElementById('subOv'),tx=document.getElementById('subTx');
+  if(!subtitlesVisible){ov.classList.add('h');return}
+  const found=getSubAtTime(t);
+  if(found){tx.textContent=found.text;ov.classList.remove('h')}else{ov.classList.add('h')}
+}
 
 /* ─── Subtitle drag & trim ─── */
+function subSnapTo(t){
+  if(!snapOn)return t;
+  const threshold=5/pxPerSec;
+  // Snap to clip boundaries
+  for(let j=0;j<starts.length;j++){
+    if(Math.abs(t-starts[j])<threshold)return starts[j];
+    const end=starts[j]+clipDur(j);
+    if(Math.abs(t-end)<threshold)return end;
+  }
+  // Snap to other subtitle boundaries
+  for(let j=0;j<subTiming.length;j++){
+    const st=subTiming[j];if(!st)continue;
+    if(Math.abs(t-st.start)<threshold)return st.start;
+    if(Math.abs(t-st.end)<threshold)return st.end;
+  }
+  return t;
+}
 function initSubDrag(el,i){
   let startX,origStart,origEnd;
   el.addEventListener('mousedown',(e)=>{
@@ -2152,6 +2167,7 @@ function initSubDrag(el,i){
       let ns=Math.max(0,origStart+dx);
       let ne=ns+dur;
       if(ne>total){ne=total;ns=ne-dur}
+      ns=subSnapTo(ns);ne=ns+dur;
       subTiming[i].start=ns;subTiming[i].end=ne;
       subTiming[i]._manual=true;
       el.style.left=(ns*pxPerSec)+'px';
@@ -2173,11 +2189,13 @@ function initSubTrim(handle,i,side){
       const dx=(ev.clientX-startX)/pxPerSec;
       if(side==='left'){
         let ns=Math.max(0,Math.min(origEnd-0.3,origStart+dx));
+        ns=subSnapTo(ns);
         subTiming[i].start=ns;
         parent.style.left=(ns*pxPerSec)+'px';
         parent.style.width=((subTiming[i].end-ns)*pxPerSec)+'px';
       } else {
         let ne=Math.max(origStart+0.3,Math.min(total,origEnd+dx));
+        ne=subSnapTo(ne);
         subTiming[i].end=ne;
         parent.style.width=((ne-subTiming[i].start)*pxPerSec)+'px';
       }
@@ -2211,12 +2229,10 @@ function toggleSubtitleDisplay(){
   const subTrack=document.getElementById('subTrack');
   if(subTrack)subTrack.style.display=subtitlesVisible?'':'none';
   // Refresh current subtitle display
-  const ov=document.getElementById('subOv'),tx=document.getElementById('subTx');
   if(subtitlesVisible){
-    const sub=SUBS[cur]||'';
-    if(sub){tx.textContent=sub;ov.classList.remove('h')}else{ov.classList.add('h')}
+    showSubAtTime(gTime);
   } else {
-    ov.classList.add('h');
+    document.getElementById('subOv').classList.add('h');
   }
 }
 
