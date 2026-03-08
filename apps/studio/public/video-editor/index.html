@@ -1150,7 +1150,7 @@ function sel(i){
   deselectSub();
   showSubAtTime(starts[i]);
   syncSubUI();applySubStyle();
-  applyCropToVideo();syncZoomUI();if(cropMode)updateCropOverlay();
+  applyCropToVideo();syncZoomUI();applyZoomToVideo();if(cropMode)updateCropOverlay();
   checkLetterbox();
   scrollToClip(i);
   updateMediaBtn();
