@@ -276,6 +276,23 @@ def get_video_duration(path):
         return 0.0
 
 
+def is_video_landscape(path):
+    """Check if video has landscape aspect ratio (width > height)."""
+    try:
+        r = subprocess.run(
+            ["ffprobe", "-v", "quiet", "-select_streams", "v:0",
+             "-show_entries", "stream=width,height", "-of", "csv=p=0", path],
+            capture_output=True, text=True
+        )
+        parts = r.stdout.strip().split(",")
+        if len(parts) >= 2:
+            w, h = int(parts[0]), int(parts[1])
+            return w > h
+    except:
+        pass
+    return False
+
+
 def get_video_fps(path):
     try:
         r = subprocess.run(
@@ -520,6 +537,12 @@ def generate_context_subs(clips, context, api_key_from_client=""):
 - 사용자가 설명한 톤/분위기에 맞게
 - {len(clips)}줄을 정확히 출력 (클립 수와 동일)
 - 번호 없이 자막 텍스트만 한 줄씩 출력
+- 이모지(emoji)는 절대 사용하지 마세요. 텍스트만 작성하세요.
+- 자막 전체 흐름은 기승전결 구조를 따르세요:
+  - 기(도입): 호기심을 유발하는 시작
+  - 승(전개): 내용을 구체적으로 풀어가기
+  - 전(전환): 반전이나 임팩트 포인트
+  - 결(마무리): 여운을 남기는 마무리
 
 자막:"""
 
@@ -662,6 +685,9 @@ def run_render(data):
             tmp_out = tmp_dir / f"clip_{i:03d}.mp4"
             tmp_files.append(tmp_out)
 
+            # Detect if source is landscape
+            is_landscape = is_video_landscape(str(src))
+
             # Build filter chain
             filters = []
 
@@ -672,9 +698,37 @@ def run_render(data):
             # Normalize fps (all clips must have same fps for concat)
             filters.append(f"fps={output_fps}")
 
-            # Scale to output
-            filters.append(f"scale={W}:{H}:force_original_aspect_ratio=increase")
-            filters.append(f"crop={W}:{H}")
+            # Scale to output — letterbox with blur bg for landscape sources
+            if is_landscape and not (zoom["scale"] != 1 or zoom["panX"] != 0 or zoom["panY"] != 0):
+                # Use filter_complex: blur bg + contain overlay
+                speed_filter = f"setpts={1/speed:.4f}*PTS," if speed != 1 else ""
+                fc = (
+                    f"{speed_filter}fps={output_fps},"
+                    f"split[main][bg];"
+                    f"[bg]scale={W}:{H}:force_original_aspect_ratio=increase,"
+                    f"crop={W}:{H},boxblur=20:5[blurred];"
+                    f"[main]scale={W}:{H}:force_original_aspect_ratio=decrease[fg];"
+                    f"[blurred][fg]overlay=(W-w)/2:(H-h)/2"
+                )
+                cmd = [
+                    "ffmpeg", "-y",
+                    "-ss", f"{start:.3f}", "-t", f"{end-start:.3f}",
+                    "-i", str(src),
+                    "-filter_complex", fc,
+                    "-c:v", "libx264", "-preset", "fast", "-crf", "18",
+                    "-an", "-t", f"{dur:.3f}",
+                    str(tmp_out)
+                ]
+                print(f"[Render] Clip {i+1}/{len(clips)} (letterbox): {' '.join(cmd)}")
+                r = subprocess.run(cmd, capture_output=True, text=True)
+                if r.returncode != 0:
+                    raise RuntimeError(f"Clip {i+1} failed: {r.stderr[-500:]}")
+                with render_lock:
+                    render_status["progress"] = i + 1
+                continue
+            else:
+                filters.append(f"scale={W}:{H}:force_original_aspect_ratio=increase")
+                filters.append(f"crop={W}:{H}")
 
             # Zoom
             if zoom["scale"] != 1 or zoom["panX"] != 0 or zoom["panY"] != 0:
@@ -745,14 +799,15 @@ def run_render(data):
         if r.returncode != 0:
             raise RuntimeError(f"Concat failed: {r.stderr[-500:]}")
 
-        # Subtitles
+        # Subtitles (respect subtitlesEnabled flag)
         subs = []
+        subtitles_enabled = data.get("subtitlesEnabled", True)
         t_offset = 0
         for i, clip in enumerate(clips):
             speed = clip.get("speed", 1)
             dur = (clip["end"] - clip["start"]) / speed
             sub_text = clip.get("subtitle", "")
-            if sub_text:
+            if sub_text and subtitles_enabled:
                 sub_style = clip.get("subStyle", {"size": 16, "x": 50, "y": 80})
                 subs.append((t_offset, t_offset + dur, sub_text, sub_style))
             t_offset += dur

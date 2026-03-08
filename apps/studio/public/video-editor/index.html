@@ -43,7 +43,10 @@ body{background:#0f0f0f;color:#e0e0e0;font-family:-apple-system,'Apple SD Gothic
 /* Preview */
 .pv{width:600px;min-width:180px;max-width:600px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#080808;flex-shrink:0;position:relative}
 .phone{width:432px;height:768px;background:#000;border-radius:12px;overflow:hidden;position:relative;border:2px solid #2a2a2a}
-.phone video{width:100%;height:100%;object-fit:cover}
+.phone video{width:100%;height:100%;object-fit:cover;position:relative;z-index:1}
+.phone .vid-blur-bg{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;filter:blur(20px) brightness(.5);transform:scale(1.2);z-index:0;display:none}
+.phone.letterbox video{object-fit:contain;z-index:1}
+.phone.letterbox .vid-blur-bg{display:block}
 /* Crop overlay */
 .crop-overlay{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:5;display:none}
 .crop-overlay.active{display:block;pointer-events:auto;cursor:crosshair}
@@ -252,6 +255,10 @@ body{background:#0f0f0f;color:#e0e0e0;font-family:-apple-system,'Apple SD Gothic
   <button class="btn" onclick="undo()" title="Cmd+Z">↩</button>
   <span class="info" id="totalInfo">--</span>
   <div style="margin-left:auto;display:flex;gap:4px">
+    <button class="btn" id="subToggleBtn" onclick="toggleSubtitleDisplay()" title="자막 표시 on/off">💬 자막</button>
+    <button class="btn" onclick="uploadExternalVideo()" title="외부 영상 업로드">📎 영상 추가</button>
+    <input type="file" id="extVideoUpload" accept="video/*" multiple style="display:none" onchange="handleExtUpload(this.files)">
+    <div class="sep"></div>
     <button class="btn" onclick="goToProjects()">📂 프로젝트</button>
     <button class="btn" onclick="saveProject()">💾 저장</button>
     <button class="btn" onclick="exportSrt()">📝 SRT</button>
@@ -263,6 +270,7 @@ body{background:#0f0f0f;color:#e0e0e0;font-family:-apple-system,'Apple SD Gothic
 <div class="upper">
   <div class="pv" id="pvPanel">
     <div class="phone" id="phoneFrame">
+      <video class="vid-blur-bg" id="vidBlur" muted playsinline></video>
       <video id="vid" muted playsinline></video>
       <div class="sub-ov h" id="subOv"><span class="sub-tx" id="subTx"></span></div>
       <div class="crop-overlay" id="cropOverlay">
@@ -284,7 +292,7 @@ body{background:#0f0f0f;color:#e0e0e0;font-family:-apple-system,'Apple SD Gothic
   <div class="detail">
     <div class="detail-head">📋 <span id="clipLabel">#1</span></div>
     <div class="detail-body">
-      <div class="d-row"><label>소스</label><span id="dSrc">-</span></div>
+      <div class="d-row"><label>소스</label><span id="dSrc" style="flex:1">-</span><button class="btn" onclick="changeClipSource()" title="이 클립의 소스 변경" style="font-size:9px">변경</button></div>
       <div class="d-row"><label>시작</label><input type="number" id="dStart" step="0.1" onchange="onDetailChange()"><label style="width:auto;margin-left:4px">끝</label><input type="number" id="dEnd" step="0.1" onchange="onDetailChange()"></div>
       <div class="d-row"><label>길이</label><span id="dDur">-</span></div>
       <div class="d-section">
@@ -1074,9 +1082,10 @@ function sel(i){
   else vid.currentTime=c.start;
   const sub=SUBS[i]||'';
   const ov=document.getElementById('subOv'),tx=document.getElementById('subTx');
-  if(sub){tx.textContent=sub;ov.classList.remove('h')}else ov.classList.add('h');
+  if(sub&&subtitlesVisible){tx.textContent=sub;ov.classList.remove('h')}else ov.classList.add('h');
   syncSubUI();applySubStyle();
   applyCropToVideo();syncZoomUI();if(cropMode)updateCropOverlay();
+  checkLetterbox();
   scrollToClip(i);
 }
 
@@ -1110,7 +1119,7 @@ function onDetailChange(){save();
 }
 function onSpeedChange(){save();clipMeta[cur].speed=parseFloat(document.getElementById('dSpeed').value);recalc();renderTL();updateDetail()}
 function onTransitionChange(){save();clipMeta[cur].transition=document.getElementById('dTransition').value;clipMeta[cur].transDur=parseFloat(document.getElementById('dTransDur').value)||0.3;renderTL()}
-function onSubEdit(v){SUBS[cur]=v;const ov=document.getElementById('subOv'),tx=document.getElementById('subTx');if(v){tx.textContent=v;ov.classList.remove('h')}else ov.classList.add('h');renderTL()}
+function onSubEdit(v){SUBS[cur]=v;const ov=document.getElementById('subOv'),tx=document.getElementById('subTx');if(v&&subtitlesVisible){tx.textContent=v;ov.classList.remove('h')}else ov.classList.add('h');renderTL()}
 
 function delCur(){if(CLIPS.length<=1)return;save();CLIPS.splice(cur,1);SUBS.splice(cur,1);clipMeta.splice(cur,1);clipSubStyles.splice(cur,1);clipCrops.splice(cur,1);clipZooms.splice(cur,1);recalc();renderTL();sel(Math.min(cur,CLIPS.length-1))}
 
@@ -1192,7 +1201,7 @@ function playC(i,offsetSec){
   updateDetail();
   const sub=SUBS[i]||'';
   const ov=document.getElementById('subOv'),tx=document.getElementById('subTx');
-  if(sub){tx.textContent=sub;ov.classList.remove('h')}else ov.classList.add('h');
+  if(sub&&subtitlesVisible){tx.textContent=sub;ov.classList.remove('h')}else ov.classList.add('h');
 
   const startPlayback=()=>{
     if(gen!==_playGen)return; // stale
@@ -1258,7 +1267,7 @@ function onSkim(e){
       // Show subtitle
       const sub=SUBS[i]||'';
       const ov=document.getElementById('subOv'),tx=document.getElementById('subTx');
-      if(sub){tx.textContent=sub;ov.classList.remove('h')}else ov.classList.add('h');
+      if(sub&&subtitlesVisible){tx.textContent=sub;ov.classList.remove('h')}else ov.classList.add('h');
       break;
     }
   }
@@ -1393,7 +1402,7 @@ function showRenderConfirm(label,defaultFps,renderClips,maxDur){
     const outputFps=parseInt(sel.value)||30;
     modal.remove();
     showRenderDialog(renderClips.length);
-    const payload={clips:renderClips,maxDuration:maxDur,fps:outputFps};
+    const payload={clips:renderClips,maxDuration:maxDur,fps:outputFps,subtitlesEnabled:subtitlesVisible};
     fetch(apiUrl('/api/render'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
       .then(r=>r.json()).then(()=>pollRender(renderClips.length))
       .catch(e=>{renderError('렌더 요청 실패: '+e)});
@@ -1653,7 +1662,7 @@ function copy(t,msg){navigator.clipboard.writeText(t).then(()=>alert(msg)).catch
         // subtitle
         const sub=SUBS[i]||'';
         const ov=document.getElementById('subOv'),tx=document.getElementById('subTx');
-        if(sub){tx.textContent=sub;ov.classList.remove('h')}else ov.classList.add('h');
+        if(sub&&subtitlesVisible){tx.textContent=sub;ov.classList.remove('h')}else ov.classList.add('h');
         // highlight
         if(cur!==i){cur=i;document.querySelectorAll('.tl-clip').forEach((e,j)=>e.classList.toggle('active',j===i));updateDetail()}
         break;
@@ -2076,6 +2085,158 @@ function initEditorState(){
   if(CLIPS.length)sel(0);
   applySubStyle();
 }
+
+/* ─── Subtitle Toggle ─── */
+let subtitlesVisible=true;
+function toggleSubtitleDisplay(){
+  subtitlesVisible=!subtitlesVisible;
+  const btn=document.getElementById('subToggleBtn');
+  btn.classList.toggle('on',subtitlesVisible);
+  // Toggle subtitle overlay visibility
+  document.getElementById('subOv').style.display=subtitlesVisible?'':'none';
+  // Toggle subtitle track visibility
+  document.getElementById('subTrack').style.display=subtitlesVisible?'':'none';
+}
+
+/* ─── External Video Upload & Source Change ─── */
+function uploadExternalVideo(){
+  document.getElementById('extVideoUpload').click();
+}
+function handleExtUpload(fileList){
+  if(!fileList||!fileList.length)return;
+  const fd=new FormData();
+  for(const f of fileList)fd.append('files',f);
+  const btn=document.querySelector('[onclick="uploadExternalVideo()"]');
+  btn.disabled=true;btn.textContent='⏳ 업로드 중...';
+  fetch(apiUrl('/api/upload'),{method:'POST',body:fd})
+    .then(r=>r.json()).then(data=>{
+      btn.disabled=false;btn.textContent='📎 영상 추가';
+      document.getElementById('extVideoUpload').value='';
+      if(!data.uploaded||!data.uploaded.length)return;
+      // Show modal to choose: add as new clip or change current clip source
+      showUploadResultModal(data.uploaded);
+    }).catch(e=>{
+      btn.disabled=false;btn.textContent='📎 영상 추가';
+      alert('업로드 실패: '+e);
+    });
+}
+
+function showUploadResultModal(uploaded){
+  document.getElementById('uploadModal')?.remove();
+  const modal=document.createElement('div');
+  modal.id='uploadModal';
+  modal.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:400;display:flex;align-items:center;justify-content:center';
+  const items=uploaded.map(v=>`<div style="padding:8px 12px;background:#222;border:1px solid #333;border-radius:6px;margin-bottom:4px;font-size:12px;color:#ccc">${v.name} (${v.duration}s, ${v.size}MB)</div>`).join('');
+  modal.innerHTML=`
+    <div style="background:#1e1e1e;border:1px solid #3a3a3a;border-radius:12px;padding:24px 32px;min-width:360px;max-width:500px;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+      <h3 style="font-size:14px;color:#e0e0e0;margin:0 0 12px">업로드 완료</h3>
+      ${items}
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+        <button class="btn" id="uploadCancel" style="padding:8px 16px;font-size:12px">닫기</button>
+        ${CLIPS.length?`<button class="btn" id="uploadReplace" style="padding:8px 16px;font-size:12px;color:#fbbf24;border-color:#fbbf24">현재 클립 소스 변경</button>`:''}
+        <button class="btn pri" id="uploadAdd" style="padding:8px 16px;font-size:12px">새 클립으로 추가</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  document.getElementById('uploadCancel').onclick=()=>modal.remove();
+  document.getElementById('uploadAdd').onclick=()=>{
+    modal.remove();
+    save();
+    uploaded.forEach(v=>{
+      CLIPS.push({source:v.name,source_idx:0,start:0,end:v.duration,score:0});
+      SUBS.push('');clipMeta.push({speed:1,transition:'none',transDur:0.3});
+      clipSubStyles.push({...subStyleDefault});clipCrops.push({x:0,y:0,w:100,h:100});clipZooms.push({scale:1,panX:0,panY:0});
+    });
+    // Re-assign source_idx
+    const srcNames=[...new Set(CLIPS.map(c=>c.source))];
+    CLIPS.forEach(c=>{c.source_idx=srcNames.indexOf(c.source)});
+    recalc();renderTL();sel(CLIPS.length-1);
+  };
+  const replaceBtn=document.getElementById('uploadReplace');
+  if(replaceBtn){
+    replaceBtn.onclick=()=>{
+      modal.remove();
+      if(!uploaded.length)return;
+      save();
+      const v=uploaded[0];
+      CLIPS[cur].source=v.name;
+      CLIPS[cur].start=0;CLIPS[cur].end=v.duration;
+      const srcNames=[...new Set(CLIPS.map(c=>c.source))];
+      CLIPS.forEach(c=>{c.source_idx=srcNames.indexOf(c.source)});
+      recalc();renderTL();sel(cur);
+    };
+  }
+}
+
+function changeClipSource(){
+  // Fetch available videos and let user pick
+  fetch(apiUrl('/api/list-videos')).then(r=>r.json()).then(data=>{
+    if(!data.videos||!data.videos.length){alert('서버에 영상이 없습니다');return}
+    document.getElementById('srcChangeModal')?.remove();
+    const modal=document.createElement('div');
+    modal.id='srcChangeModal';
+    modal.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:400;display:flex;align-items:center;justify-content:center';
+    const items=data.videos.map(v=>`<div class="src-change-item" data-name="${v.name}" data-dur="${v.duration}" style="padding:8px 12px;background:#222;border:1px solid #333;border-radius:6px;margin-bottom:4px;font-size:12px;color:#ccc;cursor:pointer;transition:.1s">${v.name} (${v.duration}s, ${v.size}MB)</div>`).join('');
+    modal.innerHTML=`
+      <div style="background:#1e1e1e;border:1px solid #3a3a3a;border-radius:12px;padding:24px 32px;min-width:360px;max-width:500px;max-height:70vh;box-shadow:0 20px 60px rgba(0,0,0,.5);display:flex;flex-direction:column">
+        <h3 style="font-size:14px;color:#e0e0e0;margin:0 0 12px">클립 #${cur+1} 소스 변경</h3>
+        <div style="overflow-y:auto;flex:1;margin-bottom:12px">${items}</div>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn" onclick="document.getElementById('srcChangeModal').remove()" style="padding:8px 16px;font-size:12px">취소</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.querySelectorAll('.src-change-item').forEach(el=>{
+      el.addEventListener('mouseover',()=>{el.style.borderColor='#2563eb';el.style.background='#1e293b'});
+      el.addEventListener('mouseout',()=>{el.style.borderColor='#333';el.style.background='#222'});
+      el.addEventListener('click',()=>{
+        save();
+        CLIPS[cur].source=el.dataset.name;
+        CLIPS[cur].start=0;
+        CLIPS[cur].end=parseFloat(el.dataset.dur)||5;
+        const srcNames=[...new Set(CLIPS.map(c=>c.source))];
+        CLIPS.forEach(c=>{c.source_idx=srcNames.indexOf(c.source)});
+        recalc();renderTL();sel(cur);
+        modal.remove();
+      });
+    });
+  });
+}
+
+/* ─── Letterbox Detection ─── */
+function checkLetterbox(){
+  const vid=document.getElementById('vid');
+  const phone=document.getElementById('phoneFrame');
+  if(!vid.videoWidth||!vid.videoHeight){phone.classList.remove('letterbox');return}
+  const videoRatio=vid.videoWidth/vid.videoHeight;
+  const phoneRatio=phone.clientWidth/phone.clientHeight; // ~9:16 = 0.5625
+  // If video is landscape (ratio > phone ratio), use letterbox
+  if(videoRatio>phoneRatio*1.1){
+    phone.classList.add('letterbox');
+    // Sync blur background
+    const blur=document.getElementById('vidBlur');
+    if(blur.src!==vid.src){blur.src=vid.src;blur.currentTime=vid.currentTime}
+  } else {
+    phone.classList.remove('letterbox');
+  }
+}
+// Sync blur bg time with main video
+const _vid=document.getElementById('vid');
+_vid.addEventListener('loadedmetadata',()=>{checkLetterbox()});
+_vid.addEventListener('seeked',()=>{
+  const blur=document.getElementById('vidBlur');
+  if(document.getElementById('phoneFrame').classList.contains('letterbox')){
+    blur.currentTime=_vid.currentTime;
+  }
+});
+_vid.addEventListener('timeupdate',()=>{
+  const blur=document.getElementById('vidBlur');
+  if(document.getElementById('phoneFrame').classList.contains('letterbox')&&Math.abs(blur.currentTime-_vid.currentTime)>0.5){
+    blur.currentTime=_vid.currentTime;
+  }
+});
 
 /* ─── Init ─── */
 restoreLastStyle();refreshPresetList();
