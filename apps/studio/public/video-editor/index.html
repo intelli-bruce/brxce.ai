@@ -534,8 +534,12 @@ function resetZoom(){
 }
 
 function applyZoomToAll(){
+  save();
   const z={...zoomOf(cur)};
   clipZooms=clipZooms.map(()=>({...z}));
+  // Brief visual feedback
+  const btn=document.querySelector('[onclick="applyZoomToAll()"]');
+  if(btn){const orig=btn.textContent;btn.textContent='적용됨!';btn.style.color='#4ade80';setTimeout(()=>{btn.textContent=orig;btn.style.color='#fbbf24'},800)}
 }
 
 function toggleCropMode(){
