@@ -1142,16 +1142,34 @@ function startClipDrag(e,i){
 }
 
 /* ─── Selection ─── */
+// UI-only selection: updates highlight, detail panel, zoom/crop without touching video or gTime
+function selUI(i){
+  cur=i;
+  document.querySelectorAll('.tl-clip').forEach((e,j)=>e.classList.toggle('active',j===i));
+  updateDetail();
+  deselectSub();
+  showSubAtTime(gTime);
+  syncSubUI();applySubStyle();
+  applyCropToVideo();syncZoomUI();applyZoomToVideo();if(cropMode)updateCropOverlay();
+  checkLetterbox();
+  scrollToClip(i);
+  updateMediaBtn();
+}
 function sel(i){
   cur=i;
   document.querySelectorAll('.tl-clip').forEach((e,j)=>e.classList.toggle('active',j===i));
   updateDetail();
   const c=CLIPS[i],vid=document.getElementById('vid');
   const src=VBASE+'/'+c.source.split('/').pop();
+  // Set gTime to clip start and move playhead there
+  gTime=starts[i];
   if(vid.dataset.src!==src){vid.src=src;vid.dataset.src=src;vid.onloadedmetadata=()=>{srcDurs[src]=vid.duration;vid.currentTime=c.start}}
   else vid.currentTime=c.start;
+  // Update playhead position to match gTime
+  document.getElementById('tlPlayhead').style.left=(HDR+gTime*pxPerSec)+'px';
+  updateTC();
   deselectSub();
-  showSubAtTime(starts[i]);
+  showSubAtTime(gTime);
   syncSubUI();applySubStyle();
   applyCropToVideo();syncZoomUI();applyZoomToVideo();if(cropMode)updateCropOverlay();
   checkLetterbox();
@@ -1197,7 +1215,8 @@ function delCur(){if(CLIPS.length<=1)return;save();CLIPS.splice(cur,1);SUBS.spli
 function togglePlay(){playing?stopP():startP()}
 function startP(){
   playing=true;document.getElementById('playBtn').textContent='⏸';document.getElementById('playBtn').classList.add('playing');playSpeed=1;updateSpeedBadge();
-  // Find clip at current gTime and start from exact position
+  
+  // Find clip and offset from gTime
   let startIdx=0,offset=0;
   for(let i=0;i<CLIPS.length;i++){
     const end=starts[i]+clipDur(i);
@@ -1242,9 +1261,23 @@ function seekStart(){gTime=0;seekToGlobal(0)}
 function seekEnd(){gTime=total;seekToGlobal(total)}
 function seekToGlobal(t){
   gTime=Math.max(0,Math.min(total,t));
+  const vid=document.getElementById('vid');
+  vid.onloadedmetadata=null; // Clear any pending loadedmetadata from sel()
   for(let i=0;i<CLIPS.length;i++){
     const end=starts[i]+clipDur(i);
-    if(gTime<=end+0.01){sel(i);document.getElementById('vid').currentTime=CLIPS[i].start+(gTime-starts[i])*(clipMeta[i]?.speed||1);break}
+    if(gTime<=end+0.01){
+      selUI(i);
+      const c=CLIPS[i];
+      const src=VBASE+'/'+c.source.split('/').pop();
+      const targetTime=c.start+(gTime-starts[i])*(clipMeta[i]?.speed||1);
+      if(vid.dataset.src!==src){
+        vid.src=src;vid.dataset.src=src;
+        vid.onloadedmetadata=()=>{srcDurs[src]=vid.duration;vid.currentTime=targetTime};
+      } else {
+        vid.currentTime=targetTime;
+      }
+      break;
+    }
   }
   updatePlayhead();updateTC();
 }
@@ -1746,8 +1779,10 @@ function copy(t,msg){navigator.clipboard.writeText(t).then(()=>alert(msg)).catch
 
 /* ─── Keyboard ─── */
 document.addEventListener('keydown',e=>{
-  if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return;
   const k=e.code;
+  if(e.target.tagName==='SELECT')return;
+  if(e.target.tagName==='INPUT'&&e.target.type==='range'){e.target.blur();}
+  else if(e.target.tagName==='INPUT')return;
   if(k==='Space'){e.preventDefault();togglePlay()}
   if(k==='ArrowLeft'){e.preventDefault();seekToGlobal(gTime-1)}
   if(k==='ArrowRight'){e.preventDefault();seekToGlobal(gTime+1)}

@@ -2,6 +2,7 @@
 """Editor server with render API endpoint."""
 import http.server
 import json
+import mimetypes
 import os
 import subprocess
 import sys
@@ -40,6 +41,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
         self.send_header("Pragma", "no-cache")
         self.send_header("Expires", "0")
+        self.send_header("Accept-Ranges", "bytes")
         super().end_headers()
 
     def handle_one_request(self):
@@ -75,6 +77,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.send_error(404)
 
     def do_GET(self):
+        # Handle Range requests first (for video seeking)
+        if not self.path.startswith("/api/") and self.headers.get('Range'):
+            self.handle_range_request()
+            return
         if self.path == "/api/render/status":
             self.send_json(render_status)
         elif self.path == "/api/analyze/status":
@@ -89,6 +95,55 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.handle_project_load()
         else:
             super().do_GET()
+
+    def handle_range_request(self):
+        """Handle HTTP Range requests for video seeking (206 Partial Content)."""
+        path = self.translate_path(self.path.split('?')[0])
+        if not os.path.isfile(path):
+            self.send_error(404)
+            return
+        file_size = os.path.getsize(path)
+        range_header = self.headers.get('Range')
+        # Parse range: "bytes=START-END" or "bytes=START-"
+        try:
+            range_spec = range_header.replace('bytes=', '')
+            parts = range_spec.split('-')
+            start = int(parts[0]) if parts[0] else 0
+            end = int(parts[1]) if parts[1] else file_size - 1
+        except (ValueError, IndexError):
+            start = 0
+            end = file_size - 1
+        
+        if start >= file_size:
+            self.send_error(416, "Range Not Satisfiable")
+            return
+        
+        end = min(end, file_size - 1)
+        content_length = end - start + 1
+        
+        # Guess content type
+        ctype = mimetypes.guess_type(path)[0] or 'application/octet-stream'
+        
+        self.send_response(206)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", content_length)
+        self.send_header("Content-Range", f"bytes {start}-{end}/{file_size}")
+        self.send_header("Accept-Ranges", "bytes")
+        self.end_headers()
+        
+        with open(path, 'rb') as f:
+            f.seek(start)
+            remaining = content_length
+            buf_size = 64 * 1024
+            while remaining > 0:
+                chunk = f.read(min(buf_size, remaining))
+                if not chunk:
+                    break
+                try:
+                    self.wfile.write(chunk)
+                except (BrokenPipeError, ConnectionResetError):
+                    break
+                remaining -= len(chunk)
 
     def send_json(self, data):
         body = json.dumps(data).encode()
