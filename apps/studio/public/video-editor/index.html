@@ -1216,11 +1216,6 @@ function togglePlay(){playing?stopP():startP()}
 function startP(){
   playing=true;document.getElementById('playBtn').textContent='⏸';document.getElementById('playBtn').classList.add('playing');playSpeed=1;updateSpeedBadge();
   
-  // Derive actual gTime from playhead DOM position (most reliable source)
-  const phLeft=parseFloat(document.getElementById('tlPlayhead').style.left)||0;
-  const derivedGTime=Math.max(0,Math.min(total,(phLeft-HDR)/pxPerSec));
-  gTime=derivedGTime;
-  
   // Find clip and offset from gTime
   let startIdx=0,offset=0;
   for(let i=0;i<CLIPS.length;i++){

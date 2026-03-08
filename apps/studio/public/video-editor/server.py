@@ -2,6 +2,7 @@
 """Editor server with render API endpoint."""
 import http.server
 import json
+import mimetypes
 import os
 import subprocess
 import sys
@@ -121,7 +122,6 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         content_length = end - start + 1
         
         # Guess content type
-        import mimetypes
         ctype = mimetypes.guess_type(path)[0] or 'application/octet-stream'
         
         self.send_response(206)
