@@ -255,10 +255,7 @@ body{background:#0f0f0f;color:#e0e0e0;font-family:-apple-system,'Apple SD Gothic
   <button class="btn" onclick="undo()" title="Cmd+Z">↩</button>
   <span class="info" id="totalInfo">--</span>
   <div style="margin-left:auto;display:flex;gap:4px">
-    <button class="btn on" id="subToggleBtn" onclick="toggleSubtitleDisplay()" title="자막 표시 on/off">💬 자막</button>
-    <button class="btn" id="mediaBtn" onclick="uploadExternalVideo()" title="미디어 추가/수정">📎 미디어 추가</button>
     <input type="file" id="extVideoUpload" accept="video/*,image/*" multiple style="display:none" onchange="handleExtUpload(this.files)">
-    <div class="sep"></div>
     <button class="btn" onclick="goToProjects()">📂 프로젝트</button>
     <button class="btn" onclick="saveProject()">💾 저장</button>
     <button class="btn" onclick="exportSrt()">📝 SRT</button>
@@ -379,6 +376,9 @@ body{background:#0f0f0f;color:#e0e0e0;font-family:-apple-system,'Apple SD Gothic
     </div>
     <div class="sep" style="height:14px"></div>
     <button class="btn snap-btn" id="snapBtn" onclick="toggleSnap()">🧲 스냅</button>
+    <div class="sep" style="height:14px"></div>
+    <button class="btn on" id="subToggleBtn" onclick="toggleSubtitleDisplay()" title="자막 표시 on/off" style="font-size:10px">💬 자막</button>
+    <button class="btn" id="mediaBtn" onclick="uploadExternalVideo()" title="미디어 추가/수정" style="font-size:10px">📎 미디어 추가</button>
     <span class="info" id="zoomInfo" style="margin-left:auto">14px/s</span>
   </div>
   <div class="tl-ruler" id="ruler" onmousedown="onRulerDown(event)"></div>
