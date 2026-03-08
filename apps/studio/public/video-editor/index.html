@@ -1266,15 +1266,21 @@ function seekStart(){gTime=0;seekToGlobal(0)}
 function seekEnd(){gTime=total;seekToGlobal(total)}
 function seekToGlobal(t){
   gTime=Math.max(0,Math.min(total,t));
+  const vid=document.getElementById('vid');
+  vid.onloadedmetadata=null; // Clear any pending loadedmetadata from sel()
   for(let i=0;i<CLIPS.length;i++){
     const end=starts[i]+clipDur(i);
     if(gTime<=end+0.01){
       selUI(i);
-      const vid=document.getElementById('vid');
       const c=CLIPS[i];
       const src=VBASE+'/'+c.source.split('/').pop();
-      if(vid.dataset.src!==src){vid.src=src;vid.dataset.src=src;vid.onloadedmetadata=()=>{vid.currentTime=c.start+(gTime-starts[i])*(clipMeta[i]?.speed||1)}}
-      else vid.currentTime=c.start+(gTime-starts[i])*(clipMeta[i]?.speed||1);
+      const targetTime=c.start+(gTime-starts[i])*(clipMeta[i]?.speed||1);
+      if(vid.dataset.src!==src){
+        vid.src=src;vid.dataset.src=src;
+        vid.onloadedmetadata=()=>{srcDurs[src]=vid.duration;vid.currentTime=targetTime};
+      } else {
+        vid.currentTime=targetTime;
+      }
       break;
     }
   }
