@@ -37,7 +37,24 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Expires", "0")
         super().end_headers()
+
+    def handle_one_request(self):
+        """Override to catch BrokenPipe/ConnectionReset without crashing."""
+        try:
+            super().handle_one_request()
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+            pass  # Client disconnected, ignore silently
+
+    def log_message(self, format, *args):
+        """Suppress noisy logs for status polling."""
+        msg = format % args
+        if "/api/render/status" in msg:
+            return
+        super().log_message(format, *args)
 
     def do_OPTIONS(self):
         self.send_response(204)
@@ -939,9 +956,14 @@ def srt_time(s):
 
 
 if __name__ == "__main__":
-    import socketserver
-    socketserver.TCPServer.allow_reuse_address = True
-    server = http.server.HTTPServer(("", PORT), Handler)
-    server.allow_reuse_address = True
+    import socketserver, signal
+    if hasattr(signal, 'SIGPIPE'):
+        signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+
+    class ThreadedServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
+        allow_reuse_address = True
+        daemon_threads = True
+
+    server = ThreadedServer(("", PORT), Handler)
     print(f"🎬 Editor server at http://localhost:{PORT}/editor.html")
     server.serve_forever()

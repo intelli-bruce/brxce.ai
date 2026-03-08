@@ -1,10 +1,10 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { AlertCircle, CheckCircle2, ExternalLink, LoaderCircle, ServerCrash } from "lucide-react"
+import { AlertCircle, CheckCircle2, LoaderCircle, ServerCrash } from "lucide-react"
 
 const EDITOR_ORIGIN = "http://localhost:8090"
-const EDITOR_URL = `${EDITOR_ORIGIN}/editor.html`
+const EDITOR_URL = `${EDITOR_ORIGIN}/editor.html?v=${Date.now()}`
 const STATUS_URL = `${EDITOR_ORIGIN}/api/render/status`
 
 type ConnectionState = "checking" | "connected" | "disconnected"
@@ -87,15 +87,7 @@ export default function VideoEditPage() {
             <StatusIcon className={`size-3.5 ${connectionState === "checking" ? "animate-spin" : ""}`} />
             <span>{statusMeta.label}</span>
           </div>
-          <a
-            href={EDITOR_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 py-2 text-xs text-[#d4d4d4] no-underline transition hover:border-white/20 hover:bg-white/10 hover:text-white"
-          >
-            새 탭으로 열기
-            <ExternalLink className="size-3.5" />
-          </a>
+
         </div>
       </div>
 

@@ -2,12 +2,14 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="0; url=./index.html">
+  <meta http-equiv="refresh" content="0; url=./index.html?v=20260308">
   <title>Redirecting...</title>
 </head>
 <body>
   <script>
-    window.location.replace(`./index.html${window.location.search}${window.location.hash}`);
+    const bust = `v=${Date.now()}`;
+    const sep = window.location.search ? '&' : '?';
+    window.location.replace(`./index.html${window.location.search}${sep}${bust}${window.location.hash}`);
   </script>
 </body>
 </html>
