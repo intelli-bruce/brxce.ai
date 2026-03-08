@@ -958,7 +958,7 @@ def srt_time(s):
 if __name__ == "__main__":
     import socketserver, signal
     if hasattr(signal, 'SIGPIPE'):
-        signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+        signal.signal(signal.SIGPIPE, signal.SIG_IGN)
 
     class ThreadedServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
         allow_reuse_address = True
