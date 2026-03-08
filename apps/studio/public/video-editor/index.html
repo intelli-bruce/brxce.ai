@@ -934,10 +934,17 @@ function renderTL(){
     d.style.left=x+'px';d.style.width=w+'px';
     d.innerHTML=`<span class="sub-trim left"></span><span style="pointer-events:none;overflow:hidden;text-overflow:ellipsis">${sub}</span><span class="sub-trim right"></span>`;
     if(selectedSub===i)d.classList.add('sel');
-    // Click to select subtitle (not clip)
+    // Click to select subtitle only (not clip)
+    d.addEventListener('mousedown',(e)=>{
+      e.stopPropagation();
+    });
     d.addEventListener('click',(e)=>{
       if(e.target.classList.contains('sub-trim'))return;
       e.stopPropagation();
+      // Deselect clip focus
+      cur=-1;
+      document.querySelectorAll('.tl-clip').forEach(el=>el.classList.remove('active'));
+      updateMediaBtn();
       selectSub(i);
     });
     // Drag to move
@@ -1746,8 +1753,8 @@ document.addEventListener('keydown',e=>{
   if(k==='End'){e.preventDefault();seekEnd()}
   if((k==='Delete'||k==='Backspace')){
     e.preventDefault();
-    if(selectedSub>=0){deleteSelectedSub()}
-    else if(CLIPS.length>1){delCur()}
+    if(selectedSub>=0){deleteSelectedSub();return}
+    if(cur>=0&&cur<CLIPS.length&&CLIPS.length>1){delCur()}
   }
   if(k==='KeyZ'&&(e.metaKey||e.ctrlKey)){e.preventDefault();undo()}
   if(k==='KeyZ'&&e.shiftKey){e.preventDefault();zoomFit()}
@@ -2222,9 +2229,14 @@ function initSubTrim(handle,i,side){
 function selectSub(i){
   selectedSub=i;
   document.querySelectorAll('.tl-sub-clip').forEach((el,j)=>el.classList.toggle('sel',j===i));
-  // Also move playhead to subtitle start
+  // Move playhead without selecting clip
   const t=subTiming[i];
-  if(t)seekToGlobal(t.start);
+  if(t){
+    gTime=t.start;
+    const ph=document.getElementById('playhead');
+    ph.style.left=(HDR+gTime*pxPerSec)+'px';
+    showSubAtTime(gTime);
+  }
 }
 function deselectSub(){
   selectedSub=-1;
