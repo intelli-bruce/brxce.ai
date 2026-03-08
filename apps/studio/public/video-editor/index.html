@@ -44,9 +44,8 @@ body{background:#0f0f0f;color:#e0e0e0;font-family:-apple-system,'Apple SD Gothic
 .pv{width:600px;min-width:180px;max-width:600px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#080808;flex-shrink:0;position:relative}
 .phone{width:432px;height:768px;background:#000;border-radius:12px;overflow:hidden;position:relative;border:2px solid #2a2a2a}
 .phone video{width:100%;height:100%;object-fit:cover;position:relative;z-index:1}
-.phone .vid-blur-bg{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;filter:blur(20px) brightness(.5);transform:scale(1.2);z-index:0;display:none}
-.phone.letterbox video{object-fit:contain;z-index:1}
-.phone.letterbox .vid-blur-bg{display:block}
+.phone .vid-blur-bg{display:none!important}
+.phone.letterbox video{object-fit:contain;z-index:1;background:#000}
 /* Crop overlay */
 .crop-overlay{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:5;display:none}
 .crop-overlay.active{display:block;pointer-events:auto;cursor:crosshair}
@@ -152,6 +151,7 @@ body{background:#0f0f0f;color:#e0e0e0;font-family:-apple-system,'Apple SD Gothic
 /* Subtitle clips — Remotion caption style */
 .tl-sub-clip{position:absolute;top:3px;bottom:3px;background:rgba(250,204,21,.1);border:1px solid rgba(250,204,21,.2);border-radius:5px;display:flex;align-items:center;padding:0 7px;font-size:9px;color:#c9960f;overflow:hidden;white-space:nowrap;cursor:grab;transition:background .1s}
 .tl-sub-clip:hover{background:rgba(250,204,21,.18)}
+.tl-sub-clip.sel{background:rgba(250,204,21,.3);border-color:rgba(250,204,21,.6);box-shadow:0 0 4px rgba(250,204,21,.3)}
 .tl-sub-clip:active{cursor:grabbing}
 .tl-sub-clip .sub-trim{position:absolute;top:0;bottom:0;width:6px;cursor:ew-resize;z-index:2}
 .tl-sub-clip .sub-trim.left{left:0;border-radius:5px 0 0 5px}
@@ -791,6 +791,7 @@ let activeFormat=0; // 0=full, 15, 30, 60
 let clipMeta=[];
 // Independent subtitle timing: {start: globalSec, end: globalSec} per subtitle
 let subTiming=[];
+let selectedSub=-1; // currently selected subtitle index
 
 function save(){hist.push({c:JSON.parse(JSON.stringify(CLIPS)),s:[...SUBS],m:JSON.parse(JSON.stringify(clipMeta)),ss:JSON.parse(JSON.stringify(clipSubStyles)),cr:JSON.parse(JSON.stringify(clipCrops)),zm:JSON.parse(JSON.stringify(clipZooms)),st:JSON.parse(JSON.stringify(subTiming))})}
 function undo(){if(!hist.length)return;const h=hist.pop();CLIPS=h.c;SUBS=h.s;clipMeta=h.m;clipSubStyles=h.ss;clipCrops=h.cr;clipZooms=h.zm;if(h.st)subTiming=h.st;recalc();renderTL();sel(Math.min(cur,CLIPS.length-1))}
@@ -932,8 +933,13 @@ function renderTL(){
     const d=document.createElement('div');d.className='tl-sub-clip';
     d.style.left=x+'px';d.style.width=w+'px';
     d.innerHTML=`<span class="sub-trim left"></span><span style="pointer-events:none;overflow:hidden;text-overflow:ellipsis">${sub}</span><span class="sub-trim right"></span>`;
-    // Click to select clip
-    d.addEventListener('click',(e)=>{if(!e.target.classList.contains('sub-trim'))sel(i)});
+    if(selectedSub===i)d.classList.add('sel');
+    // Click to select subtitle (not clip)
+    d.addEventListener('click',(e)=>{
+      if(e.target.classList.contains('sub-trim'))return;
+      e.stopPropagation();
+      selectSub(i);
+    });
     // Drag to move
     initSubDrag(d,i);
     // Trim handles
@@ -1116,6 +1122,7 @@ function sel(i){
   const src=VBASE+'/'+c.source.split('/').pop();
   if(vid.dataset.src!==src){vid.src=src;vid.dataset.src=src;vid.onloadedmetadata=()=>{srcDurs[src]=vid.duration;vid.currentTime=c.start}}
   else vid.currentTime=c.start;
+  deselectSub();
   showSubAtTime(starts[i]);
   syncSubUI();applySubStyle();
   applyCropToVideo();syncZoomUI();if(cropMode)updateCropOverlay();
@@ -1737,7 +1744,11 @@ document.addEventListener('keydown',e=>{
   if(k==='KeyL')jkl('l');
   if(k==='Home'){e.preventDefault();seekStart()}
   if(k==='End'){e.preventDefault();seekEnd()}
-  if((k==='Delete'||k==='Backspace')&&CLIPS.length>1){e.preventDefault();delCur()}
+  if((k==='Delete'||k==='Backspace')){
+    e.preventDefault();
+    if(selectedSub>=0){deleteSelectedSub()}
+    else if(CLIPS.length>1){delCur()}
+  }
   if(k==='KeyZ'&&(e.metaKey||e.ctrlKey)){e.preventDefault();undo()}
   if(k==='KeyZ'&&e.shiftKey){e.preventDefault();zoomFit()}
   if(k==='Minus'||k==='NumpadSubtract'){e.preventDefault();zoomOut()}
@@ -2207,12 +2218,35 @@ function initSubTrim(handle,i,side){
   });
 }
 
+/* ─── Subtitle selection ─── */
+function selectSub(i){
+  selectedSub=i;
+  document.querySelectorAll('.tl-sub-clip').forEach((el,j)=>el.classList.toggle('sel',j===i));
+  // Also move playhead to subtitle start
+  const t=subTiming[i];
+  if(t)seekToGlobal(t.start);
+}
+function deselectSub(){
+  selectedSub=-1;
+  document.querySelectorAll('.tl-sub-clip').forEach(el=>el.classList.remove('sel'));
+}
+function deleteSelectedSub(){
+  if(selectedSub<0||selectedSub>=SUBS.length)return;
+  save();
+  SUBS[selectedSub]='';
+  subTiming[selectedSub]={start:0,end:0,_manual:false};
+  deselectSub();
+  recalc();renderTL();
+  showSubAtTime(gTime);
+}
+
 /* ─── Track area click — deselect when clicking empty space ─── */
 function onTrackAreaClick(e){
   // If click target is a clip or inside a clip, ignore (clip has its own handler)
   if(e.target.closest('.tl-clip,.tl-sub-clip,.tl-audio-clip,.tl-trim'))return;
   // Deselect all clips
   cur=-1;
+  deselectSub();
   document.querySelectorAll('.tl-clip').forEach(el=>el.classList.remove('active'));
   // Hide subtitle overlay
   document.getElementById('subOv').classList.add('h');
