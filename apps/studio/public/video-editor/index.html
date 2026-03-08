@@ -1746,8 +1746,10 @@ function copy(t,msg){navigator.clipboard.writeText(t).then(()=>alert(msg)).catch
 
 /* ─── Keyboard ─── */
 document.addEventListener('keydown',e=>{
-  if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return;
   const k=e.code;
+  if(e.target.tagName==='SELECT')return;
+  if(e.target.tagName==='INPUT'&&e.target.type==='range'){e.target.blur();}
+  else if(e.target.tagName==='INPUT')return;
   if(k==='Space'){e.preventDefault();togglePlay()}
   if(k==='ArrowLeft'){e.preventDefault();seekToGlobal(gTime-1)}
   if(k==='ArrowRight'){e.preventDefault();seekToGlobal(gTime+1)}
