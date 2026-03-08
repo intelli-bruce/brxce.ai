@@ -382,7 +382,7 @@ body{background:#0f0f0f;color:#e0e0e0;font-family:-apple-system,'Apple SD Gothic
     <span class="info" id="zoomInfo" style="margin-left:auto">14px/s</span>
   </div>
   <div class="tl-ruler" id="ruler" onmousedown="onRulerDown(event)"></div>
-  <div class="tl-scroll" id="tlScroll" onmousemove="onSkim(event)" onmouseleave="skimHide()">
+  <div class="tl-scroll" id="tlScroll" onmousemove="onSkim(event)" onmouseleave="skimHide()" onclick="onTrackAreaClick(event)">
     <div class="tl-track-area" id="trackArea">
       <div class="tl-headers">
         <div class="tl-h-item" style="height:56px"><span style="font-size:12px">🎬</span> V1</div>
@@ -2085,6 +2085,17 @@ function initEditorState(){
   recalc();renderTL();
   if(CLIPS.length)sel(0);
   applySubStyle();
+}
+
+/* ─── Track area click — deselect when clicking empty space ─── */
+function onTrackAreaClick(e){
+  // If click target is a clip or inside a clip, ignore (clip has its own handler)
+  if(e.target.closest('.tl-clip,.tl-sub-clip,.tl-audio-clip,.tl-trim'))return;
+  // Deselect all clips
+  document.querySelectorAll('.tl-clip').forEach(el=>el.classList.remove('active'));
+  // Hide subtitle overlay
+  document.getElementById('subOv').classList.add('h');
+  updateMediaBtn();
 }
 
 /* ─── Subtitle Toggle ─── */
