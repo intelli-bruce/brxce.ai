@@ -1142,6 +1142,19 @@ function startClipDrag(e,i){
 }
 
 /* ─── Selection ─── */
+// UI-only selection: updates highlight, detail panel, zoom/crop without touching video or gTime
+function selUI(i){
+  cur=i;
+  document.querySelectorAll('.tl-clip').forEach((e,j)=>e.classList.toggle('active',j===i));
+  updateDetail();
+  deselectSub();
+  showSubAtTime(gTime);
+  syncSubUI();applySubStyle();
+  applyCropToVideo();syncZoomUI();applyZoomToVideo();if(cropMode)updateCropOverlay();
+  checkLetterbox();
+  scrollToClip(i);
+  updateMediaBtn();
+}
 function sel(i){
   cur=i;
   document.querySelectorAll('.tl-clip').forEach((e,j)=>e.classList.toggle('active',j===i));
@@ -1249,7 +1262,15 @@ function seekToGlobal(t){
   gTime=Math.max(0,Math.min(total,t));
   for(let i=0;i<CLIPS.length;i++){
     const end=starts[i]+clipDur(i);
-    if(gTime<=end+0.01){sel(i);document.getElementById('vid').currentTime=CLIPS[i].start+(gTime-starts[i])*(clipMeta[i]?.speed||1);break}
+    if(gTime<=end+0.01){
+      selUI(i);
+      const vid=document.getElementById('vid');
+      const c=CLIPS[i];
+      const src=VBASE+'/'+c.source.split('/').pop();
+      if(vid.dataset.src!==src){vid.src=src;vid.dataset.src=src;vid.onloadedmetadata=()=>{vid.currentTime=c.start+(gTime-starts[i])*(clipMeta[i]?.speed||1)}}
+      else vid.currentTime=c.start+(gTime-starts[i])*(clipMeta[i]?.speed||1);
+      break;
+    }
   }
   updatePlayhead();updateTC();
 }
