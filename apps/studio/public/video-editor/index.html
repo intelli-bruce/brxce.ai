@@ -150,8 +150,13 @@ body{background:#0f0f0f;color:#e0e0e0;font-family:-apple-system,'Apple SD Gothic
 .tl-audio-clip canvas{width:100%;height:100%}
 
 /* Subtitle clips — Remotion caption style */
-.tl-sub-clip{position:absolute;top:3px;bottom:3px;background:rgba(250,204,21,.1);border:1px solid rgba(250,204,21,.2);border-radius:5px;display:flex;align-items:center;padding:0 7px;font-size:9px;color:#c9960f;overflow:hidden;white-space:nowrap;cursor:pointer;transition:background .1s}
+.tl-sub-clip{position:absolute;top:3px;bottom:3px;background:rgba(250,204,21,.1);border:1px solid rgba(250,204,21,.2);border-radius:5px;display:flex;align-items:center;padding:0 7px;font-size:9px;color:#c9960f;overflow:hidden;white-space:nowrap;cursor:grab;transition:background .1s}
 .tl-sub-clip:hover{background:rgba(250,204,21,.18)}
+.tl-sub-clip:active{cursor:grabbing}
+.tl-sub-clip .sub-trim{position:absolute;top:0;bottom:0;width:6px;cursor:ew-resize;z-index:2}
+.tl-sub-clip .sub-trim.left{left:0;border-radius:5px 0 0 5px}
+.tl-sub-clip .sub-trim.right{right:0;border-radius:0 5px 5px 0}
+.tl-sub-clip .sub-trim:hover{background:rgba(250,204,21,.3)}
 
 /* Snap line */
 .snap-line{position:absolute;top:0;bottom:0;width:1px;background:#fbbf24;z-index:18;pointer-events:none;display:none}
@@ -364,7 +369,9 @@ body{background:#0f0f0f;color:#e0e0e0;font-family:-apple-system,'Apple SD Gothic
 <div class="tl-panel" id="tlPanel">
   <div class="tl-toolbar">
     <label>🔍</label>
+    <button class="btn" onclick="zoomOut()" title="축소" style="font-size:10px;padding:3px 6px">−</button>
     <input type="range" id="zoomSlider" min="4" max="50" value="14" oninput="onZoom()">
+    <button class="btn" onclick="zoomIn()" title="확대" style="font-size:10px;padding:3px 6px">+</button>
     <button class="btn" onclick="zoomFit()" title="맞춤 (Shift+Z)" style="font-size:9px">맞춤</button>
     <div class="sep" style="height:14px"></div>
     <div style="display:flex;gap:2px;align-items:center">
@@ -782,13 +789,27 @@ let activeFormat=0; // 0=full, 15, 30, 60
 
 // Clip extra data
 let clipMeta=[];
+// Independent subtitle timing: {start: globalSec, end: globalSec} per subtitle
+let subTiming=[];
 
-function save(){hist.push({c:JSON.parse(JSON.stringify(CLIPS)),s:[...SUBS],m:JSON.parse(JSON.stringify(clipMeta)),ss:JSON.parse(JSON.stringify(clipSubStyles)),cr:JSON.parse(JSON.stringify(clipCrops)),zm:JSON.parse(JSON.stringify(clipZooms))})}
-function undo(){if(!hist.length)return;const h=hist.pop();CLIPS=h.c;SUBS=h.s;clipMeta=h.m;clipSubStyles=h.ss;clipCrops=h.cr;clipZooms=h.zm;recalc();renderTL();sel(Math.min(cur,CLIPS.length-1))}
+function save(){hist.push({c:JSON.parse(JSON.stringify(CLIPS)),s:[...SUBS],m:JSON.parse(JSON.stringify(clipMeta)),ss:JSON.parse(JSON.stringify(clipSubStyles)),cr:JSON.parse(JSON.stringify(clipCrops)),zm:JSON.parse(JSON.stringify(clipZooms)),st:JSON.parse(JSON.stringify(subTiming))})}
+function undo(){if(!hist.length)return;const h=hist.pop();CLIPS=h.c;SUBS=h.s;clipMeta=h.m;clipSubStyles=h.ss;clipCrops=h.cr;clipZooms=h.zm;if(h.st)subTiming=h.st;recalc();renderTL();sel(Math.min(cur,CLIPS.length-1))}
 
 function recalc(){
   let t=0;starts=CLIPS.map((c,i)=>{const s=t;const spd=clipMeta[i]?.speed||1;t+=(c.end-c.start)/spd;return s});total=t;
   document.getElementById('totalInfo').textContent=`${CLIPS.length} clips · ${total.toFixed(1)}s`;
+  // Init subTiming if needed (default: match clip timing)
+  while(subTiming.length<CLIPS.length){
+    const i=subTiming.length;
+    subTiming.push({start:starts[i]||0,end:(starts[i]||0)+clipDur(i)});
+  }
+  // Sync subTiming for clips that haven't been manually adjusted
+  CLIPS.forEach((c,i)=>{
+    if(!subTiming[i]._manual){
+      subTiming[i].start=starts[i];
+      subTiming[i].end=starts[i]+clipDur(i);
+    }
+  });
 }
 
 function fmt(s){const m=Math.floor(s/60),sec=Math.floor(s%60);return m+':'+String(sec).padStart(2,'0')}
@@ -902,14 +923,22 @@ function renderTL(){
     vt.appendChild(div);
   });
 
-  // Sub track
+  // Sub track (independent timing)
   const st=document.getElementById('subTrack');st.innerHTML='';
   CLIPS.forEach((c,i)=>{
     const sub=SUBS[i];if(!sub)return;
-    const dur=clipDur(i);
-    const x=starts[i]*pxPerSec;const w=Math.max(dur*pxPerSec,16);
+    const timing=subTiming[i]||{start:starts[i],end:starts[i]+clipDur(i)};
+    const x=timing.start*pxPerSec;const w=Math.max((timing.end-timing.start)*pxPerSec,16);
     const d=document.createElement('div');d.className='tl-sub-clip';
-    d.style.left=x+'px';d.style.width=w+'px';d.textContent=sub;d.onclick=()=>sel(i);
+    d.style.left=x+'px';d.style.width=w+'px';
+    d.innerHTML=`<span class="sub-trim left"></span><span style="pointer-events:none;overflow:hidden;text-overflow:ellipsis">${sub}</span><span class="sub-trim right"></span>`;
+    // Click to select clip
+    d.addEventListener('click',(e)=>{if(!e.target.classList.contains('sub-trim'))sel(i)});
+    // Drag to move
+    initSubDrag(d,i);
+    // Trim handles
+    initSubTrim(d.querySelector('.sub-trim.left'),i,'left');
+    initSubTrim(d.querySelector('.sub-trim.right'),i,'right');
     st.appendChild(d);
   });
 
@@ -1012,6 +1041,13 @@ function bladeCut(e,i){
   clipSubStyles.splice(i+1,0,{...clipSubStyles[i]});
   clipCrops.splice(i+1,0,{...clipCrops[i]});
   clipZooms.splice(i+1,0,{...clipZooms[i]});
+  // Split subTiming at cut point
+  if(subTiming[i]){
+    const st=subTiming[i];
+    const splitT=starts[i]+((cutPoint-CLIPS[i].start)/(clipMeta[i]?.speed||1));
+    subTiming.splice(i+1,0,{start:splitT,end:st.end,_manual:st._manual});
+    st.end=splitT;
+  }
   recalc();renderTL();sel(i);
   document.getElementById('bladeLine').style.display='none';
 }
@@ -1063,8 +1099,8 @@ function startClipDrag(e,i){
     if(!moved)return;
     
     if(dropTarget>=0&&dropTarget!==i){save();
-      const cl=CLIPS.splice(i,1)[0],su=SUBS.splice(i,1)[0],me=clipMeta.splice(i,1)[0],sst=clipSubStyles.splice(i,1)[0],scr=clipCrops.splice(i,1)[0],szm=clipZooms.splice(i,1)[0];
-      CLIPS.splice(dropTarget,0,cl);SUBS.splice(dropTarget,0,su);clipMeta.splice(dropTarget,0,me);clipSubStyles.splice(dropTarget,0,sst);clipCrops.splice(dropTarget,0,scr);clipZooms.splice(dropTarget,0,szm);
+      const cl=CLIPS.splice(i,1)[0],su=SUBS.splice(i,1)[0],me=clipMeta.splice(i,1)[0],sst=clipSubStyles.splice(i,1)[0],scr=clipCrops.splice(i,1)[0],szm=clipZooms.splice(i,1)[0],stm=subTiming.splice(i,1)[0];
+      CLIPS.splice(dropTarget,0,cl);SUBS.splice(dropTarget,0,su);clipMeta.splice(dropTarget,0,me);clipSubStyles.splice(dropTarget,0,sst);clipCrops.splice(dropTarget,0,scr);clipZooms.splice(dropTarget,0,szm);subTiming.splice(dropTarget,0,stm);
       recalc();renderTL();sel(dropTarget);
     }
   };
@@ -1122,7 +1158,7 @@ function onSpeedChange(){save();clipMeta[cur].speed=parseFloat(document.getEleme
 function onTransitionChange(){save();clipMeta[cur].transition=document.getElementById('dTransition').value;clipMeta[cur].transDur=parseFloat(document.getElementById('dTransDur').value)||0.3;renderTL()}
 function onSubEdit(v){SUBS[cur]=v;const ov=document.getElementById('subOv'),tx=document.getElementById('subTx');if(v&&subtitlesVisible){tx.textContent=v;ov.classList.remove('h')}else ov.classList.add('h');renderTL()}
 
-function delCur(){if(CLIPS.length<=1)return;save();CLIPS.splice(cur,1);SUBS.splice(cur,1);clipMeta.splice(cur,1);clipSubStyles.splice(cur,1);clipCrops.splice(cur,1);clipZooms.splice(cur,1);recalc();renderTL();sel(Math.min(cur,CLIPS.length-1))}
+function delCur(){if(CLIPS.length<=1)return;save();CLIPS.splice(cur,1);SUBS.splice(cur,1);clipMeta.splice(cur,1);clipSubStyles.splice(cur,1);clipCrops.splice(cur,1);clipZooms.splice(cur,1);subTiming.splice(cur,1);recalc();renderTL();sel(Math.min(cur,CLIPS.length-1))}
 
 /* ─── Playback / JKL ─── */
 function togglePlay(){playing?stopP():startP()}
@@ -1320,6 +1356,8 @@ function setFormat(dur){
 }
 
 function onZoom(){pxPerSec=parseInt(document.getElementById('zoomSlider').value);document.getElementById('zoomInfo').textContent=pxPerSec+'px/s';renderTL()}
+function zoomIn(){const s=document.getElementById('zoomSlider');s.value=Math.min(50,parseInt(s.value)+3);onZoom()}
+function zoomOut(){const s=document.getElementById('zoomSlider');s.value=Math.max(4,parseInt(s.value)-3);onZoom()}
 function zoomFit(){
   const w=document.getElementById('tlScroll').clientWidth-HDR-20;
   pxPerSec=Math.max(4,Math.min(50,Math.round(w/total)));
@@ -1327,7 +1365,7 @@ function zoomFit(){
 }
 
 /* ─── Export ─── */
-function exportSrt(){let s='',n=1;CLIPS.forEach((c,i)=>{const sub=SUBS[i];if(!sub)return;const st=starts[i],en=st+clipDur(i);s+=`${n}\n${srtT(st)} --> ${srtT(en)}\n${sub}\n\n`;n++});copy(s,'SRT 복사됨!')}
+function exportSrt(){let s='',n=1;CLIPS.forEach((c,i)=>{const sub=SUBS[i];if(!sub)return;const t=subTiming[i]||{start:starts[i],end:starts[i]+clipDur(i)};s+=`${n}\n${srtT(t.start)} --> ${srtT(t.end)}\n${sub}\n\n`;n++});copy(s,'SRT 복사됨!')}
 function exportJson(){copy(JSON.stringify({clips:CLIPS.map((c,i)=>({...c,subtitle:SUBS[i]||'',subStyle:clipSubStyles[i],crop:clipCrops[i],zoom:clipZooms[i],speed:clipMeta[i].speed,transition:clipMeta[i].transition}))},null,2),'JSON 복사됨!')}
 function getMaxSourceFps(){
   const fpsVals=Object.values(srcFps);
@@ -1763,6 +1801,7 @@ function loadProject(pid){
     clipSubStyles=(data.clipSubStyles||[]).length===CLIPS.length?data.clipSubStyles:CLIPS.map(()=>({...subStyleDefault}));
     clipCrops=(data.clipCrops||[]).length===CLIPS.length?data.clipCrops:CLIPS.map(()=>({x:0,y:0,w:100,h:100}));
     clipZooms=(data.clipZooms||[]).length===CLIPS.length?data.clipZooms:CLIPS.map(()=>({scale:1,panX:0,panY:0}));
+    subTiming=(data.subTiming||[]).length===CLIPS.length?data.subTiming:[];
     hist=[];cur=0;
     recalc();renderTL();
     if(CLIPS.length)sel(0);
@@ -1791,6 +1830,7 @@ function saveProject(){
     clipSubStyles,
     clipCrops,
     clipZooms,
+    subTiming:subTiming.map(t=>({start:t.start,end:t.end,_manual:!!t._manual})),
     sources,
     totalDuration:total
   };
@@ -2087,6 +2127,68 @@ function initEditorState(){
   applySubStyle();
 }
 
+/* ─── Subtitle time lookup ─── */
+function getSubAtTime(t){
+  for(let i=0;i<SUBS.length;i++){
+    if(!SUBS[i])continue;
+    const st=subTiming[i];
+    if(st&&t>=st.start&&t<st.end)return{text:SUBS[i],idx:i};
+  }
+  return null;
+}
+
+/* ─── Subtitle drag & trim ─── */
+function initSubDrag(el,i){
+  let startX,origStart,origEnd;
+  el.addEventListener('mousedown',(e)=>{
+    if(e.target.classList.contains('sub-trim'))return;
+    e.preventDefault();e.stopPropagation();
+    save();
+    startX=e.clientX;
+    const t=subTiming[i];origStart=t.start;origEnd=t.end;
+    const dur=origEnd-origStart;
+    const onMove=(ev)=>{
+      const dx=(ev.clientX-startX)/pxPerSec;
+      let ns=Math.max(0,origStart+dx);
+      let ne=ns+dur;
+      if(ne>total){ne=total;ns=ne-dur}
+      subTiming[i].start=ns;subTiming[i].end=ne;
+      subTiming[i]._manual=true;
+      el.style.left=(ns*pxPerSec)+'px';
+    };
+    const onUp=()=>{document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp)};
+    document.addEventListener('mousemove',onMove);
+    document.addEventListener('mouseup',onUp);
+  });
+}
+function initSubTrim(handle,i,side){
+  if(!handle)return;
+  handle.addEventListener('mousedown',(e)=>{
+    e.preventDefault();e.stopPropagation();
+    save();
+    const startX=e.clientX;
+    const t=subTiming[i];const origStart=t.start;const origEnd=t.end;
+    const parent=handle.closest('.tl-sub-clip');
+    const onMove=(ev)=>{
+      const dx=(ev.clientX-startX)/pxPerSec;
+      if(side==='left'){
+        let ns=Math.max(0,Math.min(origEnd-0.3,origStart+dx));
+        subTiming[i].start=ns;
+        parent.style.left=(ns*pxPerSec)+'px';
+        parent.style.width=((subTiming[i].end-ns)*pxPerSec)+'px';
+      } else {
+        let ne=Math.max(origStart+0.3,Math.min(total,origEnd+dx));
+        subTiming[i].end=ne;
+        parent.style.width=((ne-subTiming[i].start)*pxPerSec)+'px';
+      }
+      subTiming[i]._manual=true;
+    };
+    const onUp=()=>{document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp)};
+    document.addEventListener('mousemove',onMove);
+    document.addEventListener('mouseup',onUp);
+  });
+}
+
 /* ─── Track area click — deselect when clicking empty space ─── */
 function onTrackAreaClick(e){
   // If click target is a clip or inside a clip, ignore (clip has its own handler)
@@ -2156,6 +2258,7 @@ function addUploadedAsNewClips(uploaded){
     CLIPS.push({source:v.name,source_idx:0,start:0,end:v.duration,score:0});
     SUBS.push('');clipMeta.push({speed:1,transition:'none',transDur:0.3});
     clipSubStyles.push({...subStyleDefault});clipCrops.push({x:0,y:0,w:100,h:100});clipZooms.push({scale:1,panX:0,panY:0});
+    subTiming.push({start:0,end:0}); // will be recalculated by recalc()
   });
   const srcNames=[...new Set(CLIPS.map(c=>c.source))];
   CLIPS.forEach(c=>{c.source_idx=srcNames.indexOf(c.source)});
