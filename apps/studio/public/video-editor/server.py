@@ -962,17 +962,35 @@ def run_render(data):
         if r.returncode != 0:
             raise RuntimeError(f"Concat failed: {r.stderr[-500:]}")
 
-        # Subtitles (respect subtitlesEnabled flag)
+        # Subtitles (respect subtitlesEnabled flag) — multi-subtitle support
         subs = []
         subtitles_enabled = data.get("subtitlesEnabled", True)
         t_offset = 0
         for i, clip in enumerate(clips):
             speed = clip.get("speed", 1)
             dur = (clip["end"] - clip["start"]) / speed
-            sub_text = clip.get("subtitle", "")
-            if sub_text and subtitles_enabled:
-                sub_style = clip.get("subStyle", {"size": 16, "x": 50, "y": 80})
-                subs.append((t_offset, t_offset + dur, sub_text, sub_style))
+            
+            # Support both legacy "subtitle" (string) and new "subtitles" (array)
+            clip_subs = clip.get("subtitles", [])
+            legacy_sub = clip.get("subtitle", "")
+            
+            if not clip_subs and legacy_sub:
+                # Legacy format: single string
+                clip_subs = [{"text": legacy_sub, "style": None}]
+            
+            if subtitles_enabled:
+                for sub_entry in clip_subs:
+                    if isinstance(sub_entry, str):
+                        sub_text = sub_entry
+                        sub_style = clip.get("subStyle", {"size": 16, "x": 50, "y": 80})
+                    elif isinstance(sub_entry, dict):
+                        sub_text = sub_entry.get("text", "")
+                        sub_style = sub_entry.get("style") or clip.get("subStyle", {"size": 16, "x": 50, "y": 80})
+                    else:
+                        continue
+                    if sub_text:
+                        subs.append((t_offset, t_offset + dur, sub_text, sub_style))
+            
             t_offset += dur
 
         max_dur = data.get("maxDuration", 0)
@@ -991,7 +1009,7 @@ def run_render(data):
                 sy = ss.get("y", 80)
 
                 png_path = tmp_dir / f"sub_{idx:03d}.png"
-                img_w, img_h = render_subtitle_image(text, font_size, str(png_path), W, H)
+                img_w, img_h = render_subtitle_image(text, font_size, str(png_path), W, H, style=ss)
                 sub_pngs.append(png_path)
 
                 # Position: center the PNG at (sx%, sy%) of frame
@@ -1044,12 +1062,103 @@ def run_render(data):
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
-def render_subtitle_image(text, font_size, out_path, frame_w=1080, frame_h=1920):
-    """Render a subtitle as a transparent PNG with rounded black background box."""
+def render_subtitle_image(text, font_size, out_path, frame_w=1080, frame_h=1920, style=None):
+    """Render a subtitle as a transparent PNG with optional background box and custom style."""
+    style = style or {}
+    
+    # Font selection — must support Korean (CJK) if text contains Korean
+    import re
+    has_cjk = bool(re.search(r'[\uAC00-\uD7AF\u3130-\u318F\u4E00-\u9FFF]', text))
+    
+    font_family = style.get("font", "")
+    font_path = FONT_PATH  # default: Apple SD Gothic (Korean support)
+    
+    HOME = Path.home()
+    UFONTS = HOME / "Library" / "Fonts"
+    
+    # Font registry: name → [paths] (ordered by preference)
+    FONT_MAP = {
+        # Korean Gothic (sans-serif)
+        "Apple SD":     ["/System/Library/Fonts/AppleSDGothicNeo.ttc"],
+        "Noto Sans KR": [str(UFONTS / "NotoSansKR-Bold.ttf"), str(UFONTS / "NotoSansKR-Medium.ttf"), "/System/Library/Fonts/Supplemental/NotoSansCJKkr-Regular.otf"],
+        "Binggrae":     [str(UFONTS / "Binggrae.otf")],
+        "Samanco":      [str(UFONTS / "BinggraeSamanco.otf")],
+        "ONE Mobile":   [str(UFONTS / "ONE Mobile OTF Bold.otf"), str(UFONTS / "ONE Mobile OTF Regular.otf")],
+        "HDharmony":    [str(UFONTS / "현대하모니+B.ttf"), str(UFONTS / "현대하모니+M.ttf")],
+        # Korean Serif
+        "Myungjo":      ["/System/Library/Fonts/AppleMyungjo.ttc"],
+        "Gowun Batang": [str(UFONTS / "GowunBatang-Bold.ttf"), str(UFONTS / "GowunBatang-Regular.ttf")],
+        "Batang":       ["/System/Library/Fonts/Supplemental/Batang.ttc"],
+        # Handwriting / Display
+        "HSYuji":       [str(UFONTS / "HS유지체.otf")],
+        "Gotgam":       [str(UFONTS / "SANGJU Gotgam.otf")],
+        "Dajungdagam":  [str(UFONTS / "SANGJU Dajungdagam.otf")],
+        "Gyeongcheon":  [str(UFONTS / "SANGJU Gyeongcheon Island.otf")],
+        "Recipekorea":  [str(UFONTS / "Recipekorea 饭内眉 FONT.otf")],
+        "MBC 1961":     [str(UFONTS / "MBC 1961 OTF M.otf"), str(UFONTS / "MBC 1961굴림 OTF M.otf")],
+        # Latin only (no Korean)
+        "Impact":       ["/System/Library/Fonts/Supplemental/Impact.ttf"],
+        "Courier":      ["/System/Library/Fonts/Courier.ttc"],
+        "Georgia":      ["/System/Library/Fonts/Supplemental/Georgia.ttf"],
+        "Arial":        ["/System/Library/Fonts/Supplemental/Arial.ttf"],
+    }
+    
+    NO_CJK = {"Impact", "Courier", "Georgia", "Arial"}
+    
+    # Match font family string to registry key
+    selected = None
+    match_map = [
+        ("Samanco", "Samanco"), ("Binggrae", "Binggrae"),
+        ("ONE Mobile", "ONE Mobile"), ("HDharmony", "HDharmony"), ("현대하모니", "HDharmony"),
+        ("Gowun Batang", "Gowun Batang"), ("고운바탕", "Gowun Batang"),
+        ("Batang", "Batang"), ("바탕", "Batang"),
+        ("Myungjo", "Myungjo"), ("명조", "Myungjo"),
+        ("HSYuji", "HSYuji"), ("유지", "HSYuji"),
+        ("Gotgam", "Gotgam"), ("곶감", "Gotgam"),
+        ("Dajungdagam", "Dajungdagam"), ("다정다감", "Dajungdagam"),
+        ("Gyeongcheon", "Gyeongcheon"), ("경천섬", "Gyeongcheon"),
+        ("Recipekorea", "Recipekorea"), ("레시피", "Recipekorea"),
+        ("MBC", "MBC 1961"),
+        ("Noto Sans KR", "Noto Sans KR"), ("Noto", "Noto Sans KR"),
+        ("Impact", "Impact"), ("Courier", "Courier"),
+        ("Georgia", "Georgia"), ("Arial", "Arial"),
+    ]
+    for keyword, key in match_map:
+        if keyword in font_family:
+            selected = key
+            break
+    
+    if selected:
+        if selected in NO_CJK and has_cjk:
+            print(f"[Sub] Font '{selected}' doesn't support Korean, falling back to default")
+        else:
+            for p in FONT_MAP.get(selected, []):
+                if Path(p).exists():
+                    font_path = p
+                    break
+    
     try:
-        font = ImageFont.truetype(FONT_PATH, font_size)
+        font = ImageFont.truetype(font_path, font_size)
     except:
         font = ImageFont.load_default()
+    
+    # Parse colors
+    def hex_to_rgba(hex_color, alpha=1.0):
+        hex_color = hex_color.lstrip('#')
+        if len(hex_color) == 6:
+            r, g, b = int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
+            return (r, g, b, int(alpha * 255))
+        return (255, 255, 255, 255)
+    
+    text_color = hex_to_rgba(style.get("color", "#ffffff"))
+    show_bg = style.get("bg", True)
+    if isinstance(show_bg, str):
+        show_bg = True  # Legacy: string bg means enabled
+    bg_color_hex = style.get("bgColor", "#000000")
+    bg_alpha = style.get("bgAlpha", 0.6)
+    if not isinstance(bg_alpha, (int, float)):
+        bg_alpha = 0.6
+    bg_color = hex_to_rgba(bg_color_hex, bg_alpha) if show_bg else (0, 0, 0, 0)
     
     # Measure text
     dummy = Image.new("RGBA", (1, 1))
@@ -1058,10 +1167,9 @@ def render_subtitle_image(text, font_size, out_path, frame_w=1080, frame_h=1920)
     tw = bbox[2] - bbox[0]
     th = bbox[3] - bbox[1]
     
-    # Padding and radius matching editor style
-    pad_h = int(font_size * 0.7)  # horizontal padding
-    pad_v = int(font_size * 0.35)  # vertical padding
-    radius = int(font_size * 0.4)  # border radius
+    pad_h = int(font_size * 0.7)
+    pad_v = int(font_size * 0.35)
+    radius = int(font_size * 0.4)
     
     img_w = tw + pad_h * 2
     img_h = th + pad_v * 2
@@ -1069,17 +1177,16 @@ def render_subtitle_image(text, font_size, out_path, frame_w=1080, frame_h=1920)
     img = Image.new("RGBA", (img_w, img_h), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
     
-    # Rounded rectangle background — rgba(0,0,0,0.6) = alpha 153
-    draw.rounded_rectangle(
-        [(0, 0), (img_w - 1, img_h - 1)],
-        radius=radius,
-        fill=(0, 0, 0, 153)
-    )
+    if show_bg:
+        draw.rounded_rectangle(
+            [(0, 0), (img_w - 1, img_h - 1)],
+            radius=radius,
+            fill=bg_color
+        )
     
-    # White bold text centered in box
     tx = pad_h - bbox[0]
     ty = pad_v - bbox[1]
-    draw.text((tx, ty), text, font=font, fill=(255, 255, 255, 255))
+    draw.text((tx, ty), text, font=font, fill=text_color)
     
     img.save(out_path, "PNG")
     return img_w, img_h

@@ -359,13 +359,33 @@ body{background:#0f0f0f;color:#e0e0e0;font-family:-apple-system,'Apple SD Gothic
           <div style="margin-top:6px">
             <div class="d-row"><label>글꼴</label>
               <select id="subFont" onchange="onSubStyleChange()" style="flex:1;background:#222;border:1px solid #3a3a3a;color:#ddd;padding:3px 5px;border-radius:4px;font-size:10px">
-                <option value="'Apple SD Gothic Neo',sans-serif">Apple SD 고딕</option>
-                <option value="'Noto Sans CJK KR',sans-serif">Noto Sans KR</option>
-                <option value="Arial,Helvetica,sans-serif">Arial</option>
-                <option value="'Courier New',monospace">Courier New</option>
-                <option value="Georgia,serif">Georgia</option>
-                <option value="Impact,sans-serif">Impact</option>
-                <option value="'AppleMyungjo',serif">명조체</option>
+                <optgroup label="고딕 (sans-serif)">
+                  <option value="'Apple SD Gothic Neo',sans-serif">Apple SD 고딕</option>
+                  <option value="'Noto Sans KR',sans-serif">Noto Sans KR</option>
+                  <option value="'Binggrae',sans-serif">빙그레체</option>
+                  <option value="'Binggrae Samanco',sans-serif">빙그레 싸만코</option>
+                  <option value="'ONE Mobile OTF',sans-serif">ONE 모바일고딕</option>
+                  <option value="'HDharmony',sans-serif">현대하모니</option>
+                </optgroup>
+                <optgroup label="명조/바탕 (serif)">
+                  <option value="'AppleMyungjo',serif">명조체</option>
+                  <option value="'Gowun Batang',serif">고운바탕</option>
+                  <option value="'Batang',serif">바탕</option>
+                </optgroup>
+                <optgroup label="손글씨/감성">
+                  <option value="'HSYuji',sans-serif">HS유지체</option>
+                  <option value="'SANGJU Gotgam',sans-serif">상주곶감체</option>
+                  <option value="'SANGJU Dajungdagam',sans-serif">상주다정다감</option>
+                  <option value="'SANGJU Gyeongcheon Island',sans-serif">상주경천섬</option>
+                  <option value="'RecipekoreaOTF',sans-serif">레시피코리아</option>
+                  <option value="'MBC 1961 OTF',sans-serif">MBC 1961</option>
+                </optgroup>
+                <optgroup label="영문">
+                  <option value="Arial,Helvetica,sans-serif">Arial</option>
+                  <option value="'Courier New',monospace">Courier New</option>
+                  <option value="Georgia,serif">Georgia</option>
+                  <option value="Impact,sans-serif">Impact</option>
+                </optgroup>
               </select>
             </div>
             <div class="d-row"><label>크기</label><input type="range" id="subSize" min="8" max="40" value="16" oninput="onSubStyleChange()" style="flex:1"><span id="subSizeVal" style="color:#888;font-size:9px;min-width:28px;text-align:right">16px</span></div>
@@ -782,7 +802,6 @@ function applySubStyle(){
 }
 
 function initSubDrag(e,idx){
-  const ov=document.getElementById('subOv');
   const phone=document.getElementById('phoneFrame');
   const rect=phone.getBoundingClientRect();
   const sub=getClipSubs(cur)[idx];
@@ -790,14 +809,24 @@ function initSubDrag(e,idx){
   const st=sub.style||(sub.style={...subStyleDefault});
   const startX=st.x,startY=st.y;
   const mx0=e.clientX,my0=e.clientY;
+  // Find the span element being dragged
+  const span=e.target.closest('.sub-tx')||e.target;
   const onMove=ev=>{
+    ev.preventDefault();
     const dx=(ev.clientX-mx0)/rect.width*100;
     const dy=(ev.clientY-my0)/rect.height*100;
     st.x=Math.max(5,Math.min(95,startX+dx));
     st.y=Math.max(5,Math.min(95,startY+dy));
-    applySubStyle();
+    // Direct style update (no DOM rebuild during drag)
+    span.style.left=st.x+'%';
+    span.style.top=st.y+'%';
+    document.getElementById('subPosInfo').textContent=`${Math.round(st.x)}%, ${Math.round(st.y)}%`;
   };
-  const onUp=()=>{document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp)};
+  const onUp=()=>{
+    document.removeEventListener('mousemove',onMove);
+    document.removeEventListener('mouseup',onUp);
+    applySubStyle(); // Final full rebuild
+  };
   document.addEventListener('mousemove',onMove);
   document.addEventListener('mouseup',onUp);
 }
@@ -1092,7 +1121,7 @@ function renderTL(){
       updateMediaBtn();
       selectedSub=i;renderTL();
     });
-    initSubDrag(d,i);
+    initTimelineSubDrag(d,i);
     initSubTrim(d.querySelector('.sub-trim.left'),i,'left');
     initSubTrim(d.querySelector('.sub-trim.right'),i,'right');
     st.appendChild(d);
@@ -2563,7 +2592,7 @@ function subSnapTo(t){
   }
   return t;
 }
-function initSubDrag(el,i){
+function initTimelineSubDrag(el,i){
   let startX,origStart,origEnd;
   el.addEventListener('mousedown',(e)=>{
     if(e.target.classList.contains('sub-trim'))return;
