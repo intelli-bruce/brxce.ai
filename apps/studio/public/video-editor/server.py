@@ -1011,7 +1011,10 @@ def run_render(data):
         output = BASE / f"edited_output{suffix}.mp4"
 
         if subs:
-            SCALE = 2.5  # phone 432px → 1080px
+            # Measured: CSS AppleSD 23px → 50px text (11.6% of 432px)
+            # ffmpeg drawtext AppleSD fontsize=65 → 126px (11.7% of 1080px)
+            # Scale = 65/23 = 2.826
+            SCALE = 2.83  # CSS→ffmpeg drawtext measured scale
 
             # Split subs: emoji → PNG overlay, text-only → drawtext
             emoji_subs = []
@@ -1065,6 +1068,9 @@ def run_render(data):
                     bbox = dummy.textbbox((0, 0), text, font=pil_font)
                     tw = bbox[2] - bbox[0]
                     th = bbox[3] - bbox[1]
+                    # Pillow renders ~8% wider than ffmpeg drawtext; shrink to match
+                    tw = int(tw * 0.93)
+                    th = int(th * 0.93)
                     bg_w = tw + pad_h * 2
                     bg_h = th + pad_v * 2
                     # Create rounded rect PNG
