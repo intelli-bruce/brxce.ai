@@ -1019,6 +1019,8 @@ def run_render(data):
             for idx, (st, en, text, ss) in enumerate(subs):
                 SCALE = 3.9  # CSS→Pillow font scale (measured: CSS 23px=74px, Pillow 90px=188px → 90/23≈3.9)
                 font_size = int(ss.get("size", 16) * SCALE)
+                print(f"[Sub {idx}] size={ss.get('size')}, font={ss.get('font','?')[:30]}, scaled={font_size}, text={text[:20]}")
+                import sys; sys.stdout.flush()
                 sx = ss.get("x", 50)
                 sy = ss.get("y", 80)
 
@@ -1209,11 +1211,12 @@ def render_subtitle_image(text, font_size, out_path, frame_w=1080, frame_h=1920,
     tw = bbox[2] - bbox[0]
     th = bbox[3] - bbox[1]
     
-    # CSS→Pillow scale (measured from actual browser rendering)
-    RENDER_SCALE = 3.9
-    pad_h = int(12 * RENDER_SCALE)   # ~42px
-    pad_v = int(4 * RENDER_SCALE)    # ~14px
-    radius = int(6 * RENDER_SCALE)   # ~21px
+    # Padding/radius scale: pure resolution ratio (432px → 1080px = 2.5x)
+    # Font uses 3.9x because CSS and Pillow font rendering differ
+    PX_SCALE = 2.5
+    pad_h = int(12 * PX_SCALE)   # ~30px
+    pad_v = int(4 * PX_SCALE)    # ~10px
+    radius = int(6 * PX_SCALE)   # ~15px
     
     img_w = tw + pad_h * 2
     img_h = th + pad_v * 2
@@ -1237,7 +1240,7 @@ def render_subtitle_image(text, font_size, out_path, frame_w=1080, frame_h=1920,
     # Stroke (outline)
     show_stroke = style.get("stroke", False)
     stroke_color = hex_to_rgba(style.get("strokeColor", "#000000")) if show_stroke else None
-    stroke_width = int(style.get("strokeWidth", 2) * RENDER_SCALE) if show_stroke else 0
+    stroke_width = int(style.get("strokeWidth", 2) * PX_SCALE) if show_stroke else 0
     
     if has_emoji and HAS_PILMOJI:
         # Use pilmoji for proper color emoji rendering
