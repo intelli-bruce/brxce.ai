@@ -2238,7 +2238,8 @@ function loadProjectList(){
           <div class="proj-meta">${p.clipCount}클립 · ${p.totalDuration}초 · ${dateStr}</div>
           ${srcs?`<div class="proj-meta">${srcs}</div>`:''}
         </div>
-        <span class="proj-del" onclick="event.stopPropagation();deleteProject('${p.id}')">🗑</span>
+        <span class="proj-del" onclick="event.stopPropagation();renameProject('${p.id}',this.parentElement.querySelector('.proj-name'))" title="이름 수정">✏️</span>
+        <span class="proj-del" onclick="event.stopPropagation();deleteProject('${p.id}')" title="삭제">🗑</span>
       `;
       item.addEventListener('click',()=>loadProject(p.id));
       list.appendChild(item);
