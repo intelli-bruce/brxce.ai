@@ -1036,7 +1036,9 @@ def run_render(data):
                 text_color = ss.get("color", "#ffffff")
                 show_stroke = ss.get("stroke", False)
                 stroke_color = ss.get("strokeColor", "#000000") if show_stroke else None
-                stroke_width = int(ss.get("strokeWidth", 2) * SCALE) if show_stroke else 0
+                # CSS -webkit-text-stroke is total width (both sides); ffmpeg borderw is per-side
+                # CSS 5px → 2.5px per side → scale with resolution ratio (2.5)
+                stroke_width = int(ss.get("strokeWidth", 2) / 2 * 2.5) if show_stroke else 0
                 show_bg = ss.get("bg", True)
                 bg_color = ss.get("bgColor", "#000000") if show_bg else None
                 bg_alpha = ss.get("bgAlpha", 0.6) if show_bg else 0
@@ -1052,12 +1054,13 @@ def run_render(data):
 
                 # Background: render as rounded-corner PNG
                 if show_bg and bg_color:
-                    pad_h = int(12 * SCALE)
-                    pad_v = int(4 * SCALE)
-                    radius = int(6 * SCALE)
+                    RES_SCALE = 2.5  # pure resolution ratio 432→1080
+                    pad_h = int(12 * RES_SCALE)  # 30px
+                    pad_v = int(4 * RES_SCALE)   # 10px
+                    radius = int(6 * RES_SCALE)  # 15px
                     if show_stroke:
-                        pad_h = max(pad_h, stroke_width + int(4 * SCALE))
-                        pad_v = max(pad_v, stroke_width + int(2 * SCALE))
+                        pad_h = max(pad_h, stroke_width + int(4 * RES_SCALE))
+                        pad_v = max(pad_v, stroke_width + int(2 * RES_SCALE))
                     # Measure text size with this font
                     from PIL import ImageFont, Image, ImageDraw
                     try:
