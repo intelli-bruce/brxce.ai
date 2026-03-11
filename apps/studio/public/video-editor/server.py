@@ -882,11 +882,8 @@ def run_render(data):
                 
                 fc = (
                     f"{speed_filter}fps={output_fps},"
-                    f"split[main][bg];"
-                    f"[bg]scale={W}:{H}:force_original_aspect_ratio=increase,"
-                    f"crop={W}:{H},boxblur=20:5[blurred];"
-                    f"[main]scale={W}:{H}:force_original_aspect_ratio=decrease[fg];"
-                    f"[blurred][fg]overlay=(W-w)/2:(H-h)/2{zoom_filter}"
+                    f"scale={W}:{H}:force_original_aspect_ratio=decrease,"
+                    f"pad={W}:{H}:(ow-iw)/2:(oh-ih)/2:black{zoom_filter}"
                 )
                 cmd = [
                     "ffmpeg", "-y",
