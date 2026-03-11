@@ -962,36 +962,43 @@ def run_render(data):
         if r.returncode != 0:
             raise RuntimeError(f"Concat failed: {r.stderr[-500:]}")
 
-        # Subtitles (respect subtitlesEnabled flag) — multi-subtitle support
+        # Subtitles — global subtitle support
         subs = []
         subtitles_enabled = data.get("subtitlesEnabled", True)
-        t_offset = 0
-        for i, clip in enumerate(clips):
-            speed = clip.get("speed", 1)
-            dur = (clip["end"] - clip["start"]) / speed
-            
-            # Support both legacy "subtitle" (string) and new "subtitles" (array)
-            clip_subs = clip.get("subtitles", [])
-            legacy_sub = clip.get("subtitle", "")
-            
-            if not clip_subs and legacy_sub:
-                # Legacy format: single string
-                clip_subs = [{"text": legacy_sub, "style": None}]
-            
-            if subtitles_enabled:
-                for sub_entry in clip_subs:
-                    if isinstance(sub_entry, str):
-                        sub_text = sub_entry
-                        sub_style = clip.get("subStyle", {"size": 16, "x": 50, "y": 80})
-                    elif isinstance(sub_entry, dict):
-                        sub_text = sub_entry.get("text", "")
-                        sub_style = sub_entry.get("style") or clip.get("subStyle", {"size": 16, "x": 50, "y": 80})
-                    else:
-                        continue
-                    if sub_text:
-                        subs.append((t_offset, t_offset + dur, sub_text, sub_style))
-            
-            t_offset += dur
+        
+        if subtitles_enabled:
+            # Prefer globalSubs (new format: [{text, style, start, end}])
+            global_subs = data.get("globalSubs", [])
+            if global_subs:
+                for gs in global_subs:
+                    text = gs.get("text", "")
+                    style = gs.get("style", {"size": 16, "x": 50, "y": 80})
+                    start = gs.get("start", 0)
+                    end = gs.get("end", 0)
+                    if text and end > start:
+                        subs.append((start, end, text, style))
+            else:
+                # Fallback: legacy clip-based subtitles
+                t_offset = 0
+                for i, clip in enumerate(clips):
+                    speed = clip.get("speed", 1)
+                    dur = (clip["end"] - clip["start"]) / speed
+                    clip_subs = clip.get("subtitles", [])
+                    legacy_sub = clip.get("subtitle", "")
+                    if not clip_subs and legacy_sub:
+                        clip_subs = [{"text": legacy_sub, "style": None}]
+                    for sub_entry in clip_subs:
+                        if isinstance(sub_entry, str):
+                            sub_text = sub_entry
+                            sub_style = clip.get("subStyle", {"size": 16, "x": 50, "y": 80})
+                        elif isinstance(sub_entry, dict):
+                            sub_text = sub_entry.get("text", "")
+                            sub_style = sub_entry.get("style") or clip.get("subStyle", {"size": 16, "x": 50, "y": 80})
+                        else:
+                            continue
+                        if sub_text:
+                            subs.append((t_offset, t_offset + dur, sub_text, sub_style))
+                    t_offset += dur
 
         max_dur = data.get("maxDuration", 0)
         suffix = f"_{max_dur}s" if max_dur else ""

@@ -58,7 +58,7 @@ body{background:#0f0f0f;color:#e0e0e0;font-family:-apple-system,'Apple SD Gothic
 .crop-handle.br{bottom:-5px;right:-5px;cursor:nwse-resize}
 .sub-ov{position:absolute;left:0;right:0;top:0;bottom:0;pointer-events:none;transition:opacity .2s;z-index:3}
 .sub-ov.h{opacity:0}
-.sub-tx{position:absolute;background:rgba(0,0,0,.6);color:#fff;font-weight:700;padding:4px 12px;border-radius:6px;letter-spacing:.5px;max-width:90%;word-break:keep-all;pointer-events:auto;cursor:grab;white-space:nowrap}
+.sub-tx{position:absolute;background:rgba(0,0,0,.6);color:#fff;font-weight:700;padding:4px 12px;border-radius:6px;letter-spacing:.5px;max-width:90%;word-break:keep-all;pointer-events:auto;cursor:grab;white-space:nowrap;transition:left .08s ease-out,top .08s ease-out;will-change:left,top}
 .sub-tx:active{cursor:grabbing}
 .sub-tx.sub-active{outline:2px solid #4ade80;outline-offset:2px}
 /* In/Out marks */
@@ -490,20 +490,48 @@ body{background:#0f0f0f;color:#e0e0e0;font-family:-apple-system,'Apple SD Gothic
 
 <script>
 let CLIPS=[];
-let SUBS=[]; // SUBS[clipIdx] = [{text,style:{size,x,y,font,bg,bgColor,bgAlpha,color}}]
-let curSubIdx=0; // currently selected subtitle index within clip
+// Global subtitle list — each sub has its own timing, independent of clips
+// SUBS = [{id, text, style:{size,x,y,font,bg,bgColor,bgAlpha,color}, start, end}]
+let SUBS=[];
+let curSubIdx=-1; // currently selected global subtitle index
+let _subIdCounter=0;
+function nextSubId(){return 'sub_'+(++_subIdCounter)+'_'+Date.now()}
 
-// Normalize SUBS: legacy string → array of objects
+// Convert legacy formats to global subs
 function normSubs(){
-  SUBS=SUBS.map(s=>{
-    if(!s||s==='')return [];
-    if(typeof s==='string')return [{text:s,style:null}];
-    if(Array.isArray(s))return s;
-    return [];
+  if(!SUBS||!SUBS.length)return;
+  // Already global format?
+  if(SUBS[0]&&typeof SUBS[0]==='object'&&!Array.isArray(SUBS[0])&&SUBS[0].start!==undefined)return;
+  // Legacy: SUBS[clipIdx] = string | [{text,style}]
+  const global=[];
+  SUBS.forEach((s,i)=>{
+    const clipStart=starts[i]||0;
+    const clipEnd=clipStart+clipDur(i);
+    if(!s)return;
+    if(typeof s==='string'&&s){
+      global.push({id:nextSubId(),text:s,style:{...subStyleDefault},start:clipStart,end:clipEnd});
+    }else if(Array.isArray(s)){
+      s.forEach(entry=>{
+        if(!entry)return;
+        if(typeof entry==='string'&&entry){
+          global.push({id:nextSubId(),text:entry,style:{...subStyleDefault},start:clipStart,end:clipEnd});
+        }else if(entry.text){
+          global.push({id:nextSubId(),text:entry.text,style:entry.style||{...subStyleDefault},start:entry.start!=null?entry.start:clipStart,end:entry.end!=null?entry.end:clipEnd});
+        }
+      });
+    }
   });
+  SUBS=global;
 }
-function getClipSubs(i){return Array.isArray(SUBS[i])?SUBS[i]:[]}
-function getCurSub(){const subs=getClipSubs(cur);return subs[curSubIdx]||null}
+
+function getClipSubs(i){
+  if(!starts||!starts.length)return[];
+  const cs=starts[i]||0;
+  const ce=cs+(clipDur(i)||0);
+  return SUBS.filter(s=>s.end>cs&&s.start<ce);
+}
+function getCurSub(){return SUBS[curSubIdx]||null}
+function getSubById(id){return SUBS.find(s=>s.id===id)||null}
 let _hasInitialData=false;
 const API_BASE='http://localhost:8090';
 const VBASE=API_BASE;
@@ -809,23 +837,35 @@ function initSubDrag(e,idx){
   const st=sub.style||(sub.style={...subStyleDefault});
   const startX=st.x,startY=st.y;
   const mx0=e.clientX,my0=e.clientY;
-  // Find the span element being dragged
   const span=e.target.closest('.sub-tx')||e.target;
-  const onMove=ev=>{
-    ev.preventDefault();
-    const dx=(ev.clientX-mx0)/rect.width*100;
-    const dy=(ev.clientY-my0)/rect.height*100;
+  span.style.transition='none'; // disable transition during drag
+  span.style.cursor='grabbing';
+  let rafId=0,latestEv=null;
+  
+  const tick=()=>{
+    if(!latestEv)return;
+    const dx=(latestEv.clientX-mx0)/rect.width*100;
+    const dy=(latestEv.clientY-my0)/rect.height*100;
     st.x=Math.max(5,Math.min(95,startX+dx));
     st.y=Math.max(5,Math.min(95,startY+dy));
-    // Direct style update (no DOM rebuild during drag)
     span.style.left=st.x+'%';
     span.style.top=st.y+'%';
     document.getElementById('subPosInfo').textContent=`${Math.round(st.x)}%, ${Math.round(st.y)}%`;
+    latestEv=null;
+  };
+  
+  const onMove=ev=>{
+    ev.preventDefault();
+    latestEv=ev;
+    cancelAnimationFrame(rafId);
+    rafId=requestAnimationFrame(tick);
   };
   const onUp=()=>{
+    cancelAnimationFrame(rafId);
     document.removeEventListener('mousemove',onMove);
     document.removeEventListener('mouseup',onUp);
-    applySubStyle(); // Final full rebuild
+    span.style.cursor='';
+    applySubStyle();
   };
   document.addEventListener('mousemove',onMove);
   document.addEventListener('mouseup',onUp);
@@ -963,11 +1003,11 @@ let activeFormat=0; // 0=full, 15, 30, 60
 // Clip extra data
 let clipMeta=[];
 // Independent subtitle timing: {start: globalSec, end: globalSec} per subtitle
-let subTiming=[];
-let selectedSub=-1; // currently selected subtitle index
+let subTiming=[]; // legacy compat — not used for global subs
+let selectedSub=-1; // timeline selected subtitle index into SUBS[]
 
-function save(){hist.push({c:JSON.parse(JSON.stringify(CLIPS)),s:JSON.parse(JSON.stringify(SUBS)),m:JSON.parse(JSON.stringify(clipMeta)),ss:JSON.parse(JSON.stringify(clipSubStyles)),cr:JSON.parse(JSON.stringify(clipCrops)),zm:JSON.parse(JSON.stringify(clipZooms)),st:JSON.parse(JSON.stringify(subTiming))})}
-function undo(){if(!hist.length)return;const h=hist.pop();CLIPS=h.c;SUBS=h.s;clipMeta=h.m;clipSubStyles=h.ss;clipCrops=h.cr;clipZooms=h.zm;if(h.st)subTiming=h.st;recalc();renderTL();sel(Math.min(cur,CLIPS.length-1))}
+function save(){hist.push({c:JSON.parse(JSON.stringify(CLIPS)),s:JSON.parse(JSON.stringify(SUBS)),m:JSON.parse(JSON.stringify(clipMeta)),ss:JSON.parse(JSON.stringify(clipSubStyles)),cr:JSON.parse(JSON.stringify(clipCrops)),zm:JSON.parse(JSON.stringify(clipZooms))})}
+function undo(){if(!hist.length)return;const h=hist.pop();CLIPS=h.c;SUBS=h.s;clipMeta=h.m;clipSubStyles=h.ss;clipCrops=h.cr;clipZooms=h.zm;recalc();renderTL();sel(Math.min(cur,CLIPS.length-1))}
 
 function recalc(){
   let t=0;starts=CLIPS.map((c,i)=>{const s=t;const spd=clipMeta[i]?.speed||1;t+=(c.end-c.start)/spd;return s});total=t;
@@ -1098,32 +1138,31 @@ function renderTL(){
     vt.appendChild(div);
   });
 
-  // Sub track (independent timing) — multi-subtitle
+  // Sub track — each global subtitle as independent bar
   const st=document.getElementById('subTrack');st.innerHTML='';
-  CLIPS.forEach((c,i)=>{
-    const clipSubs=getClipSubs(i);
-    if(!clipSubs.length)return;
-    const subText=clipSubs.map(s=>s.text).filter(Boolean).join(' / ')||'(빈 자막)';
-    const timing=subTiming[i]||{start:starts[i],end:starts[i]+clipDur(i)};
-    const x=timing.start*pxPerSec;const w=Math.max((timing.end-timing.start)*pxPerSec,16);
+  const subColors=['#4ade80','#60a5fa','#f59e0b','#ec4899','#a78bfa','#14b8a6'];
+  SUBS.forEach((sub,gi)=>{
+    if(!sub.text&&curSubIdx!==gi)return;
+    const x=sub.start*pxPerSec;
+    const w=Math.max((sub.end-sub.start)*pxPerSec,20);
+    const color=subColors[gi%subColors.length];
     const d=document.createElement('div');d.className='tl-sub-clip';
     d.style.left=x+'px';d.style.width=w+'px';
-    d.innerHTML=`<span class="sub-trim left"></span><span style="pointer-events:none;overflow:hidden;text-overflow:ellipsis">${subText}</span><span class="sub-trim right"></span>`;
-    if(selectedSub===i)d.classList.add('sel');
-    d.addEventListener('mousedown',(e)=>{
-      e.stopPropagation();
-    });
+    d.style.borderColor=color;d.style.background=color+'22';
+    d.innerHTML=`<span class="sub-trim left" style="background:${color}"></span><span style="pointer-events:none;overflow:hidden;text-overflow:ellipsis;color:${color}">${sub.text||'(빈 자막)'}</span><span class="sub-trim right" style="background:${color}"></span>`;
+    if(selectedSub===gi||curSubIdx===gi)d.classList.add('sel');
+    d.addEventListener('mousedown',(e)=>{e.stopPropagation()});
     d.addEventListener('click',(e)=>{
       if(e.target.classList.contains('sub-trim'))return;
       e.stopPropagation();
-      cur=-1;
-      document.querySelectorAll('.tl-clip').forEach(el=>el.classList.remove('active'));
-      updateMediaBtn();
-      selectedSub=i;renderTL();
+      curSubIdx=gi;selectedSub=gi;
+      syncSubStylePanel();applySubStyle();renderTL();
     });
-    initTimelineSubDrag(d,i);
-    initSubTrim(d.querySelector('.sub-trim.left'),i,'left');
-    initSubTrim(d.querySelector('.sub-trim.right'),i,'right');
+    // Drag to move
+    initGlobalSubDrag(d,gi);
+    // Trim handles
+    initGlobalSubTrim(d.querySelector('.sub-trim.left'),gi,'left');
+    initGlobalSubTrim(d.querySelector('.sub-trim.right'),gi,'right');
     st.appendChild(d);
   });
 
@@ -1221,7 +1260,7 @@ function bladeCut(e,i){
   const origEnd=c.end;
   CLIPS[i].end=cutPoint;
   CLIPS.splice(i+1,0,{...newClip,end:origEnd});
-  SUBS.splice(i+1,0,JSON.parse(JSON.stringify(getClipSubs(i))));
+  // Global subs: no clip-based splice needed (subtitles span clips independently)
   clipMeta.splice(i+1,0,{...clipMeta[i]});
   clipSubStyles.splice(i+1,0,{...clipSubStyles[i]});
   clipCrops.splice(i+1,0,{...clipCrops[i]});
@@ -1284,8 +1323,8 @@ function startClipDrag(e,i){
     if(!moved)return;
     
     if(dropTarget>=0&&dropTarget!==i){save();
-      const cl=CLIPS.splice(i,1)[0],su=SUBS.splice(i,1)[0],me=clipMeta.splice(i,1)[0],sst=clipSubStyles.splice(i,1)[0],scr=clipCrops.splice(i,1)[0],szm=clipZooms.splice(i,1)[0],stm=subTiming.splice(i,1)[0];
-      CLIPS.splice(dropTarget,0,cl);SUBS.splice(dropTarget,0,su);clipMeta.splice(dropTarget,0,me);clipSubStyles.splice(dropTarget,0,sst);clipCrops.splice(dropTarget,0,scr);clipZooms.splice(dropTarget,0,szm);subTiming.splice(dropTarget,0,stm);
+      const cl=CLIPS.splice(i,1)[0],me=clipMeta.splice(i,1)[0],sst=clipSubStyles.splice(i,1)[0],scr=clipCrops.splice(i,1)[0],szm=clipZooms.splice(i,1)[0];
+      CLIPS.splice(dropTarget,0,cl);clipMeta.splice(dropTarget,0,me);clipSubStyles.splice(dropTarget,0,sst);clipCrops.splice(dropTarget,0,scr);clipZooms.splice(dropTarget,0,szm);
       recalc();renderTL();sel(dropTarget);
     }
   };
@@ -1513,19 +1552,21 @@ function onSubEdit(v){
 
 function addSubToClip(){
   save();
-  if(!Array.isArray(SUBS[cur]))SUBS[cur]=[];
-  const newStyle={...subStyleDefault, y:80-getClipSubs(cur).length*12};
-  SUBS[cur].push({text:'',style:newStyle});
-  curSubIdx=SUBS[cur].length-1;
-  renderSubList();syncSubStylePanel();applySubStyle();
+  const clipStart=starts[cur]||0;
+  const clipEnd=clipStart+clipDur(cur);
+  const existing=getClipSubs(cur);
+  const newStyle={...subStyleDefault, y:80-existing.length*12};
+  const newSub={id:nextSubId(),text:'',style:newStyle,start:clipStart,end:clipEnd};
+  SUBS.push(newSub);
+  curSubIdx=SUBS.indexOf(newSub);
+  renderSubList();syncSubStylePanel();applySubStyle();renderTL();
   document.getElementById('subIn').focus();
 }
 
-function removeSubFromClip(idx){
+function removeSubByIndex(globalIdx){
   save();
-  const subs=getClipSubs(cur);
-  if(idx>=0&&idx<subs.length)subs.splice(idx,1);
-  if(curSubIdx>=subs.length)curSubIdx=Math.max(0,subs.length-1);
+  if(globalIdx>=0&&globalIdx<SUBS.length)SUBS.splice(globalIdx,1);
+  if(curSubIdx>=SUBS.length)curSubIdx=Math.max(-1,SUBS.length-1);
   renderSubList();syncSubStylePanel();applySubStyle();renderTL();
 }
 
@@ -1537,17 +1578,31 @@ function renderSubList(){
     document.getElementById('subEditPanel').style.display='none';
     return;
   }
-  list.innerHTML=subs.map((s,i)=>`
-    <div class="d-row" style="padding:3px 4px;border-radius:4px;cursor:pointer;${i===curSubIdx?'background:#1a2a1a;border:1px solid #4ade8033':'border:1px solid transparent'}" onclick="selectSub(${i})">
-      <span style="color:#4ade80;font-size:9px;min-width:16px">#${i+1}</span>
+  list.innerHTML=subs.map((s)=>{
+    const gi=SUBS.indexOf(s);
+    const isSel=gi===curSubIdx;
+    const spanClips=getSubSpanInfo(s);
+    return `
+    <div class="d-row" style="padding:3px 4px;border-radius:4px;cursor:pointer;${isSel?'background:#1a2a1a;border:1px solid #4ade8033':'border:1px solid transparent'}" onclick="selectSub(${gi})">
+      <span style="color:#4ade80;font-size:9px;min-width:16px">#${gi+1}</span>
       <span style="flex:1;font-size:10px;color:${s.text?'#ddd':'#555'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.text||'(빈 자막)'}</span>
-      <button class="btn" onclick="event.stopPropagation();removeSubFromClip(${i})" style="font-size:9px;color:#f87171;padding:1px 4px" title="삭제">✕</button>
-    </div>
-  `).join('');
+      <span style="font-size:8px;color:#666;margin:0 4px">${s.start.toFixed(1)}-${s.end.toFixed(1)}s</span>
+      <button class="btn" onclick="event.stopPropagation();removeSubByIndex(${gi})" style="font-size:9px;color:#f87171;padding:1px 4px" title="삭제">✕</button>
+    </div>`;
+  }).join('');
   document.getElementById('subEditPanel').style.display='block';
 }
 
-function delCur(){if(CLIPS.length<=1)return;save();CLIPS.splice(cur,1);SUBS.splice(cur,1);clipMeta.splice(cur,1);clipSubStyles.splice(cur,1);clipCrops.splice(cur,1);clipZooms.splice(cur,1);subTiming.splice(cur,1);recalc();renderTL();sel(Math.min(cur,CLIPS.length-1))}
+function getSubSpanInfo(sub){
+  let count=0;
+  for(let i=0;i<CLIPS.length;i++){
+    const cs=starts[i],ce=cs+clipDur(i);
+    if(sub.end>cs&&sub.start<ce)count++;
+  }
+  return count;
+}
+
+function delCur(){if(CLIPS.length<=1)return;save();CLIPS.splice(cur,1);clipMeta.splice(cur,1);clipSubStyles.splice(cur,1);clipCrops.splice(cur,1);clipZooms.splice(cur,1);recalc();renderTL();sel(Math.min(cur,CLIPS.length-1))}
 
 /* ─── Playback / JKL ─── */
 function togglePlay(){playing?stopP():startP()}
@@ -1725,7 +1780,7 @@ function insertFromMark(){
       const eOff=(Math.min(markOutT,end)-starts[i])*(clipMeta[i]?.speed||1);
       save();
       CLIPS.push({source:c.source,source_idx:c.source_idx,start:c.start+sOff,end:c.start+eOff,score:0});
-      SUBS.push([]);clipMeta.push({speed:1,transition:'none',transDur:0.3});
+      clipMeta.push({speed:1,transition:'none',transDur:0.3});
       recalc();renderTL();sel(CLIPS.length-1);
       return;
     }
@@ -1754,7 +1809,7 @@ function zoomFit(){
 }
 
 /* ─── Export ─── */
-function exportSrt(){let s='',n=1;CLIPS.forEach((c,i)=>{const clipSubs=getClipSubs(i);if(!clipSubs.length)return;const t=subTiming[i]||{start:starts[i],end:starts[i]+clipDur(i)};const text=clipSubs.map(sub=>sub.text).filter(Boolean).join('\n');if(!text)return;s+=`${n}\n${srtT(t.start)} --> ${srtT(t.end)}\n${text}\n\n`;n++});copy(s,'SRT 복사됨!')}
+function exportSrt(){let s='',n=1;SUBS.forEach(sub=>{if(!sub.text)return;s+=`${n}\n${srtT(sub.start)} --> ${srtT(sub.end)}\n${sub.text}\n\n`;n++});copy(s,'SRT 복사됨!')}
 function exportJson(){copy(JSON.stringify({clips:CLIPS.map((c,i)=>({...c,subtitles:getClipSubs(i),subStyle:clipSubStyles[i],crop:clipCrops[i],zoom:clipZooms[i],speed:clipMeta[i].speed,transition:clipMeta[i].transition}))},null,2),'JSON 복사됨!')}
 function getMaxSourceFps(){
   const fpsVals=Object.values(srcFps);
@@ -1830,7 +1885,7 @@ function showRenderConfirm(label,defaultFps,renderClips,maxDur){
     const outputFps=parseInt(sel.value)||30;
     modal.remove();
     showRenderDialog(renderClips.length);
-    const payload={clips:renderClips,maxDuration:maxDur,fps:outputFps,subtitlesEnabled:subtitlesVisible};
+    const payload={clips:renderClips,maxDuration:maxDur,fps:outputFps,subtitlesEnabled:subtitlesVisible,globalSubs:SUBS};
     fetch(apiUrl('/api/render'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
       .then(r=>r.json()).then(()=>pollRender(renderClips.length))
       .catch(e=>{renderError('렌더 요청 실패: '+e)});
@@ -1997,13 +2052,10 @@ function exportCmd(){
   // Step 4: Generate SRT and burn subtitles
   let srt='',n=1;
   let hasSubs=false;
-  CLIPS.forEach((c,i)=>{
-    const clipSubs=getClipSubs(i);if(!clipSubs.length)return;
-    const text=clipSubs.map(s=>s.text).filter(Boolean).join('\n');if(!text)return;
+  SUBS.forEach(sub=>{
+    if(!sub.text)return;
     hasSubs=true;
-    const st=starts[i],en=st+clipDur(i);
-    const ss=clipSubStyles[i]||{size:16,x:50,y:80};
-    srt+=`${n}\n${srtT(st)} --> ${srtT(en)}\n${text}\n\n`;
+    srt+=`${n}\n${srtT(sub.start)} --> ${srtT(sub.end)}\n${sub.text}\n\n`;
     n++;
   });
 
@@ -2190,8 +2242,7 @@ function loadProject(pid){
     currentProjectName=data.name||'';
     CLIPS=data.clips||[];
     SUBS=data.subs||[];
-    while(SUBS.length<CLIPS.length)SUBS.push([]);
-    normSubs();
+    // normSubs needs starts[] so defer until after recalc
     // Restore per-clip metadata
     clipMeta=(data.clipMeta||[]).length===CLIPS.length?data.clipMeta:CLIPS.map(()=>({speed:1,transition:'none',transDur:0.3}));
     clipSubStyles=(data.clipSubStyles||[]).length===CLIPS.length?data.clipSubStyles:CLIPS.map(()=>({...subStyleDefault}));
@@ -2199,7 +2250,7 @@ function loadProject(pid){
     clipZooms=(data.clipZooms||[]).length===CLIPS.length?data.clipZooms:CLIPS.map(()=>({scale:1,panX:0,panY:0}));
     subTiming=(data.subTiming||[]).length===CLIPS.length?data.subTiming:[];
     hist=[];cur=0;
-    recalc();renderTL();
+    recalc();normSubs();renderTL();
     if(CLIPS.length)sel(0);
     applySubStyle();refreshPresetList();
     document.getElementById('srcOverlay').classList.add('hidden');
@@ -2481,7 +2532,7 @@ function closeAnalyzeDialog(){
 function loadAnalyzeResult(result){
   CLIPS=result.clips||[];
   SUBS=result.subs||[];
-  while(SUBS.length<CLIPS.length)SUBS.push([]);
+  recalc();normSubs();
   normSubs();
   // Set project name from input
   currentProjectName=document.getElementById('projName').value||'새 프로젝트 '+new Date().toLocaleDateString('ko');
@@ -2525,34 +2576,17 @@ function initEditorState(){
 }
 
 /* ─── Subtitle time lookup ─── */
-function getSubAtTime(t){
-  for(let i=0;i<SUBS.length;i++){
-    const clipSubs=getClipSubs(i);
-    if(!clipSubs.length)continue;
-    const st=subTiming[i];
-    if(st&&t>=st.start&&t<st.end){
-      const text=clipSubs.map(s=>s.text).filter(Boolean).join('\n');
-      return{text,idx:i,subs:clipSubs};
-    }
-  }
-  return null;
+function getSubsAtTime(t){
+  return SUBS.filter(s=>s.text&&t>=s.start&&t<s.end);
 }
 function showSubAtTime(t){
   const ov=document.getElementById('subOv');
   if(!subtitlesVisible){ov.classList.add('h');return}
-  // Find which clip this time falls into
-  let clipIdx=-1;
-  for(let i=0;i<CLIPS.length;i++){
-    const timing=subTiming[i]||{start:starts[i],end:starts[i]+clipDur(i)};
-    if(t>=timing.start&&t<=timing.end){clipIdx=i;break}
-  }
-  if(clipIdx<0){ov.classList.add('h');ov.innerHTML='';return}
-  const clipSubs=getClipSubs(clipIdx);
-  if(!clipSubs.length){ov.classList.add('h');ov.innerHTML='';return}
+  const activeSubs=getSubsAtTime(t);
+  if(!activeSubs.length){ov.classList.add('h');ov.innerHTML='';return}
   ov.classList.remove('h');ov.innerHTML='';
-  clipSubs.forEach(sub=>{
-    if(!sub.text)return;
-    const st=sub.style||clipSubStyles[clipIdx]||subStyleDefault;
+  activeSubs.forEach(sub=>{
+    const st=sub.style||subStyleDefault;
     const span=document.createElement('span');
     span.className='sub-tx';
     span.textContent=sub.text;
@@ -2564,7 +2598,7 @@ function showSubAtTime(t){
     span.style.color=st.color||'#ffffff';
     if(st.bg!==false){
       const bgC=st.bgColor||'#000000';
-      const bgA=st.bgAlpha!=null?st.bgAlpha:0.6;
+      const bgA=typeof st.bgAlpha==='number'?st.bgAlpha:0.6;
       const r=parseInt(bgC.slice(1,3),16),g=parseInt(bgC.slice(3,5),16),b=parseInt(bgC.slice(5,7),16);
       span.style.background=`rgba(${r},${g},${b},${bgA})`;
     }else{
@@ -2646,6 +2680,58 @@ function initSubTrim(handle,i,side){
   });
 }
 
+/* ─── Global subtitle drag & trim ─── */
+function initGlobalSubDrag(el,gi){
+  el.addEventListener('mousedown',(e)=>{
+    if(e.target.classList.contains('sub-trim'))return;
+    e.preventDefault();e.stopPropagation();
+    save();
+    const startX=e.clientX;
+    const sub=SUBS[gi];const origStart=sub.start;const origEnd=sub.end;
+    const dur=origEnd-origStart;
+    const onMove=(ev)=>{
+      const dx=(ev.clientX-startX)/pxPerSec;
+      let ns=Math.max(0,origStart+dx);
+      let ne=ns+dur;
+      if(ne>total){ne=total;ns=ne-dur}
+      ns=subSnapTo(ns);ne=ns+dur;
+      sub.start=ns;sub.end=ne;
+      el.style.left=(ns*pxPerSec)+'px';
+    };
+    const onUp=()=>{document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);renderTL()};
+    document.addEventListener('mousemove',onMove);
+    document.addEventListener('mouseup',onUp);
+  });
+}
+function initGlobalSubTrim(handle,gi,side){
+  if(!handle)return;
+  handle.addEventListener('mousedown',(e)=>{
+    e.preventDefault();e.stopPropagation();
+    save();
+    const startX=e.clientX;
+    const sub=SUBS[gi];const origStart=sub.start;const origEnd=sub.end;
+    const parent=handle.closest('.tl-sub-clip');
+    const onMove=(ev)=>{
+      const dx=(ev.clientX-startX)/pxPerSec;
+      if(side==='left'){
+        let ns=Math.max(0,Math.min(origEnd-0.3,origStart+dx));
+        ns=subSnapTo(ns);
+        sub.start=ns;
+        parent.style.left=(ns*pxPerSec)+'px';
+        parent.style.width=((sub.end-ns)*pxPerSec)+'px';
+      }else{
+        let ne=Math.max(origStart+0.3,Math.min(total+5,origEnd+dx));
+        ne=subSnapTo(ne);
+        sub.end=ne;
+        parent.style.width=((ne-sub.start)*pxPerSec)+'px';
+      }
+    };
+    const onUp=()=>{document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);renderTL()};
+    document.addEventListener('mousemove',onMove);
+    document.addEventListener('mouseup',onUp);
+  });
+}
+
 /* ─── Timeline Subtitle selection ─── */
 function selectTimelineSub(i){
   selectedSub=i;
@@ -2666,10 +2752,10 @@ function deselectSub(){
 function deleteSelectedSub(){
   if(selectedSub<0||selectedSub>=SUBS.length)return;
   save();
-  SUBS[selectedSub]=[];
-  subTiming[selectedSub]={start:0,end:0,_manual:false};
+  SUBS.splice(selectedSub,1);
+  curSubIdx=-1;selectedSub=-1;
   deselectSub();
-  recalc();renderTL();
+  renderTL();
   showSubAtTime(gTime);
 }
 
@@ -2739,7 +2825,7 @@ function addUploadedAsNewClips(uploaded){
   save();
   uploaded.forEach(v=>{
     CLIPS.push({source:v.name,source_idx:0,start:0,end:v.duration,score:0});
-    SUBS.push([]);clipMeta.push({speed:1,transition:'none',transDur:0.3});
+    clipMeta.push({speed:1,transition:'none',transDur:0.3});
     clipSubStyles.push({...subStyleDefault});clipCrops.push({x:0,y:0,w:100,h:100});clipZooms.push({scale:1,panX:0,panY:0});
     subTiming.push({start:0,end:0}); // will be recalculated by recalc()
   });
@@ -2880,10 +2966,15 @@ window.addEventListener('message', function(e) {
     end: c.end || 5,
     source_idx: c.source_idx || 0
   }));
-  SUBS = (preset.clips || []).map(c => {
-    if (c.subtitle) return [{text: c.subtitle, style: {...subStyleDefault}}];
-    if (c.subtitles && Array.isArray(c.subtitles)) return c.subtitles;
-    return [];
+  // Build global subs from preset clips
+  SUBS = [];
+  let _presetOffset = 0;
+  (preset.clips || []).forEach(c => {
+    const dur = (c.end || 5) - (c.start || 0);
+    if (c.subtitle) {
+      SUBS.push({id: nextSubId(), text: c.subtitle, style: {...subStyleDefault}, start: _presetOffset, end: _presetOffset + dur});
+    }
+    _presetOffset += dur;
   });
   clipMeta = CLIPS.map(c => ({
     speed: c.speed || (preset.clips && preset.clips[CLIPS.indexOf(c)]?.speed) || 1,
