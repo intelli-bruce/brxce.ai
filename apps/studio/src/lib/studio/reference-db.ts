@@ -59,7 +59,43 @@ function getDb(): Database.Database {
     CREATE INDEX IF NOT EXISTS idx_posts_hook ON posts(hook_type);
     CREATE INDEX IF NOT EXISTS idx_slides_post ON slides(post_id);
   `);
+  ensureVideoTables(_db);
   return _db;
+}
+
+// === Video References tables ===
+function ensureVideoTables(db: Database.Database) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS video_accounts (
+      id TEXT PRIMARY KEY,
+      display_name TEXT,
+      platform TEXT DEFAULT 'instagram',
+      follower_count INTEGER,
+      notes TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS video_posts (
+      id TEXT PRIMARY KEY,
+      account_id TEXT NOT NULL,
+      post_date TEXT,
+      platform TEXT DEFAULT 'instagram',
+      url TEXT,
+      duration_sec INTEGER,
+      like_count INTEGER DEFAULT 0,
+      comment_count INTEGER DEFAULT 0,
+      view_count INTEGER,
+      caption TEXT,
+      thumbnail_path TEXT,
+      video_path TEXT,
+      style_tags TEXT,
+      transition_tags TEXT,
+      music_tags TEXT,
+      notes TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_video_posts_account ON video_posts(account_id);
+  `);
 }
 
 // === Accounts ===
@@ -305,4 +341,219 @@ export function getSlideImagePath(postId: string, slideIndex: number): string | 
   const slide = db.prepare("SELECT image_path FROM slides WHERE post_id = ? AND slide_index = ?").get(postId, slideIndex) as { image_path: string } | undefined;
   if (!slide) return null;
   return join(REF_DIR, slide.image_path);
+}
+
+// ============================================================
+// === Video References ===
+// ============================================================
+
+const VIDEO_REF_DIR = join(DATA_DIR, "video-references");
+
+export function getVideoAccounts() {
+  const db = getDb();
+  return db.prepare("SELECT * FROM video_accounts ORDER BY id").all();
+}
+
+export interface VideoPostFilters {
+  account?: string;
+  platform?: string;
+  style?: string;
+  sort?: "latest" | "views" | "likes" | "comments";
+  limit?: number;
+  offset?: number;
+}
+
+export function getVideoPosts(filters: VideoPostFilters = {}) {
+  const db = getDb();
+  const conditions: string[] = [];
+  const params: Record<string, any> = {};
+
+  if (filters.account) {
+    conditions.push("account_id = @account");
+    params.account = filters.account;
+  }
+  if (filters.platform) {
+    conditions.push("platform = @platform");
+    params.platform = filters.platform;
+  }
+  if (filters.style) {
+    conditions.push("style_tags LIKE @style");
+    params.style = `%${filters.style}%`;
+  }
+
+  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+  const orderMap: Record<string, string> = {
+    latest: "post_date DESC, created_at DESC",
+    views: "view_count DESC",
+    likes: "like_count DESC",
+    comments: "comment_count DESC",
+  };
+  const order = orderMap[filters.sort ?? "latest"] ?? "post_date DESC";
+  const limit = filters.limit ?? 50;
+  const offset = filters.offset ?? 0;
+
+  const rows = db
+    .prepare(`SELECT * FROM video_posts ${where} ORDER BY ${order} LIMIT @limit OFFSET @offset`)
+    .all({ ...params, limit, offset });
+  const total = db
+    .prepare(`SELECT COUNT(*) as cnt FROM video_posts ${where}`)
+    .get(params) as { cnt: number };
+
+  return { videos: rows, total: total.cnt };
+}
+
+export function getVideoPost(id: string) {
+  const db = getDb();
+  return db.prepare("SELECT * FROM video_posts WHERE id = ?").get(id) ?? null;
+}
+
+export function updateVideoPost(id: string, patch: Record<string, any>) {
+  const db = getDb();
+  const allowed = ["style_tags", "transition_tags", "music_tags", "notes"];
+  const sets: string[] = [];
+  const params: Record<string, any> = { id };
+  for (const key of allowed) {
+    if (patch[key] !== undefined) {
+      sets.push(`${key} = @${key}`);
+      params[key] = patch[key];
+    }
+  }
+  if (!sets.length) return getVideoPost(id);
+  sets.push("updated_at = datetime('now')");
+  db.prepare(`UPDATE video_posts SET ${sets.join(", ")} WHERE id = @id`).run(params);
+  return getVideoPost(id);
+}
+
+export function importVideoFromUrl(url: string): { id: string; message: string } {
+  const db = getDb();
+  mkdirSync(VIDEO_REF_DIR, { recursive: true });
+
+  // Use yt-dlp to fetch metadata
+  let meta: any;
+  try {
+    const raw = execSync(
+      `yt-dlp --dump-json --no-download "${url}" 2>/dev/null`,
+      { maxBuffer: 10 * 1024 * 1024 }
+    ).toString();
+    meta = JSON.parse(raw);
+  } catch (e: any) {
+    throw new Error("yt-dlp 메타데이터 가져오기 실패. URL을 확인하세요.");
+  }
+
+  const videoId = meta.id || meta.display_id || Date.now().toString();
+
+  // Check duplicate
+  const existing = db.prepare("SELECT id FROM video_posts WHERE id = ?").get(videoId);
+  if (existing) {
+    return { id: videoId, message: "이미 존재하는 영상입니다." };
+  }
+
+  // Determine account
+  const uploader = meta.uploader_id || meta.uploader || meta.channel || "unknown";
+  const uploaderName = meta.uploader || meta.channel || uploader;
+
+  // Detect platform
+  let platform = "instagram";
+  if (url.includes("youtube.com") || url.includes("youtu.be")) platform = "youtube";
+  else if (url.includes("tiktok.com")) platform = "tiktok";
+  else if (url.includes("threads.net")) platform = "threads";
+
+  // Ensure account
+  db.prepare(`
+    INSERT OR IGNORE INTO video_accounts (id, display_name, platform)
+    VALUES (@id, @display_name, @platform)
+  `).run({ id: uploader, display_name: uploaderName, platform });
+
+  // Download thumbnail + video
+  const destDir = join(VIDEO_REF_DIR, uploader);
+  mkdirSync(destDir, { recursive: true });
+  const thumbPath = join(destDir, `${videoId}.jpg`);
+  let savedThumb: string | null = null;
+  let savedVideo: string | null = null;
+
+  // Thumbnail
+  if (meta.thumbnail) {
+    try {
+      execSync(`curl -sL -o "${thumbPath}" "${meta.thumbnail}"`, { timeout: 15000 });
+      savedThumb = `${uploader}/${videoId}.jpg`;
+    } catch { /* ignore */ }
+  }
+
+  // Video file
+  const videoPath = join(destDir, `${videoId}.mp4`);
+  try {
+    execSync(
+      `yt-dlp -f "best[ext=mp4]/best" --no-playlist -o "${videoPath}" "${url}" 2>/dev/null`,
+      { timeout: 120000, maxBuffer: 10 * 1024 * 1024 }
+    );
+    if (existsSync(videoPath)) {
+      savedVideo = `${uploader}/${videoId}.mp4`;
+    }
+  } catch { /* video download failed, thumbnail-only mode */ }
+
+  // Post date
+  const uploadDate = meta.upload_date; // YYYYMMDD
+  const postDate = uploadDate
+    ? `${uploadDate.slice(0, 4)}-${uploadDate.slice(4, 6)}-${uploadDate.slice(6, 8)}`
+    : new Date().toISOString().split("T")[0];
+
+  // Insert
+  db.prepare(`
+    INSERT INTO video_posts (id, account_id, post_date, platform, url, duration_sec,
+      like_count, comment_count, view_count, caption, thumbnail_path, video_path)
+    VALUES (@id, @account_id, @post_date, @platform, @url, @duration_sec,
+      @like_count, @comment_count, @view_count, @caption, @thumbnail_path, @video_path)
+  `).run({
+    id: videoId,
+    account_id: uploader,
+    post_date: postDate,
+    platform,
+    url,
+    duration_sec: meta.duration ? Math.round(meta.duration) : null,
+    like_count: meta.like_count ?? 0,
+    comment_count: meta.comment_count ?? 0,
+    view_count: meta.view_count ?? null,
+    caption: meta.description || meta.title || "",
+    thumbnail_path: savedThumb,
+    video_path: savedVideo,
+  });
+
+  return { id: videoId, message: "임포트 완료" };
+}
+
+export function backfillVideoFiles(): { updated: number; failed: number } {
+  const db = getDb();
+  mkdirSync(VIDEO_REF_DIR, { recursive: true });
+  const rows = db.prepare("SELECT id, account_id, url FROM video_posts WHERE video_path IS NULL AND url IS NOT NULL").all() as { id: string; account_id: string; url: string }[];
+  let updated = 0, failed = 0;
+  for (const row of rows) {
+    const destDir = join(VIDEO_REF_DIR, row.account_id);
+    mkdirSync(destDir, { recursive: true });
+    const videoPath = join(destDir, `${row.id}.mp4`);
+    try {
+      execSync(
+        `yt-dlp -f "best[ext=mp4]/best" --no-playlist -o "${videoPath}" "${row.url}" 2>/dev/null`,
+        { timeout: 120000, maxBuffer: 10 * 1024 * 1024 }
+      );
+      if (existsSync(videoPath)) {
+        db.prepare("UPDATE video_posts SET video_path = ? WHERE id = ?").run(`${row.account_id}/${row.id}.mp4`, row.id);
+        updated++;
+      } else { failed++; }
+    } catch { failed++; }
+  }
+  return { updated, failed };
+}
+
+export function getVideoFilePath(postId: string): string | null {
+  const db = getDb();
+  const row = db.prepare("SELECT video_path FROM video_posts WHERE id = ?").get(postId) as { video_path: string } | undefined;
+  if (!row?.video_path) return null;
+  return join(VIDEO_REF_DIR, row.video_path);
+}
+
+export function getVideoThumbnailPath(postId: string): string | null {
+  const db = getDb();
+  const row = db.prepare("SELECT thumbnail_path FROM video_posts WHERE id = ?").get(postId) as { thumbnail_path: string } | undefined;
+  if (!row?.thumbnail_path) return null;
+  return join(VIDEO_REF_DIR, row.thumbnail_path);
 }

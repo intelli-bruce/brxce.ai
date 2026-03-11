@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import Link from "next/link"
 import { usePathname, useSearchParams, useRouter } from "next/navigation"
 import { createSupabaseBrowser } from "@/lib/supabase-browser"
@@ -46,7 +47,7 @@ type NavLink = {
   href: string
   label: string
   icon: LucideIcon
-  children?: { href: string; label: string; icon?: LucideIcon }[]
+  children?: { href: string; label: string; icon?: LucideIcon; group?: string }[]
 }
 
 type NavSection = {
@@ -81,11 +82,12 @@ const navSections: NavSection[] = [
         label: "스튜디오",
         icon: Clapperboard,
         children: [
-          { href: "/carousel", label: "캐러셀" },
-          { href: "/studio/templates", label: "템플릿: 이미지" },
-
-          { href: "/studio/video-edit", label: "영상 편집", icon: Scissors },
-          { href: "/studio/references", label: "레퍼런스" },
+          { href: "/carousel", label: "캐러셀", group: "캐러셀" },
+          { href: "/studio/templates", label: "템플릿: 이미지", group: "캐러셀" },
+          { href: "/studio/references", label: "레퍼런스 : 캐러셀", group: "캐러셀" },
+          { href: "/studio/video-edit", label: "영상 편집", icon: Scissors, group: "영상" },
+          { href: "/studio/templates?tab=video", label: "템플릿: 영상", group: "영상" },
+          { href: "/studio/references/video", label: "레퍼런스 : 영상", group: "영상" },
         ],
       },
       { href: "/media", label: "미디어 라이브러리", icon: FolderOpen },
@@ -132,12 +134,13 @@ export function AppSidebar() {
       }
       return true
     }
-    // query param 없는 일반 경로 — 같은 pathname에 tab param이 있으면 비활성
-    if (pathname.startsWith(href)) {
-      const tab = searchParams.get("tab")
-      if (tab && pathname === href.split("?")[0]) return false
+    // query param 없는 일반 경로
+    if (pathname === href) {
+      // 같은 pathname을 쓰는 ?tab= 링크가 있을 수 있으므로, tab이 있으면 비활성
+      if (searchParams.get("tab")) return false
       return true
     }
+    // 하위 세그먼트 매칭은 하지 않음 (prefix 겹침 방지)
     return false
   }
 
@@ -181,19 +184,34 @@ export function AppSidebar() {
                     </SidebarMenuButton>
                     {item.children && (
                       <SidebarMenuSub>
-                        {item.children.map((child) => (
-                          <SidebarMenuSubItem key={child.href}>
-                            <SidebarMenuSubButton
-                              asChild
-                              isActive={isActive(child.href)}
-                            >
-                              <Link href={child.href}>
-                                {child.icon ? <child.icon className="size-4" /> : null}
-                                <span>{child.label}</span>
-                              </Link>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        ))}
+                        {(() => {
+                          let lastGroup: string | undefined
+                          return item.children.map((child) => {
+                            const showGroupHeader = child.group && child.group !== lastGroup
+                            lastGroup = child.group
+                            return (
+                              <React.Fragment key={child.href}>
+                                {showGroupHeader && (
+                                  <li className="px-2 pt-3 pb-1">
+                                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#555]">
+                                      {child.group}
+                                    </span>
+                                  </li>
+                                )}
+                                <SidebarMenuSubItem>
+                                  <SidebarMenuSubButton
+                                    asChild
+                                    isActive={isActive(child.href)}
+                                  >
+                                    <Link href={child.href}>
+                                      <span>{child.label}</span>
+                                    </Link>
+                                  </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
+                              </React.Fragment>
+                            )
+                          })
+                        })()}
                       </SidebarMenuSub>
                     )}
                   </SidebarMenuItem>

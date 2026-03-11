@@ -1,32 +1,34 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState, useCallback } from "react"
 import { AlertCircle, CheckCircle2, LoaderCircle, ServerCrash } from "lucide-react"
 
 const EDITOR_ORIGIN = "http://localhost:8090"
 const EDITOR_URL = `${EDITOR_ORIGIN}/editor.html?v=${Date.now()}`
 const STATUS_URL = `${EDITOR_ORIGIN}/api/render/status`
+const PRESET_STORAGE_KEY = "brxce-video-preset"
 
 type ConnectionState = "checking" | "connected" | "disconnected"
 
 export default function VideoEditPage() {
   const [connectionState, setConnectionState] = useState<ConnectionState>("checking")
   const [lastCheckedAt, setLastCheckedAt] = useState<string | null>(null)
+  const [presetLoaded, setPresetLoaded] = useState(false)
+  const [presetName, setPresetName] = useState<string | null>(null)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
 
+  // Check connection
   useEffect(() => {
     let disposed = false
-
     const checkConnection = async () => {
       const controller = new AbortController()
       const timeout = window.setTimeout(() => controller.abort(), 2500)
-
       try {
         const response = await fetch(STATUS_URL, {
           method: "GET",
           cache: "no-store",
           signal: controller.signal,
         })
-
         if (!disposed) {
           setConnectionState(response.ok ? "connected" : "disconnected")
           setLastCheckedAt(new Date().toLocaleTimeString("ko-KR", { hour12: false }))
@@ -40,13 +42,43 @@ export default function VideoEditPage() {
         window.clearTimeout(timeout)
       }
     }
-
     checkConnection()
     const interval = window.setInterval(checkConnection, 5000)
+    return () => { disposed = true; window.clearInterval(interval) }
+  }, [])
 
-    return () => {
-      disposed = true
-      window.clearInterval(interval)
+  // Listen for preset-loaded confirmation from iframe
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      if (e.data?.type === "brxce-preset-loaded") {
+        setPresetLoaded(true)
+        // Clean up localStorage
+        localStorage.removeItem(PRESET_STORAGE_KEY)
+        // Auto-hide toast after 3s
+        setTimeout(() => setPresetLoaded(false), 3000)
+      }
+    }
+    window.addEventListener("message", handler)
+    return () => window.removeEventListener("message", handler)
+  }, [])
+
+  // Send preset to iframe after it loads
+  const handleIframeLoad = useCallback(() => {
+    const raw = localStorage.getItem(PRESET_STORAGE_KEY)
+    if (!raw) return
+    try {
+      const project = JSON.parse(raw)
+      setPresetName(project.name || null)
+      // Small delay to ensure editor JS is initialized
+      setTimeout(() => {
+        iframeRef.current?.contentWindow?.postMessage(
+          { type: "brxce-load-preset", project },
+          EDITOR_ORIGIN
+        )
+      }, 500)
+    } catch {
+      // Invalid preset data
+      localStorage.removeItem(PRESET_STORAGE_KEY)
     }
   }, [])
 
@@ -83,11 +115,17 @@ export default function VideoEditPage() {
           <p className="mt-1 text-sm text-[#7a7a7a]">타임라인 기반 편집기를 studio 내부에서 바로 엽니다.</p>
         </div>
         <div className="flex items-center gap-3">
+          {/* Preset loaded toast */}
+          {presetLoaded && (
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-300 animate-pulse">
+              <CheckCircle2 className="size-3.5" />
+              <span>프리셋 적용됨{presetName ? ` — ${presetName}` : ""}</span>
+            </div>
+          )}
           <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs ${statusMeta.className}`}>
             <StatusIcon className={`size-3.5 ${connectionState === "checking" ? "animate-spin" : ""}`} />
             <span>{statusMeta.label}</span>
           </div>
-
         </div>
       </div>
 
@@ -115,11 +153,13 @@ export default function VideoEditPage() {
       ) : (
         <div className="flex-1 bg-black">
           <iframe
+            ref={iframeRef}
             key={connectionState}
             src={EDITOR_URL}
             title="Brxce Studio Video Editor"
             className="h-full w-full border-0 bg-black"
             allow="clipboard-read; clipboard-write; fullscreen"
+            onLoad={handleIframeLoad}
           />
         </div>
       )}
