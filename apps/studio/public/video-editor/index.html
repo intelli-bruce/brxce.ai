@@ -2563,10 +2563,6 @@ function showSubAtTime(t){
   const ov=document.getElementById('subOv');
   if(!subtitlesVisible){ov.classList.add('h');return}
   const activeSubs=getSubsAtTime(t);
-  // Also show selected sub for editing even if outside time
-  const selSub=getCurSub();
-  if(selSub&&selSub.text&&!activeSubs.includes(selSub))activeSubs.push(selSub);
-  
   if(!activeSubs.length){ov.classList.add('h');ov.innerHTML='';return}
   ov.classList.remove('h');ov.innerHTML='';
   activeSubs.forEach(sub=>{
