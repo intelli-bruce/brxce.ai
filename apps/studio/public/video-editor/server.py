@@ -1024,6 +1024,8 @@ def run_render(data):
 
             # --- Build drawtext filters for text-only subs ---
             drawtext_filters = []
+            bg_pngs = []  # rounded background PNGs to overlay before drawtext
+
             for idx, st, en, text, ss in text_subs:
                 font_size = int(ss.get("size", 16) * SCALE)
                 sx = ss.get("x", 50)
@@ -1045,66 +1047,106 @@ def run_render(data):
                 enable = f"enable='between(t,{st:.3f},{en:.3f})'"
                 base = f"fontfile='{font_path}':text='{escaped_text}':fontsize={font_size}:x={x_expr}:y={y_expr}"
 
-                # Multi-pass: 1) background box  2) stroke  3) fill text
-                # This ensures box covers stroke, and text is centered in box
+                # Background: render as rounded-corner PNG
                 if show_bg and bg_color:
-                    box_pad = int(12 * SCALE)  # horizontal-like padding
+                    pad_h = int(12 * SCALE)
+                    pad_v = int(4 * SCALE)
+                    radius = int(6 * SCALE)
                     if show_stroke:
-                        box_pad = max(box_pad, stroke_width + int(4 * SCALE))
-                    # Pass 1: background box (invisible text, just the box)
-                    dt_bg = f"drawtext={base}:fontcolor=0x000000@0.0"
-                    dt_bg += f":box=1:boxcolor=0x{bg_color[1:]}@{bg_alpha:.2f}:boxborderw={box_pad}"
-                    dt_bg += f":{enable}"
-                    drawtext_filters.append(dt_bg)
+                        pad_h = max(pad_h, stroke_width + int(4 * SCALE))
+                        pad_v = max(pad_v, stroke_width + int(2 * SCALE))
+                    # Measure text size with this font
+                    from PIL import ImageFont, Image, ImageDraw
+                    try:
+                        pil_font = ImageFont.truetype(font_path, font_size)
+                    except:
+                        pil_font = ImageFont.load_default()
+                    dummy = ImageDraw.Draw(Image.new('RGBA', (1, 1)))
+                    bbox = dummy.textbbox((0, 0), text, font=pil_font)
+                    tw = bbox[2] - bbox[0]
+                    th = bbox[3] - bbox[1]
+                    bg_w = tw + pad_h * 2
+                    bg_h = th + pad_v * 2
+                    # Create rounded rect PNG
+                    bg_img = Image.new('RGBA', (bg_w, bg_h), (0, 0, 0, 0))
+                    r_bg = int(bg_color[1:3], 16)
+                    g_bg = int(bg_color[3:5], 16)
+                    b_bg = int(bg_color[5:7], 16)
+                    a_bg = int(bg_alpha * 255)
+                    bg_draw = ImageDraw.Draw(bg_img)
+                    bg_draw.rounded_rectangle(
+                        [(0, 0), (bg_w - 1, bg_h - 1)],
+                        radius=radius,
+                        fill=(r_bg, g_bg, b_bg, a_bg)
+                    )
+                    bg_png = tmp_dir / f"bg_{idx:03d}.png"
+                    bg_img.save(str(bg_png))
+                    # Position: center at (sx%, sy%)
+                    ox = int(sx / 100 * W - bg_w / 2)
+                    oy = int(sy / 100 * H - bg_h / 2)
+                    ox = max(0, min(W - bg_w, ox))
+                    oy = max(0, min(H - bg_h, oy))
+                    bg_pngs.append((bg_png, ox, oy, st, en))
 
+                # Stroke pass
                 if show_stroke and stroke_width > 0:
-                    # Pass 2: stroke only (thick border, same color as stroke)
                     dt_stroke = f"drawtext={base}:fontcolor={stroke_color}"
                     dt_stroke += f":borderw={stroke_width}:bordercolor={stroke_color}"
                     dt_stroke += f":{enable}"
                     drawtext_filters.append(dt_stroke)
 
-                # Pass 3: fill text (clean, on top)
+                # Fill text pass
                 dt_fill = f"drawtext={base}:fontcolor={text_color}:{enable}"
                 drawtext_filters.append(dt_fill)
 
-                print(f"[Sub {idx}] drawtext ({3 if show_stroke else (2 if show_bg else 1)} pass): {text[:20]}, size={font_size}")
+                print(f"[Sub {idx}] drawtext: {text[:20]}, size={font_size}, bg_png={'yes' if show_bg else 'no'}")
 
-            # --- Build PNG overlay for emoji subs ---
-            overlay_inputs = []
-            overlay_filters = []
+            # (emoji subs are now included in all_png_overlays above)
+
+            # Combine: bg PNGs → emoji PNGs → drawtext (text+stroke)
+            all_png_overlays = []  # (png_path, ox, oy, st, en)
+            all_overlay_inputs = []
+
+            # 1) Rounded bg PNGs
+            for bg_png, ox, oy, st, en in bg_pngs:
+                all_overlay_inputs.extend(["-i", str(bg_png)])
+                all_png_overlays.append((ox, oy, st, en))
+
+            # 2) Emoji PNGs
             for eidx, (idx, st, en, text, ss) in enumerate(emoji_subs):
-                font_size = int(ss.get("size", 16) * SCALE)
-                sx = ss.get("x", 50)
-                sy = ss.get("y", 80)
-                png_path = tmp_dir / f"sub_{idx:03d}.png"
-                img_w, img_h = render_subtitle_image(text, font_size, str(png_path), W, H, style=ss)
-                ox = int(sx / 100 * W - img_w / 2)
-                oy = int(sy / 100 * H - img_h / 2)
-                ox = max(0, min(W - img_w, ox))
-                oy = max(0, min(H - img_h, oy))
-                overlay_inputs.extend(["-i", str(png_path)])
-                inp_idx = eidx + 1  # 0 is main video
-                prev = "0:v" if eidx == 0 else f"ev{eidx}"
-                out_label = f"ev{eidx+1}"
-                overlay_filters.append(
+                all_overlay_inputs.extend(["-i", str(tmp_dir / f"sub_{idx:03d}.png")])
+                font_size_e = int(ss.get("size", 16) * SCALE)
+                sx_e = ss.get("x", 50)
+                sy_e = ss.get("y", 80)
+                png_path_e = tmp_dir / f"sub_{idx:03d}.png"
+                img_w, img_h = render_subtitle_image(text, font_size_e, str(png_path_e), W, H, style=ss)
+                ox_e = int(sx_e / 100 * W - img_w / 2)
+                oy_e = int(sy_e / 100 * H - img_h / 2)
+                ox_e = max(0, min(W - img_w, ox_e))
+                oy_e = max(0, min(H - img_h, oy_e))
+                all_png_overlays.append((ox_e, oy_e, st, en))
+                print(f"[Sub {idx}] PNG overlay (emoji): {text[:20]}, size={font_size_e}")
+
+            # Build overlay chain
+            overlay_chain = []
+            for pidx, (ox, oy, st, en) in enumerate(all_png_overlays):
+                inp_idx = pidx + 1
+                prev = "0:v" if pidx == 0 else f"ov{pidx}"
+                out_label = f"ov{pidx + 1}"
+                overlay_chain.append(
                     f"[{prev}][{inp_idx}:v]overlay={ox}:{oy}:enable='between(t,{st:.3f},{en:.3f})'[{out_label}]"
                 )
-                print(f"[Sub {idx}] PNG overlay (emoji): {text[:20]}, size={font_size}")
 
-            # Combine filters
             all_filters = []
-            if overlay_filters and drawtext_filters:
-                # PNG overlays first, then drawtext
-                all_filters = overlay_filters.copy()
-                last_overlay = f"ev{len(emoji_subs)}"
-                # Apply drawtext to the last overlay output
+            if overlay_chain and drawtext_filters:
+                all_filters = overlay_chain.copy()
+                last_ov = f"ov{len(all_png_overlays)}"
                 dt_chain = ",".join(drawtext_filters)
-                all_filters.append(f"[{last_overlay}]{dt_chain}[final]")
+                all_filters.append(f"[{last_ov}]{dt_chain}[final]")
                 final_label = "final"
-            elif overlay_filters:
-                all_filters = overlay_filters
-                final_label = f"ev{len(emoji_subs)}"
+            elif overlay_chain:
+                all_filters = overlay_chain
+                final_label = f"ov{len(all_png_overlays)}"
             elif drawtext_filters:
                 dt_chain = ",".join(drawtext_filters)
                 all_filters = [f"[0:v]{dt_chain}[final]"]
@@ -1116,7 +1158,7 @@ def run_render(data):
 
             cmd = [
                 "ffmpeg", "-y", "-i", str(merged),
-                *overlay_inputs,
+                *all_overlay_inputs,
                 "-filter_complex", fc,
                 "-map", f"[{final_label}]",
                 "-c:v", "libx264", "-preset", "fast", "-crf", "18",
