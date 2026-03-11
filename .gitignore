@@ -11,3 +11,5 @@ out
 engine/node_modules
 test-results/
 __pycache__
+apps/studio/.data/
+apps/studio/public/video-editor
