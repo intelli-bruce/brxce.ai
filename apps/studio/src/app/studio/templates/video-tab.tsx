@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Clock, Film, Play, Scissors, Music, Type, Zap } from "lucide-react";
 
@@ -205,11 +205,51 @@ function PresetIcon({ icon, color }: { icon: string; color: string }) {
 
 export default function VideoTab() {
   const router = useRouter();
+  const [selectedPreset, setSelectedPreset] = useState<VideoPreset | null>(null);
+  const [availableVideos, setAvailableVideos] = useState<string[]>([]);
+  const [selectedVideos, setSelectedVideos] = useState<string[]>([]);
+  const [loadingVideos, setLoadingVideos] = useState(false);
+
+  // Open source selection modal
+  const openSourcePicker = async (preset: VideoPreset) => {
+    setSelectedPreset(preset);
+    setSelectedVideos([]);
+    setLoadingVideos(true);
+    try {
+      const res = await fetch("http://localhost:8090/api/list-videos");
+      const data = await res.json();
+      setAvailableVideos(data.videos || []);
+    } catch {
+      setAvailableVideos([]);
+    }
+    setLoadingVideos(false);
+  };
+
+  const toggleVideo = (name: string) => {
+    setSelectedVideos((prev) =>
+      prev.includes(name) ? prev.filter((v) => v !== name) : [...prev, name]
+    );
+  };
+
+  const applyPresetWithSources = () => {
+    if (!selectedPreset) return;
+    const project = { ...selectedPreset.defaultProject };
+    
+    if (selectedVideos.length > 0) {
+      // Distribute selected videos across preset clips
+      project.clips = project.clips.map((clip, i) => ({
+        ...clip,
+        source: selectedVideos[i % selectedVideos.length],
+      }));
+    }
+    
+    localStorage.setItem("brxce-video-preset", JSON.stringify(project));
+    setSelectedPreset(null);
+    router.push("/studio/video-edit");
+  };
 
   const handleSelectPreset = (preset: VideoPreset) => {
-    // 프리셋 JSON을 localStorage에 저장하고 영상 편집기로 이동
-    localStorage.setItem("brxce-video-preset", JSON.stringify(preset.defaultProject));
-    router.push("/studio/video-edit");
+    openSourcePicker(preset);
   };
 
   return (
@@ -296,6 +336,101 @@ export default function VideoTab() {
           ))}
         </div>
       </div>
+
+      {/* Source Selection Modal */}
+      {selectedPreset && (
+        <div
+          className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center"
+          onClick={() => setSelectedPreset(null)}
+        >
+          <div
+            className="bg-[#111] rounded-2xl w-[640px] max-h-[80vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="p-6 border-b border-white/[0.06]">
+              <div className="flex items-center gap-3 mb-2">
+                <PresetIcon icon={selectedPreset.icon} color={selectedPreset.color} />
+                <div>
+                  <h3 className="text-lg font-bold text-[#fafafa]">{selectedPreset.name}</h3>
+                  <p className="text-xs text-white/40">{selectedPreset.description}</p>
+                </div>
+              </div>
+              <p className="text-sm text-white/50 mt-3">
+                사용할 소스 영상을 선택하세요. 선택한 영상이 프리셋 클립에 자동 배분됩니다.
+              </p>
+              <p className="text-xs text-white/30 mt-1">
+                추천 클립 수: {selectedPreset.clipCount} · 선택됨: {selectedVideos.length}개
+              </p>
+            </div>
+
+            {/* Video list */}
+            <div className="flex-1 overflow-y-auto p-4">
+              {loadingVideos ? (
+                <div className="text-center text-white/30 py-10">영상 목록 로딩 중...</div>
+              ) : availableVideos.length === 0 ? (
+                <div className="text-center py-10">
+                  <p className="text-white/30 mb-2">편집기 서버에 영상이 없습니다</p>
+                  <p className="text-xs text-white/20">video-editor 폴더에 영상을 추가하세요</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-2">
+                  {availableVideos.map((name) => {
+                    const isSelected = selectedVideos.includes(name);
+                    const idx = selectedVideos.indexOf(name);
+                    return (
+                      <button
+                        key={name}
+                        onClick={() => toggleVideo(name)}
+                        className={`relative text-left p-3 rounded-lg border transition text-xs ${
+                          isSelected
+                            ? "border-[#ff6b35] bg-[#ff6b35]/10"
+                            : "border-[#222] bg-[#0a0a0a] hover:border-[#333]"
+                        }`}
+                      >
+                        {isSelected && (
+                          <span className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-[#ff6b35] text-white text-[10px] flex items-center justify-center font-bold">
+                            {idx + 1}
+                          </span>
+                        )}
+                        <span className="text-white/70 truncate block">{name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="p-4 border-t border-white/[0.06] flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  // 소스 없이 바로 적용
+                  localStorage.setItem("brxce-video-preset", JSON.stringify(selectedPreset.defaultProject));
+                  setSelectedPreset(null);
+                  router.push("/studio/video-edit");
+                }}
+                className="px-4 py-2 rounded-lg text-sm text-white/50 bg-[#1a1a1a] hover:bg-[#222]"
+              >
+                소스 없이 시작
+              </button>
+              <button
+                onClick={() => setSelectedPreset(null)}
+                className="px-4 py-2 rounded-lg text-sm text-white/50 bg-[#1a1a1a] hover:bg-[#222]"
+              >
+                취소
+              </button>
+              <button
+                onClick={applyPresetWithSources}
+                disabled={selectedVideos.length === 0}
+                className="px-5 py-2 rounded-lg text-sm font-semibold bg-[#ff6b35] text-white hover:bg-[#ff5522] disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                적용 ({selectedVideos.length}개 선택)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Guide */}
       <div className="px-12 py-8 border-t border-white/[0.06]">
