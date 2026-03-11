@@ -1071,9 +1071,7 @@ def run_render(data):
                     bbox = dummy.textbbox((0, 0), text, font=pil_font)
                     tw = bbox[2] - bbox[0]
                     th = bbox[3] - bbox[1]
-                    # Pillow renders ~8% wider than ffmpeg drawtext; shrink to match
-                    tw = int(tw * 0.93)
-                    th = int(th * 0.93)
+                    # Use Pillow measurement as-is (slightly larger than ffmpeg = more padding = good)
                     bg_w = tw + pad_h * 2
                     bg_h = th + pad_v * 2
                     # Create rounded rect PNG
