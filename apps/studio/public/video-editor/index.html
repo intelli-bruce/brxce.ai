@@ -296,7 +296,7 @@ body{background:#0f0f0f;color:#e0e0e0;font-family:-apple-system,'Apple SD Gothic
     <div class="detail-head">📋 <span id="clipLabel">#1</span></div>
     <div class="detail-body">
       <div class="d-row"><label>소스</label><span id="dSrc" style="flex:1">-</span><button class="btn" onclick="changeClipSource()" title="이 클립의 소스 변경" style="font-size:9px">변경</button></div>
-      <div class="d-row"><label>시작</label><input type="number" id="dStart" step="0.1" onchange="onDetailChange()"><label style="width:auto;margin-left:4px">끝</label><input type="number" id="dEnd" step="0.1" onchange="onDetailChange()"></div>
+      <div class="d-row"><label>시작</label><input type="number" id="dStart" step="0.1" onchange="onDetailChange()" oninput="debouncedDetailChange()"><label style="width:auto;margin-left:4px">끝</label><input type="number" id="dEnd" step="0.1" onchange="onDetailChange()" oninput="debouncedDetailChange()"></div>
       <!-- Visual Trim Bar -->
       <div class="d-row" style="flex-direction:column;gap:4px;padding:4px 0">
         <div id="trimBar" style="position:relative;width:100%;height:32px;background:#1a1a1a;border-radius:6px;overflow:hidden;cursor:pointer;user-select:none">
@@ -1515,12 +1515,20 @@ function formatTrimTime(s){
 // Patch updateDetail to also update trim bar
 const _origUpdateDetail=typeof updateDetail==='function'?updateDetail:null;
 
+let _detailDebounce=null;
+function debouncedDetailChange(){clearTimeout(_detailDebounce);_detailDebounce=setTimeout(onDetailChange,200)}
 function onDetailChange(){save();
   CLIPS[cur].start=parseFloat(document.getElementById('dStart').value)||0;
   CLIPS[cur].end=parseFloat(document.getElementById('dEnd').value)||CLIPS[cur].start+1;
   if(CLIPS[cur].end<=CLIPS[cur].start)CLIPS[cur].end=CLIPS[cur].start+0.3;
-  document.getElementById('vid').currentTime=CLIPS[cur].start;
-  recalc();renderTL();updateDetail();
+  const vid=document.getElementById('vid');
+  vid.currentTime=CLIPS[cur].start;
+  // Ensure video frame updates even if paused
+  vid.pause();
+  const seekDone=()=>{vid.removeEventListener('seeked',seekDone)};
+  vid.addEventListener('seeked',seekDone);
+  recalc();renderTL();updateDetail();updateTrimBar();
+  showSubAtTime(gTime);
 }
 function onSpeedChange(){save();clipMeta[cur].speed=parseFloat(document.getElementById('dSpeed').value);recalc();renderTL();updateDetail()}
 function onTransitionChange(){save();clipMeta[cur].transition=document.getElementById('dTransition').value;clipMeta[cur].transDur=parseFloat(document.getElementById('dTransDur').value)||0.3;renderTL()}
