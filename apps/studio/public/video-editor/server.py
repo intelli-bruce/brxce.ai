@@ -868,16 +868,25 @@ def run_render(data):
             filters.append(f"fps={output_fps}")
 
             # Scale to output — letterbox with blur bg for landscape sources
-            if is_landscape and not (zoom["scale"] != 1 or zoom["panX"] != 0 or zoom["panY"] != 0):
+            if is_landscape:
                 # Use filter_complex: blur bg + contain overlay
                 speed_filter = f"setpts={1/speed:.4f}*PTS," if speed != 1 else ""
+                # Apply zoom after letterbox compositing
+                zoom_filter = ""
+                if zoom["scale"] != 1 or zoom["panX"] != 0 or zoom["panY"] != 0:
+                    zw = int(W * zoom["scale"])
+                    zh = int(H * zoom["scale"])
+                    zx = max(0, int((zw - W) / 2 - (zoom["panX"] / 100) * W))
+                    zy = max(0, int((zh - H) / 2 - (zoom["panY"] / 100) * H))
+                    zoom_filter = f",scale={zw}:{zh},crop={W}:{H}:{zx}:{zy}"
+                
                 fc = (
                     f"{speed_filter}fps={output_fps},"
                     f"split[main][bg];"
                     f"[bg]scale={W}:{H}:force_original_aspect_ratio=increase,"
                     f"crop={W}:{H},boxblur=20:5[blurred];"
                     f"[main]scale={W}:{H}:force_original_aspect_ratio=decrease[fg];"
-                    f"[blurred][fg]overlay=(W-w)/2:(H-h)/2"
+                    f"[blurred][fg]overlay=(W-w)/2:(H-h)/2{zoom_filter}"
                 )
                 cmd = [
                     "ffmpeg", "-y",
