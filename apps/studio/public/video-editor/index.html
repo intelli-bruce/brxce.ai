@@ -1358,8 +1358,11 @@ function updateDetail(){
   const c=CLIPS[cur],m=clipMeta[cur];
   document.getElementById('clipLabel').textContent=`#${cur+1} / ${CLIPS.length}`;
   document.getElementById('dSrc').textContent=c.source.split('/').pop();
-  document.getElementById('dStart').value=c.start.toFixed(1);
-  document.getElementById('dEnd').value=c.end.toFixed(1);
+  // Don't overwrite focused input (user is typing)
+  const ae=document.activeElement;
+  const dS=document.getElementById('dStart'),dE=document.getElementById('dEnd');
+  if(ae!==dS)dS.value=c.start.toFixed(1);
+  if(ae!==dE)dE.value=c.end.toFixed(1);
   document.getElementById('dDur').textContent=clipDur(cur).toFixed(1)+'s';
   document.getElementById('dSpeed').value=m.speed;
   document.getElementById('dSpeedDur').textContent=`(${clipDur(cur).toFixed(1)}s 재생)`;
@@ -1527,7 +1530,11 @@ function onDetailChange(){save();
   vid.pause();
   const seekDone=()=>{vid.removeEventListener('seeked',seekDone)};
   vid.addEventListener('seeked',seekDone);
-  recalc();renderTL();updateDetail();updateTrimBar();
+  recalc();renderTL();
+  // Update duration label without overwriting input fields
+  document.getElementById('dDur').textContent=clipDur(cur).toFixed(1)+'s';
+  document.getElementById('dSpeedDur').textContent=`(${clipDur(cur).toFixed(1)}s 재생)`;
+  updateTrimBar();
   showSubAtTime(gTime);
 }
 function onSpeedChange(){save();clipMeta[cur].speed=parseFloat(document.getElementById('dSpeed').value);recalc();renderTL();updateDetail()}
