@@ -784,46 +784,8 @@ let clipSubStyles=[];
 function subStyle(){return clipSubStyles[cur]||subStyleDefault}
 
 function applySubStyle(){
-  // Render all subtitles active at current time (global, clip-independent)
-  const ov=document.getElementById('subOv');
-  ov.innerHTML='';
-  const activeSubs=SUBS.filter(s=>s.text&&gTime>=s.start&&gTime<s.end);
-  // Also show selected sub even if outside time range (for editing)
+  showSubAtTime(gTime);
   const selSub=getCurSub();
-  if(selSub&&selSub.text&&!activeSubs.includes(selSub))activeSubs.push(selSub);
-  
-  if(!activeSubs.length||!subtitlesVisible){ov.classList.add('h');return}
-  ov.classList.remove('h');
-  
-  activeSubs.forEach(sub=>{
-    const gi=SUBS.indexOf(sub);
-    const st=sub.style||subStyleDefault;
-    const span=document.createElement('span');
-    span.className='sub-tx'+(gi===curSubIdx?' sub-active':'');
-    span.textContent=sub.text;
-    span.style.fontSize=(st.size||16)+'px';
-    span.style.left=(st.x||50)+'%';
-    span.style.top=(st.y||80)+'%';
-    span.style.transform='translate(-50%,-50%)';
-    span.style.fontFamily=st.font||"'Apple SD Gothic Neo',sans-serif";
-    span.style.color=st.color||'#ffffff';
-    if(st.bg!==false){
-      const bgC=st.bgColor||'#000000';
-      const bgA=typeof st.bgAlpha==='number'?st.bgAlpha:0.6;
-      const r=parseInt(bgC.slice(1,3),16),g=parseInt(bgC.slice(3,5),16),b=parseInt(bgC.slice(5,7),16);
-      span.style.background=`rgba(${r},${g},${b},${bgA})`;
-    }else{
-      span.style.background='transparent';
-    }
-    span.dataset.subIdx=gi;
-    span.addEventListener('mousedown',e=>{
-      e.stopPropagation();
-      selectSub(gi);
-      initSubDrag(e,gi);
-    });
-    ov.appendChild(span);
-  });
-  
   if(selSub){
     const st=selSub.style||subStyleDefault;
     document.getElementById('subPosInfo').textContent=`${Math.round(st.x||50)}%, ${Math.round(st.y||80)}%`;
@@ -2601,12 +2563,17 @@ function showSubAtTime(t){
   const ov=document.getElementById('subOv');
   if(!subtitlesVisible){ov.classList.add('h');return}
   const activeSubs=getSubsAtTime(t);
+  // Also show selected sub for editing even if outside time
+  const selSub=getCurSub();
+  if(selSub&&selSub.text&&!activeSubs.includes(selSub))activeSubs.push(selSub);
+  
   if(!activeSubs.length){ov.classList.add('h');ov.innerHTML='';return}
   ov.classList.remove('h');ov.innerHTML='';
   activeSubs.forEach(sub=>{
+    const gi=SUBS.indexOf(sub);
     const st=sub.style||subStyleDefault;
     const span=document.createElement('span');
-    span.className='sub-tx';
+    span.className='sub-tx'+(gi===curSubIdx?' sub-active':'');
     span.textContent=sub.text;
     span.style.fontSize=(st.size||16)+'px';
     span.style.left=(st.x||50)+'%';
@@ -2622,6 +2589,12 @@ function showSubAtTime(t){
     }else{
       span.style.background='transparent';
     }
+    span.dataset.subIdx=gi;
+    span.addEventListener('mousedown',e=>{
+      e.stopPropagation();
+      selectSub(gi);
+      initSubDrag(e,gi);
+    });
     ov.appendChild(span);
   });
 }
