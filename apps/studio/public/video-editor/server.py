@@ -1017,7 +1017,8 @@ def run_render(data):
             overlay_filters = []
 
             for idx, (st, en, text, ss) in enumerate(subs):
-                font_size = int(ss.get("size", 16) * 3.5)
+                SCALE = 3.5  # preview → 1080p scale factor
+                font_size = int(ss.get("size", 16) * SCALE)
                 sx = ss.get("x", 50)
                 sy = ss.get("y", 80)
 
@@ -1208,9 +1209,12 @@ def render_subtitle_image(text, font_size, out_path, frame_w=1080, frame_h=1920,
     tw = bbox[2] - bbox[0]
     th = bbox[3] - bbox[1]
     
-    pad_h = int(font_size * 0.7)
-    pad_v = int(font_size * 0.35)
-    radius = int(font_size * 0.4)
+    # Match preview CSS: padding 4px 12px at preview scale, radius 6px
+    # Scale factor: font_size / original_size ≈ 3.5
+    scale = font_size / max(style.get("size", 16), 1)
+    pad_h = int(12 * scale)  # horizontal padding (preview: 12px)
+    pad_v = int(4 * scale)   # vertical padding (preview: 4px)
+    radius = int(6 * scale)  # border-radius (preview: 6px)
     
     img_w = tw + pad_h * 2
     img_h = th + pad_v * 2
@@ -1234,7 +1238,7 @@ def render_subtitle_image(text, font_size, out_path, frame_w=1080, frame_h=1920,
     # Stroke (outline)
     show_stroke = style.get("stroke", False)
     stroke_color = hex_to_rgba(style.get("strokeColor", "#000000")) if show_stroke else None
-    stroke_width = int(style.get("strokeWidth", 2)) if show_stroke else 0
+    stroke_width = int(style.get("strokeWidth", 2) * scale) if show_stroke else 0
     
     if has_emoji and HAS_PILMOJI:
         # Use pilmoji for proper color emoji rendering
