@@ -398,6 +398,13 @@ body{background:#0f0f0f;color:#e0e0e0;font-family:-apple-system,'Apple SD Gothic
             <div class="d-row"><label>글자색</label>
               <input type="color" id="subColor" value="#ffffff" onchange="onSubStyleChange()" style="width:24px;height:20px;border:none;background:none;cursor:pointer">
             </div>
+            <div class="d-row"><label>외곽선</label>
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:10px;color:#ccc"><input type="checkbox" id="subStroke" onchange="onSubStyleChange()"> 표시</label>
+              <input type="color" id="subStrokeColor" value="#000000" onchange="onSubStyleChange()" style="width:24px;height:20px;border:none;background:none;cursor:pointer;margin-left:4px">
+              <label style="font-size:9px;color:#888;margin-left:4px">두께</label>
+              <input type="range" id="subStrokeWidth" min="1" max="6" value="2" oninput="onSubStyleChange()" style="width:40px">
+              <span id="subStrokeWidthVal" style="color:#888;font-size:9px;min-width:20px">2px</span>
+            </div>
             <div class="d-row"><label>정렬</label>
               <button class="btn sub-align-btn" onclick="alignSub(50,null)" title="가로 가운데">⫠ 가로중앙</button>
               <button class="btn sub-align-btn" onclick="alignSub(null,50)" title="세로 가운데">⫟ 세로중앙</button>
@@ -855,6 +862,10 @@ function syncSubStylePanel(){
   document.getElementById('subBgColor').value=st.bgColor||'#000000';
   document.getElementById('subBgAlpha').value=Math.round((typeof st.bgAlpha==='number'?st.bgAlpha:0.6)*100);
   document.getElementById('subColor').value=st.color||'#ffffff';
+  document.getElementById('subStroke').checked=!!st.stroke;
+  document.getElementById('subStrokeColor').value=st.strokeColor||'#000000';
+  document.getElementById('subStrokeWidth').value=st.strokeWidth||2;
+  document.getElementById('subStrokeWidthVal').textContent=(st.strokeWidth||2)+'px';
   document.getElementById('subPosInfo').textContent=`${Math.round(st.x||50)}%, ${Math.round(st.y||80)}%`;
 }
 
@@ -869,7 +880,11 @@ function onSubStyleChange(){
   st.bgColor=document.getElementById('subBgColor').value;
   st.bgAlpha=parseInt(document.getElementById('subBgAlpha').value)/100;
   st.color=document.getElementById('subColor').value;
+  st.stroke=document.getElementById('subStroke').checked;
+  st.strokeColor=document.getElementById('subStrokeColor').value;
+  st.strokeWidth=parseInt(document.getElementById('subStrokeWidth').value)||2;
   document.getElementById('subSizeVal').textContent=st.size+'px';
+  document.getElementById('subStrokeWidthVal').textContent=st.strokeWidth+'px';
   applySubStyle();
 }
 
@@ -2599,6 +2614,13 @@ function showSubAtTime(t){
       span.style.background=`rgba(${r},${g},${b},${bgA})`;
     }else{
       span.style.background='transparent';
+    }
+    // Stroke (outline)
+    if(st.stroke){
+      const sw=st.strokeWidth||2;
+      const sc=st.strokeColor||'#000000';
+      span.style.webkitTextStroke=sw+'px '+sc;
+      span.style.paintOrder='stroke fill';
     }
     span.dataset.subIdx=gi;
     span.addEventListener('mousedown',e=>{

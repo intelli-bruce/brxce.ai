@@ -6,6 +6,7 @@ import mimetypes
 import os
 import subprocess
 import sys
+import re
 import tempfile
 import shutil
 import threading
@@ -1069,12 +1070,30 @@ def run_render(data):
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
+EMOJI_RE = re.compile('['
+    '\U0001F600-\U0001F64F'
+    '\U0001F300-\U0001F5FF'
+    '\U0001F680-\U0001F6FF'
+    '\U0001F1E0-\U0001F1FF'
+    '\U00002702-\U000027B0'
+    '\U000024C2-\U0001F251'
+    '\U0001F900-\U0001F9FF'
+    '\U0001FA00-\U0001FA6F'
+    '\U0001FA70-\U0001FAFF'
+    '\U00002600-\U000026FF'
+    '\U0000FE00-\U0000FE0F'
+    '\U0000200D'
+    '\U00002640-\U00002642'
+    '\U0000203C-\U00003299'
+    ']+', re.UNICODE)
+
+EMOJI_FONT_PATH = "/System/Library/Fonts/Apple Color Emoji.ttc"
+
 def render_subtitle_image(text, font_size, out_path, frame_w=1080, frame_h=1920, style=None):
     """Render a subtitle as a transparent PNG with optional background box and custom style."""
     style = style or {}
     
     # Font selection — must support Korean (CJK) if text contains Korean
-    import re
     has_cjk = bool(re.search(r'[\uAC00-\uD7AF\u3130-\u318F\u4E00-\u9FFF]', text))
     
     font_family = style.get("font", "")
@@ -1167,10 +1186,39 @@ def render_subtitle_image(text, font_size, out_path, frame_w=1080, frame_h=1920,
         bg_alpha = 0.6
     bg_color = hex_to_rgba(bg_color_hex, bg_alpha) if show_bg else (0, 0, 0, 0)
     
-    # Measure text
+    # Measure text (account for emoji if present)
+    has_emoji = bool(EMOJI_RE.search(text))
     dummy = Image.new("RGBA", (1, 1))
     dd = ImageDraw.Draw(dummy)
-    bbox = dd.textbbox((0, 0), text, font=font)
+    
+    if has_emoji:
+        try:
+            emoji_font = ImageFont.truetype(EMOJI_FONT_PATH, font_size)
+        except:
+            emoji_font = font
+        # Measure segment by segment
+        tw = 0
+        th = 0
+        last_end = 0
+        for m in EMOJI_RE.finditer(text):
+            if m.start() > last_end:
+                seg = text[last_end:m.start()]
+                sb = dd.textbbox((0, 0), seg, font=font)
+                tw += sb[2] - sb[0]
+                th = max(th, sb[3] - sb[1])
+            eseg = m.group()
+            eb = dd.textbbox((0, 0), eseg, font=emoji_font)
+            tw += eb[2] - eb[0]
+            th = max(th, eb[3] - eb[1])
+            last_end = m.end()
+        if last_end < len(text):
+            seg = text[last_end:]
+            sb = dd.textbbox((0, 0), seg, font=font)
+            tw += sb[2] - sb[0]
+            th = max(th, sb[3] - sb[1])
+        bbox = (0, 0, tw, th)
+    else:
+        bbox = dd.textbbox((0, 0), text, font=font)
     tw = bbox[2] - bbox[0]
     th = bbox[3] - bbox[1]
     
@@ -1193,7 +1241,56 @@ def render_subtitle_image(text, font_size, out_path, frame_w=1080, frame_h=1920,
     
     tx = pad_h - bbox[0]
     ty = pad_v - bbox[1]
-    draw.text((tx, ty), text, font=font, fill=text_color)
+    
+    # Check if text has emoji
+    has_emoji = bool(EMOJI_RE.search(text))
+    
+    # Stroke (outline)
+    show_stroke = style.get("stroke", False)
+    stroke_color = hex_to_rgba(style.get("strokeColor", "#000000")) if show_stroke else None
+    stroke_width = int(style.get("strokeWidth", 2)) if show_stroke else 0
+    
+    if has_emoji:
+        # Render text segment by segment: emoji with Apple Color Emoji, rest with normal font
+        try:
+            emoji_font = ImageFont.truetype(EMOJI_FONT_PATH, font_size)
+        except:
+            emoji_font = font
+        
+        # Split text into segments: (is_emoji, text)
+        segments = []
+        last_end = 0
+        for m in EMOJI_RE.finditer(text):
+            if m.start() > last_end:
+                segments.append((False, text[last_end:m.start()]))
+            segments.append((True, m.group()))
+            last_end = m.end()
+        if last_end < len(text):
+            segments.append((False, text[last_end:]))
+        
+        cursor_x = tx
+        for is_emoji, seg in segments:
+            if is_emoji:
+                # Render emoji with embedded color
+                try:
+                    draw.text((cursor_x, ty), seg, font=emoji_font, embedded_color=True)
+                except TypeError:
+                    draw.text((cursor_x, ty), seg, font=emoji_font, fill=text_color)
+                seg_bbox = draw.textbbox((0, 0), seg, font=emoji_font)
+            else:
+                if show_stroke:
+                    draw.text((cursor_x, ty), seg, font=font, fill=text_color,
+                              stroke_width=stroke_width, stroke_fill=stroke_color)
+                else:
+                    draw.text((cursor_x, ty), seg, font=font, fill=text_color)
+                seg_bbox = draw.textbbox((0, 0), seg, font=font)
+            cursor_x += seg_bbox[2] - seg_bbox[0]
+    else:
+        if show_stroke:
+            draw.text((tx, ty), text, font=font, fill=text_color,
+                      stroke_width=stroke_width, stroke_fill=stroke_color)
+        else:
+            draw.text((tx, ty), text, font=font, fill=text_color)
     
     img.save(out_path, "PNG")
     return img_w, img_h
