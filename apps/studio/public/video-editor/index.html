@@ -60,6 +60,7 @@ body{background:#0f0f0f;color:#e0e0e0;font-family:-apple-system,'Apple SD Gothic
 .sub-ov.h{opacity:0}
 .sub-tx{position:absolute;background:rgba(0,0,0,.6);color:#fff;font-weight:700;padding:4px 12px;border-radius:6px;letter-spacing:.5px;max-width:90%;word-break:keep-all;pointer-events:auto;cursor:grab;white-space:nowrap}
 .sub-tx:active{cursor:grabbing}
+.sub-tx.sub-active{outline:2px solid #4ade80;outline-offset:2px}
 /* In/Out marks */
 .mark-badge{position:absolute;top:8px;font-size:9px;padding:2px 6px;border-radius:3px;font-weight:600}
 .mark-in{left:8px;background:#059669;color:#fff}
@@ -274,7 +275,7 @@ body{background:#0f0f0f;color:#e0e0e0;font-family:-apple-system,'Apple SD Gothic
     <div class="phone" id="phoneFrame">
       <video class="vid-blur-bg" id="vidBlur" muted playsinline></video>
       <video id="vid" muted playsinline></video>
-      <div class="sub-ov h" id="subOv"><span class="sub-tx" id="subTx"></span></div>
+      <div class="sub-ov" id="subOv"></div>
       <div class="crop-overlay" id="cropOverlay">
         <div class="crop-dim" id="cropDimT"></div>
         <div class="crop-dim" id="cropDimB"></div>
@@ -296,6 +297,18 @@ body{background:#0f0f0f;color:#e0e0e0;font-family:-apple-system,'Apple SD Gothic
     <div class="detail-body">
       <div class="d-row"><label>소스</label><span id="dSrc" style="flex:1">-</span><button class="btn" onclick="changeClipSource()" title="이 클립의 소스 변경" style="font-size:9px">변경</button></div>
       <div class="d-row"><label>시작</label><input type="number" id="dStart" step="0.1" onchange="onDetailChange()"><label style="width:auto;margin-left:4px">끝</label><input type="number" id="dEnd" step="0.1" onchange="onDetailChange()"></div>
+      <!-- Visual Trim Bar -->
+      <div class="d-row" style="flex-direction:column;gap:4px;padding:4px 0">
+        <div id="trimBar" style="position:relative;width:100%;height:32px;background:#1a1a1a;border-radius:6px;overflow:hidden;cursor:pointer;user-select:none">
+          <canvas id="trimWaveform" style="position:absolute;inset:0;width:100%;height:100%;opacity:0.3"></canvas>
+          <div id="trimRange" style="position:absolute;top:0;height:100%;background:rgba(255,107,53,0.25);border-left:3px solid #ff6b35;border-right:3px solid #ff6b35;border-radius:2px"></div>
+          <div id="trimPlayhead" style="position:absolute;top:0;width:2px;height:100%;background:#fff;pointer-events:none;z-index:2"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:9px;color:#666">
+          <span>0:00</span>
+          <span id="trimSrcDur">0:00</span>
+        </div>
+      </div>
       <div class="d-row"><label>길이</label><span id="dDur">-</span></div>
       <div class="d-section">
         <h4>⚡ 속도</h4>
@@ -339,24 +352,47 @@ body{background:#0f0f0f;color:#e0e0e0;font-family:-apple-system,'Apple SD Gothic
         </div>
       </div>
       <div class="d-section">
-        <h4>💬 자막</h4>
-        <input class="sub-input" type="text" id="subIn" placeholder="자막 입력..." oninput="onSubEdit(this.value)">
-        <div style="margin-top:8px">
-          <div class="d-row"><label>크기</label><input type="range" id="subSize" min="8" max="40" value="16" oninput="onSubStyleChange()" style="flex:1"><span id="subSizeVal" style="color:#888;font-size:9px;min-width:28px;text-align:right">16px</span></div>
-          <div class="d-row"><label>정렬</label>
-            <button class="btn sub-align-btn" onclick="alignSub(50,null)" title="가로 가운데">⫠ 가로중앙</button>
-            <button class="btn sub-align-btn" onclick="alignSub(null,50)" title="세로 가운데">⫟ 세로중앙</button>
-          </div>
-          <div class="d-row"><label>위치</label><span id="subPosInfo" style="color:#888;font-size:9px">50%, 80%</span>
-            <button class="btn" onclick="applyToAll()" title="현재 클립 자막 스타일을 전체 클립에 적용" style="margin-left:auto;color:#fbbf24;border-color:#fbbf24">📐 전체 적용</button>
-          </div>
-          <div class="d-row" style="margin-top:6px"><label>프리셋</label>
-            <button class="btn" onclick="saveSubPreset()" title="현재 스타일 저장">💾 저장</button>
-            <button class="btn" onclick="loadSubPreset()" title="저장된 스타일 불러오기">📂 불러오기</button>
-            <select id="presetSelect" style="flex:1;background:#222;border:1px solid #3a3a3a;color:#ddd;padding:3px 5px;border-radius:4px;font-size:10px">
-              <option value="">-- 프리셋 선택 --</option>
-            </select>
-            <button class="btn" onclick="deleteSubPreset()" title="선택된 프리셋 삭제" style="color:#f87171">✕</button>
+        <h4>💬 자막 <button class="btn" onclick="addSubToClip()" title="자막 추가" style="font-size:9px;margin-left:8px;color:#4ade80;border-color:#4ade80">＋ 추가</button></h4>
+        <div id="subList" style="max-height:140px;overflow-y:auto;margin-bottom:6px"></div>
+        <div id="subEditPanel" style="display:none">
+          <input class="sub-input" type="text" id="subIn" placeholder="자막 입력..." oninput="onSubEdit(this.value)">
+          <div style="margin-top:6px">
+            <div class="d-row"><label>글꼴</label>
+              <select id="subFont" onchange="onSubStyleChange()" style="flex:1;background:#222;border:1px solid #3a3a3a;color:#ddd;padding:3px 5px;border-radius:4px;font-size:10px">
+                <option value="'Apple SD Gothic Neo',sans-serif">Apple SD 고딕</option>
+                <option value="'Noto Sans CJK KR',sans-serif">Noto Sans KR</option>
+                <option value="Arial,Helvetica,sans-serif">Arial</option>
+                <option value="'Courier New',monospace">Courier New</option>
+                <option value="Georgia,serif">Georgia</option>
+                <option value="Impact,sans-serif">Impact</option>
+                <option value="'AppleMyungjo',serif">명조체</option>
+              </select>
+            </div>
+            <div class="d-row"><label>크기</label><input type="range" id="subSize" min="8" max="40" value="16" oninput="onSubStyleChange()" style="flex:1"><span id="subSizeVal" style="color:#888;font-size:9px;min-width:28px;text-align:right">16px</span></div>
+            <div class="d-row"><label>배경</label>
+              <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:10px;color:#ccc"><input type="checkbox" id="subBg" checked onchange="onSubStyleChange()"> 표시</label>
+              <input type="color" id="subBgColor" value="#000000" onchange="onSubStyleChange()" style="width:24px;height:20px;border:none;background:none;cursor:pointer;margin-left:4px">
+              <label style="font-size:9px;color:#888;margin-left:4px">투명도</label>
+              <input type="range" id="subBgAlpha" min="0" max="100" value="60" oninput="onSubStyleChange()" style="width:50px">
+            </div>
+            <div class="d-row"><label>글자색</label>
+              <input type="color" id="subColor" value="#ffffff" onchange="onSubStyleChange()" style="width:24px;height:20px;border:none;background:none;cursor:pointer">
+            </div>
+            <div class="d-row"><label>정렬</label>
+              <button class="btn sub-align-btn" onclick="alignSub(50,null)" title="가로 가운데">⫠ 가로중앙</button>
+              <button class="btn sub-align-btn" onclick="alignSub(null,50)" title="세로 가운데">⫟ 세로중앙</button>
+            </div>
+            <div class="d-row"><label>위치</label><span id="subPosInfo" style="color:#888;font-size:9px">50%, 80%</span>
+              <button class="btn" onclick="applyToAll()" title="현재 클립 자막 스타일을 전체 클립에 적용" style="margin-left:auto;color:#fbbf24;border-color:#fbbf24">📐 전체 적용</button>
+            </div>
+            <div class="d-row" style="margin-top:6px"><label>프리셋</label>
+              <button class="btn" onclick="saveSubPreset()" title="현재 스타일 저장">💾 저장</button>
+              <button class="btn" onclick="loadSubPreset()" title="저장된 스타일 불러오기">📂 불러오기</button>
+              <select id="presetSelect" style="flex:1;background:#222;border:1px solid #3a3a3a;color:#ddd;padding:3px 5px;border-radius:4px;font-size:10px">
+                <option value="">-- 프리셋 선택 --</option>
+              </select>
+              <button class="btn" onclick="deleteSubPreset()" title="선택된 프리셋 삭제" style="color:#f87171">✕</button>
+            </div>
           </div>
         </div>
       </div>
@@ -434,7 +470,20 @@ body{background:#0f0f0f;color:#e0e0e0;font-family:-apple-system,'Apple SD Gothic
 
 <script>
 let CLIPS=[];
-let SUBS=[];
+let SUBS=[]; // SUBS[clipIdx] = [{text,style:{size,x,y,font,bg,bgColor,bgAlpha,color}}]
+let curSubIdx=0; // currently selected subtitle index within clip
+
+// Normalize SUBS: legacy string → array of objects
+function normSubs(){
+  SUBS=SUBS.map(s=>{
+    if(!s||s==='')return [];
+    if(typeof s==='string')return [{text:s,style:null}];
+    if(Array.isArray(s))return s;
+    return [];
+  });
+}
+function getClipSubs(i){return Array.isArray(SUBS[i])?SUBS[i]:[]}
+function getCurSub(){const subs=getClipSubs(cur);return subs[curSubIdx]||null}
 let _hasInitialData=false;
 const API_BASE='http://localhost:8090';
 const VBASE=API_BASE;
@@ -680,40 +729,135 @@ function applyCropToAll(){
 })();
 
 // Default subtitle style — position as % of phone frame
-let subStyleDefault={size:16,x:50,y:80};
+let subStyleDefault={size:16,x:50,y:80,font:"'Apple SD Gothic Neo',sans-serif",bg:true,bgColor:'#000000',bgAlpha:0.6,color:'#ffffff'};
 // Per-clip subtitle styles
 let clipSubStyles=[];
 // Convenience getter for current clip
 function subStyle(){return clipSubStyles[cur]||subStyleDefault}
 
 function applySubStyle(){
-  const s=subStyle();
-  const tx=document.getElementById('subTx');
-  tx.style.fontSize=s.size+'px';
-  tx.style.left=s.x+'%';
-  tx.style.top=s.y+'%';
-  tx.style.transform='translate(-50%,-50%)';
-  document.getElementById('subPosInfo').textContent=`${Math.round(s.x)}%, ${Math.round(s.y)}%`;
+  // Render all subtitles for current clip in the overlay
+  const ov=document.getElementById('subOv');
+  ov.innerHTML='';
+  const subs=getClipSubs(cur);
+  if(!subs.length||!subtitlesVisible){ov.classList.add('h');return}
+  ov.classList.remove('h');
+  
+  subs.forEach((sub,idx)=>{
+    if(!sub.text)return;
+    const st=sub.style||clipSubStyles[cur]||subStyleDefault;
+    const span=document.createElement('span');
+    span.className='sub-tx'+(idx===curSubIdx?' sub-active':'');
+    span.textContent=sub.text;
+    span.style.fontSize=(st.size||16)+'px';
+    span.style.left=(st.x||50)+'%';
+    span.style.top=(st.y||80)+'%';
+    span.style.transform='translate(-50%,-50%)';
+    span.style.fontFamily=st.font||"'Apple SD Gothic Neo',sans-serif";
+    span.style.color=st.color||'#ffffff';
+    if(st.bg!==false){
+      const bgC=st.bgColor||'#000000';
+      const bgA=st.bgAlpha!=null?st.bgAlpha:0.6;
+      const r=parseInt(bgC.slice(1,3),16),g=parseInt(bgC.slice(3,5),16),b=parseInt(bgC.slice(5,7),16);
+      span.style.background=`rgba(${r},${g},${b},${bgA})`;
+    }else{
+      span.style.background='transparent';
+    }
+    span.dataset.subIdx=idx;
+    span.addEventListener('mousedown',e=>{
+      e.stopPropagation();
+      selectSub(idx);
+      initSubDrag(e,idx);
+    });
+    ov.appendChild(span);
+  });
+  
+  // Update style panel
+  const sub=getCurSub();
+  if(sub){
+    const st=sub.style||clipSubStyles[cur]||subStyleDefault;
+    document.getElementById('subPosInfo').textContent=`${Math.round(st.x||50)}%, ${Math.round(st.y||80)}%`;
+  }
   persistLastStyle();
 }
 
+function initSubDrag(e,idx){
+  const ov=document.getElementById('subOv');
+  const phone=document.getElementById('phoneFrame');
+  const rect=phone.getBoundingClientRect();
+  const sub=getClipSubs(cur)[idx];
+  if(!sub)return;
+  const st=sub.style||(sub.style={...subStyleDefault});
+  const startX=st.x,startY=st.y;
+  const mx0=e.clientX,my0=e.clientY;
+  const onMove=ev=>{
+    const dx=(ev.clientX-mx0)/rect.width*100;
+    const dy=(ev.clientY-my0)/rect.height*100;
+    st.x=Math.max(5,Math.min(95,startX+dx));
+    st.y=Math.max(5,Math.min(95,startY+dy));
+    applySubStyle();
+  };
+  const onUp=()=>{document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp)};
+  document.addEventListener('mousemove',onMove);
+  document.addEventListener('mouseup',onUp);
+}
+
+function selectSub(idx){
+  curSubIdx=idx;
+  renderSubList();
+  syncSubStylePanel();
+  applySubStyle();
+}
+
+function syncSubStylePanel(){
+  const sub=getCurSub();
+  const panel=document.getElementById('subEditPanel');
+  if(!sub){panel.style.display='none';return}
+  panel.style.display='block';
+  const st=sub.style||clipSubStyles[cur]||subStyleDefault;
+  document.getElementById('subIn').value=sub.text||'';
+  document.getElementById('subSize').value=st.size||16;
+  document.getElementById('subSizeVal').textContent=(st.size||16)+'px';
+  document.getElementById('subFont').value=st.font||"'Apple SD Gothic Neo',sans-serif";
+  document.getElementById('subBg').checked=(st.bg===true||st.bg===undefined||(typeof st.bg==='string'));
+  document.getElementById('subBgColor').value=st.bgColor||'#000000';
+  document.getElementById('subBgAlpha').value=Math.round((typeof st.bgAlpha==='number'?st.bgAlpha:0.6)*100);
+  document.getElementById('subColor').value=st.color||'#ffffff';
+  document.getElementById('subPosInfo').textContent=`${Math.round(st.x||50)}%, ${Math.round(st.y||80)}%`;
+}
+
 function onSubStyleChange(){
-  const s=subStyle();
-  s.size=parseInt(document.getElementById('subSize').value);
-  document.getElementById('subSizeVal').textContent=s.size+'px';
+  const sub=getCurSub();
+  if(!sub)return;
+  if(!sub.style)sub.style={...subStyleDefault};
+  const st=sub.style;
+  st.size=parseInt(document.getElementById('subSize').value);
+  st.font=document.getElementById('subFont').value;
+  st.bg=document.getElementById('subBg').checked;
+  st.bgColor=document.getElementById('subBgColor').value;
+  st.bgAlpha=parseInt(document.getElementById('subBgAlpha').value)/100;
+  st.color=document.getElementById('subColor').value;
+  document.getElementById('subSizeVal').textContent=st.size+'px';
   applySubStyle();
 }
 
 function alignSub(x,y){
-  const s=subStyle();
-  if(x!==null)s.x=x;
-  if(y!==null)s.y=y;
+  const sub=getCurSub();
+  if(!sub)return;
+  if(!sub.style)sub.style={...subStyleDefault};
+  if(x!==null)sub.style.x=x;
+  if(y!==null)sub.style.y=y;
   applySubStyle();
 }
 
 function applyToAll(){
-  const s=subStyle();
-  clipSubStyles=clipSubStyles.map(()=>({...s}));
+  const sub=getCurSub();
+  if(!sub||!sub.style)return;
+  const refStyle={...sub.style};
+  SUBS.forEach(subs=>{
+    if(!Array.isArray(subs))return;
+    subs.forEach(s=>{if(s.style)Object.assign(s.style,{size:refStyle.size,font:refStyle.font,bg:refStyle.bg,bgColor:refStyle.bgColor,bgAlpha:refStyle.bgAlpha,color:refStyle.color})});
+  });
   applySubStyle();
 }
 
@@ -775,28 +919,7 @@ function restoreLastStyle(){
   syncSubUI();
 }
 
-// Drag subtitle text on phone preview
-(function(){
-  const tx=document.getElementById('subTx');
-  let dragging=false,startMX,startMY,startX,startY;
-  tx.addEventListener('mousedown',e=>{
-    e.preventDefault();e.stopPropagation();
-    dragging=true;startMX=e.clientX;startMY=e.clientY;
-    const s=subStyle();startX=s.x;startY=s.y;
-  });
-  document.addEventListener('mousemove',e=>{
-    if(!dragging)return;
-    const s=subStyle();
-    const phone=document.getElementById('phoneFrame');
-    const rect=phone.getBoundingClientRect();
-    const dx=(e.clientX-startMX)/rect.width*100;
-    const dy=(e.clientY-startMY)/rect.height*100;
-    s.x=Math.max(5,Math.min(95,startX+dx));
-    s.y=Math.max(5,Math.min(95,startY+dy));
-    applySubStyle();
-  });
-  document.addEventListener('mouseup',()=>{dragging=false});
-})()
+// Subtitle drag is now handled per-subtitle in initSubDrag()
 
 let cur=0,playing=false,gTime=0,playSpeed=1,_onTU=null,_playGen=0;
 let starts=[],total=0;
@@ -814,7 +937,7 @@ let clipMeta=[];
 let subTiming=[];
 let selectedSub=-1; // currently selected subtitle index
 
-function save(){hist.push({c:JSON.parse(JSON.stringify(CLIPS)),s:[...SUBS],m:JSON.parse(JSON.stringify(clipMeta)),ss:JSON.parse(JSON.stringify(clipSubStyles)),cr:JSON.parse(JSON.stringify(clipCrops)),zm:JSON.parse(JSON.stringify(clipZooms)),st:JSON.parse(JSON.stringify(subTiming))})}
+function save(){hist.push({c:JSON.parse(JSON.stringify(CLIPS)),s:JSON.parse(JSON.stringify(SUBS)),m:JSON.parse(JSON.stringify(clipMeta)),ss:JSON.parse(JSON.stringify(clipSubStyles)),cr:JSON.parse(JSON.stringify(clipCrops)),zm:JSON.parse(JSON.stringify(clipZooms)),st:JSON.parse(JSON.stringify(subTiming))})}
 function undo(){if(!hist.length)return;const h=hist.pop();CLIPS=h.c;SUBS=h.s;clipMeta=h.m;clipSubStyles=h.ss;clipCrops=h.cr;clipZooms=h.zm;if(h.st)subTiming=h.st;recalc();renderTL();sel(Math.min(cur,CLIPS.length-1))}
 
 function recalc(){
@@ -911,13 +1034,14 @@ function renderTL(){
     div.style.left=x+'px';div.style.width=w+'px';div.id='tc-'+i;
 
     const nm=c.source.split('/').pop().replace(/\.\w+$/,'');
-    const sub=SUBS[i]||'';
+    const clipSubs=getClipSubs(i);
+    const subText=clipSubs.map(s=>s.text).filter(Boolean).join(' / ');
     const spd=clipMeta[i]?.speed||1;
     div.innerHTML=`
       <div class="tl-trim left" data-i="${i}" data-side="left"></div>
       <div class="tl-clip-inner">
         <div class="tl-clip-name">${i+1}. ${nm}${spd!==1?' ('+spd+'x)':''}</div>
-        ${sub?`<div class="tl-clip-sub">${sub}</div>`:''}
+        ${subText?`<div class="tl-clip-sub">${subText}</div>`:''}
       </div>
       <div class="tl-clip-dur">${dur.toFixed(1)}s</div>
       <div class="tl-trim right" data-i="${i}" data-side="right"></div>
@@ -945,32 +1069,30 @@ function renderTL(){
     vt.appendChild(div);
   });
 
-  // Sub track (independent timing)
+  // Sub track (independent timing) — multi-subtitle
   const st=document.getElementById('subTrack');st.innerHTML='';
   CLIPS.forEach((c,i)=>{
-    const sub=SUBS[i];if(!sub)return;
+    const clipSubs=getClipSubs(i);
+    if(!clipSubs.length)return;
+    const subText=clipSubs.map(s=>s.text).filter(Boolean).join(' / ')||'(빈 자막)';
     const timing=subTiming[i]||{start:starts[i],end:starts[i]+clipDur(i)};
     const x=timing.start*pxPerSec;const w=Math.max((timing.end-timing.start)*pxPerSec,16);
     const d=document.createElement('div');d.className='tl-sub-clip';
     d.style.left=x+'px';d.style.width=w+'px';
-    d.innerHTML=`<span class="sub-trim left"></span><span style="pointer-events:none;overflow:hidden;text-overflow:ellipsis">${sub}</span><span class="sub-trim right"></span>`;
+    d.innerHTML=`<span class="sub-trim left"></span><span style="pointer-events:none;overflow:hidden;text-overflow:ellipsis">${subText}</span><span class="sub-trim right"></span>`;
     if(selectedSub===i)d.classList.add('sel');
-    // Click to select subtitle only (not clip)
     d.addEventListener('mousedown',(e)=>{
       e.stopPropagation();
     });
     d.addEventListener('click',(e)=>{
       if(e.target.classList.contains('sub-trim'))return;
       e.stopPropagation();
-      // Deselect clip focus
       cur=-1;
       document.querySelectorAll('.tl-clip').forEach(el=>el.classList.remove('active'));
       updateMediaBtn();
-      selectSub(i);
+      selectedSub=i;renderTL();
     });
-    // Drag to move
     initSubDrag(d,i);
-    // Trim handles
     initSubTrim(d.querySelector('.sub-trim.left'),i,'left');
     initSubTrim(d.querySelector('.sub-trim.right'),i,'right');
     st.appendChild(d);
@@ -1070,7 +1192,7 @@ function bladeCut(e,i){
   const origEnd=c.end;
   CLIPS[i].end=cutPoint;
   CLIPS.splice(i+1,0,{...newClip,end:origEnd});
-  SUBS.splice(i+1,0,SUBS[i]||'');
+  SUBS.splice(i+1,0,JSON.parse(JSON.stringify(getClipSubs(i))));
   clipMeta.splice(i+1,0,{...clipMeta[i]});
   clipSubStyles.splice(i+1,0,{...clipSubStyles[i]});
   clipCrops.splice(i+1,0,{...clipCrops[i]});
@@ -1195,8 +1317,155 @@ function updateDetail(){
   document.getElementById('dSpeedDur').textContent=`(${clipDur(cur).toFixed(1)}s 재생)`;
   document.getElementById('dTransition').value=m.transition;
   document.getElementById('dTransDur').value=m.transDur;
-  document.getElementById('subIn').value=SUBS[cur]||'';
+  // Multi-subtitle support
+  curSubIdx=0;
+  renderSubList();syncSubStylePanel();
+  // Update trim bar
+  setTimeout(updateTrimBar,50);
 }
+
+/* ─── Visual Trim Bar ─── */
+let _trimSrcDuration=0;
+let _trimDragging=null; // 'start'|'end'|'range'|'seek'|null
+
+function updateTrimBar(){
+  const c=CLIPS[cur];
+  if(!c)return;
+  const bar=document.getElementById('trimBar');
+  const range=document.getElementById('trimRange');
+  const phead=document.getElementById('trimPlayhead');
+  const durLabel=document.getElementById('trimSrcDur');
+  
+  // Get source video duration
+  const vid=document.getElementById('vid');
+  _trimSrcDuration=vid.duration||c.end+5;
+  
+  const pct=x=>((x/_trimSrcDuration)*100).toFixed(2)+'%';
+  range.style.left=pct(c.start);
+  range.style.width=pct(c.end-c.start);
+  
+  // Playhead
+  const ct=vid.currentTime||c.start;
+  phead.style.left=pct(ct);
+  
+  durLabel.textContent=formatTrimTime(_trimSrcDuration);
+}
+
+function formatTrimTime(s){
+  const m=Math.floor(s/60);
+  const sec=Math.floor(s%60);
+  return `${m}:${sec.toString().padStart(2,'0')}`;
+}
+
+(function initTrimBar(){
+  const bar=document.getElementById('trimBar');
+  if(!bar)return;
+  
+  function getTimeFromX(e){
+    const rect=bar.getBoundingClientRect();
+    const x=Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width));
+    return x*_trimSrcDuration;
+  }
+  
+  function hitTest(e){
+    const rect=bar.getBoundingClientRect();
+    const x=(e.clientX-rect.left)/rect.width;
+    const c=CLIPS[cur];
+    if(!c||!_trimSrcDuration)return'seek';
+    const startPct=c.start/_trimSrcDuration;
+    const endPct=c.end/_trimSrcDuration;
+    const threshold=8/rect.width; // 8px handle zone
+    if(Math.abs(x-startPct)<threshold)return'start';
+    if(Math.abs(x-endPct)<threshold)return'end';
+    if(x>startPct&&x<endPct)return'range';
+    return'seek';
+  }
+  
+  let dragOrigin=null;
+  
+  bar.addEventListener('mousedown',e=>{
+    e.preventDefault();
+    const type=hitTest(e);
+    _trimDragging=type;
+    const c=CLIPS[cur];
+    if(!c)return;
+    
+    if(type==='seek'){
+      // Click outside range: move playhead
+      const t=getTimeFromX(e);
+      document.getElementById('vid').currentTime=t;
+      updateTrimBar();
+      _trimDragging=null;
+      return;
+    }
+    
+    save();
+    dragOrigin={start:c.start,end:c.end,mouseT:getTimeFromX(e)};
+    
+    const onMove=ev=>{
+      const t=getTimeFromX(ev);
+      const dt=t-dragOrigin.mouseT;
+      
+      if(_trimDragging==='start'){
+        c.start=Math.max(0,Math.round((dragOrigin.start+dt)*10)/10);
+        if(c.start>=c.end-0.3)c.start=c.end-0.3;
+        document.getElementById('vid').currentTime=c.start;
+      }else if(_trimDragging==='end'){
+        c.end=Math.round((dragOrigin.end+dt)*10)/10;
+        if(c.end<=c.start+0.3)c.end=c.start+0.3;
+        if(c.end>_trimSrcDuration)c.end=Math.round(_trimSrcDuration*10)/10;
+        document.getElementById('vid').currentTime=c.end-0.5;
+      }else if(_trimDragging==='range'){
+        const dur=dragOrigin.end-dragOrigin.start;
+        let newStart=Math.round((dragOrigin.start+dt)*10)/10;
+        if(newStart<0)newStart=0;
+        if(newStart+dur>_trimSrcDuration)newStart=Math.round((_trimSrcDuration-dur)*10)/10;
+        c.start=newStart;
+        c.end=Math.round((newStart+dur)*10)/10;
+        document.getElementById('vid').currentTime=c.start;
+      }
+      
+      document.getElementById('dStart').value=c.start.toFixed(1);
+      document.getElementById('dEnd').value=c.end.toFixed(1);
+      recalc();renderTL();updateTrimBar();updateDetail();
+    };
+    
+    const onUp=()=>{
+      _trimDragging=null;
+      document.removeEventListener('mousemove',onMove);
+      document.removeEventListener('mouseup',onUp);
+    };
+    
+    document.addEventListener('mousemove',onMove);
+    document.addEventListener('mouseup',onUp);
+  });
+  
+  // Cursor style
+  bar.addEventListener('mousemove',e=>{
+    if(_trimDragging)return;
+    const type=hitTest(e);
+    bar.style.cursor=type==='start'||type==='end'?'ew-resize':type==='range'?'grab':'crosshair';
+  });
+})();
+
+// Update trim bar when video time updates
+(function(){
+  const vid=document.getElementById('vid');
+  if(vid){
+    vid.addEventListener('loadedmetadata',()=>updateTrimBar());
+    vid.addEventListener('timeupdate',()=>{
+      if(!_trimDragging){
+        const phead=document.getElementById('trimPlayhead');
+        if(phead&&_trimSrcDuration){
+          phead.style.left=((vid.currentTime/_trimSrcDuration)*100).toFixed(2)+'%';
+        }
+      }
+    });
+  }
+})();
+
+// Patch updateDetail to also update trim bar
+const _origUpdateDetail=typeof updateDetail==='function'?updateDetail:null;
 
 function onDetailChange(){save();
   CLIPS[cur].start=parseFloat(document.getElementById('dStart').value)||0;
@@ -1207,7 +1476,47 @@ function onDetailChange(){save();
 }
 function onSpeedChange(){save();clipMeta[cur].speed=parseFloat(document.getElementById('dSpeed').value);recalc();renderTL();updateDetail()}
 function onTransitionChange(){save();clipMeta[cur].transition=document.getElementById('dTransition').value;clipMeta[cur].transDur=parseFloat(document.getElementById('dTransDur').value)||0.3;renderTL()}
-function onSubEdit(v){SUBS[cur]=v;const ov=document.getElementById('subOv'),tx=document.getElementById('subTx');if(v&&subtitlesVisible){tx.textContent=v;ov.classList.remove('h')}else ov.classList.add('h');renderTL()}
+function onSubEdit(v){
+  const sub=getCurSub();
+  if(sub)sub.text=v;
+  applySubStyle();renderTL();
+}
+
+function addSubToClip(){
+  save();
+  if(!Array.isArray(SUBS[cur]))SUBS[cur]=[];
+  const newStyle={...subStyleDefault, y:80-getClipSubs(cur).length*12};
+  SUBS[cur].push({text:'',style:newStyle});
+  curSubIdx=SUBS[cur].length-1;
+  renderSubList();syncSubStylePanel();applySubStyle();
+  document.getElementById('subIn').focus();
+}
+
+function removeSubFromClip(idx){
+  save();
+  const subs=getClipSubs(cur);
+  if(idx>=0&&idx<subs.length)subs.splice(idx,1);
+  if(curSubIdx>=subs.length)curSubIdx=Math.max(0,subs.length-1);
+  renderSubList();syncSubStylePanel();applySubStyle();renderTL();
+}
+
+function renderSubList(){
+  const list=document.getElementById('subList');
+  const subs=getClipSubs(cur);
+  if(!subs.length){
+    list.innerHTML='<div style="font-size:10px;color:#555;padding:4px 0">자막 없음 — ＋ 추가를 클릭하세요</div>';
+    document.getElementById('subEditPanel').style.display='none';
+    return;
+  }
+  list.innerHTML=subs.map((s,i)=>`
+    <div class="d-row" style="padding:3px 4px;border-radius:4px;cursor:pointer;${i===curSubIdx?'background:#1a2a1a;border:1px solid #4ade8033':'border:1px solid transparent'}" onclick="selectSub(${i})">
+      <span style="color:#4ade80;font-size:9px;min-width:16px">#${i+1}</span>
+      <span style="flex:1;font-size:10px;color:${s.text?'#ddd':'#555'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.text||'(빈 자막)'}</span>
+      <button class="btn" onclick="event.stopPropagation();removeSubFromClip(${i})" style="font-size:9px;color:#f87171;padding:1px 4px" title="삭제">✕</button>
+    </div>
+  `).join('');
+  document.getElementById('subEditPanel').style.display='block';
+}
 
 function delCur(){if(CLIPS.length<=1)return;save();CLIPS.splice(cur,1);SUBS.splice(cur,1);clipMeta.splice(cur,1);clipSubStyles.splice(cur,1);clipCrops.splice(cur,1);clipZooms.splice(cur,1);subTiming.splice(cur,1);recalc();renderTL();sel(Math.min(cur,CLIPS.length-1))}
 
@@ -1387,7 +1696,7 @@ function insertFromMark(){
       const eOff=(Math.min(markOutT,end)-starts[i])*(clipMeta[i]?.speed||1);
       save();
       CLIPS.push({source:c.source,source_idx:c.source_idx,start:c.start+sOff,end:c.start+eOff,score:0});
-      SUBS.push('');clipMeta.push({speed:1,transition:'none',transDur:0.3});
+      SUBS.push([]);clipMeta.push({speed:1,transition:'none',transDur:0.3});
       recalc();renderTL();sel(CLIPS.length-1);
       return;
     }
@@ -1416,8 +1725,8 @@ function zoomFit(){
 }
 
 /* ─── Export ─── */
-function exportSrt(){let s='',n=1;CLIPS.forEach((c,i)=>{const sub=SUBS[i];if(!sub)return;const t=subTiming[i]||{start:starts[i],end:starts[i]+clipDur(i)};s+=`${n}\n${srtT(t.start)} --> ${srtT(t.end)}\n${sub}\n\n`;n++});copy(s,'SRT 복사됨!')}
-function exportJson(){copy(JSON.stringify({clips:CLIPS.map((c,i)=>({...c,subtitle:SUBS[i]||'',subStyle:clipSubStyles[i],crop:clipCrops[i],zoom:clipZooms[i],speed:clipMeta[i].speed,transition:clipMeta[i].transition}))},null,2),'JSON 복사됨!')}
+function exportSrt(){let s='',n=1;CLIPS.forEach((c,i)=>{const clipSubs=getClipSubs(i);if(!clipSubs.length)return;const t=subTiming[i]||{start:starts[i],end:starts[i]+clipDur(i)};const text=clipSubs.map(sub=>sub.text).filter(Boolean).join('\n');if(!text)return;s+=`${n}\n${srtT(t.start)} --> ${srtT(t.end)}\n${text}\n\n`;n++});copy(s,'SRT 복사됨!')}
+function exportJson(){copy(JSON.stringify({clips:CLIPS.map((c,i)=>({...c,subtitles:getClipSubs(i),subStyle:clipSubStyles[i],crop:clipCrops[i],zoom:clipZooms[i],speed:clipMeta[i].speed,transition:clipMeta[i].transition}))},null,2),'JSON 복사됨!')}
 function getMaxSourceFps(){
   const fpsVals=Object.values(srcFps);
   return fpsVals.length?Math.max(...fpsVals):30;
@@ -1437,7 +1746,7 @@ function renderVideo(){
     if(maxDur>0&&accumulated>=maxDur)break;
     
     let clipData={
-      ...c,subtitle:SUBS[i]||'',subStyle:clipSubStyles[i],
+      ...c,subtitles:getClipSubs(i),subStyle:clipSubStyles[i],
       crop:clipCrops[i],zoom:clipZooms[i],
       speed:spd,transition:clipMeta[i].transition
     };
@@ -1660,11 +1969,12 @@ function exportCmd(){
   let srt='',n=1;
   let hasSubs=false;
   CLIPS.forEach((c,i)=>{
-    const sub=SUBS[i];if(!sub)return;
+    const clipSubs=getClipSubs(i);if(!clipSubs.length)return;
+    const text=clipSubs.map(s=>s.text).filter(Boolean).join('\n');if(!text)return;
     hasSubs=true;
     const st=starts[i],en=st+clipDur(i);
     const ss=clipSubStyles[i]||{size:16,x:50,y:80};
-    srt+=`${n}\n${srtT(st)} --> ${srtT(en)}\n${sub}\n\n`;
+    srt+=`${n}\n${srtT(st)} --> ${srtT(en)}\n${text}\n\n`;
     n++;
   });
 
@@ -1851,7 +2161,8 @@ function loadProject(pid){
     currentProjectName=data.name||'';
     CLIPS=data.clips||[];
     SUBS=data.subs||[];
-    while(SUBS.length<CLIPS.length)SUBS.push('');
+    while(SUBS.length<CLIPS.length)SUBS.push([]);
+    normSubs();
     // Restore per-clip metadata
     clipMeta=(data.clipMeta||[]).length===CLIPS.length?data.clipMeta:CLIPS.map(()=>({speed:1,transition:'none',transDur:0.3}));
     clipSubStyles=(data.clipSubStyles||[]).length===CLIPS.length?data.clipSubStyles:CLIPS.map(()=>({...subStyleDefault}));
@@ -2141,7 +2452,8 @@ function closeAnalyzeDialog(){
 function loadAnalyzeResult(result){
   CLIPS=result.clips||[];
   SUBS=result.subs||[];
-  while(SUBS.length<CLIPS.length)SUBS.push('');
+  while(SUBS.length<CLIPS.length)SUBS.push([]);
+  normSubs();
   // Set project name from input
   currentProjectName=document.getElementById('projName').value||'새 프로젝트 '+new Date().toLocaleDateString('ko');
   currentProjectId='proj_'+Date.now();
@@ -2186,17 +2498,51 @@ function initEditorState(){
 /* ─── Subtitle time lookup ─── */
 function getSubAtTime(t){
   for(let i=0;i<SUBS.length;i++){
-    if(!SUBS[i])continue;
+    const clipSubs=getClipSubs(i);
+    if(!clipSubs.length)continue;
     const st=subTiming[i];
-    if(st&&t>=st.start&&t<st.end)return{text:SUBS[i],idx:i};
+    if(st&&t>=st.start&&t<st.end){
+      const text=clipSubs.map(s=>s.text).filter(Boolean).join('\n');
+      return{text,idx:i,subs:clipSubs};
+    }
   }
   return null;
 }
 function showSubAtTime(t){
-  const ov=document.getElementById('subOv'),tx=document.getElementById('subTx');
+  const ov=document.getElementById('subOv');
   if(!subtitlesVisible){ov.classList.add('h');return}
-  const found=getSubAtTime(t);
-  if(found){tx.textContent=found.text;ov.classList.remove('h')}else{ov.classList.add('h')}
+  // Find which clip this time falls into
+  let clipIdx=-1;
+  for(let i=0;i<CLIPS.length;i++){
+    const timing=subTiming[i]||{start:starts[i],end:starts[i]+clipDur(i)};
+    if(t>=timing.start&&t<=timing.end){clipIdx=i;break}
+  }
+  if(clipIdx<0){ov.classList.add('h');ov.innerHTML='';return}
+  const clipSubs=getClipSubs(clipIdx);
+  if(!clipSubs.length){ov.classList.add('h');ov.innerHTML='';return}
+  ov.classList.remove('h');ov.innerHTML='';
+  clipSubs.forEach(sub=>{
+    if(!sub.text)return;
+    const st=sub.style||clipSubStyles[clipIdx]||subStyleDefault;
+    const span=document.createElement('span');
+    span.className='sub-tx';
+    span.textContent=sub.text;
+    span.style.fontSize=(st.size||16)+'px';
+    span.style.left=(st.x||50)+'%';
+    span.style.top=(st.y||80)+'%';
+    span.style.transform='translate(-50%,-50%)';
+    span.style.fontFamily=st.font||"'Apple SD Gothic Neo',sans-serif";
+    span.style.color=st.color||'#ffffff';
+    if(st.bg!==false){
+      const bgC=st.bgColor||'#000000';
+      const bgA=st.bgAlpha!=null?st.bgAlpha:0.6;
+      const r=parseInt(bgC.slice(1,3),16),g=parseInt(bgC.slice(3,5),16),b=parseInt(bgC.slice(5,7),16);
+      span.style.background=`rgba(${r},${g},${b},${bgA})`;
+    }else{
+      span.style.background='transparent';
+    }
+    ov.appendChild(span);
+  });
 }
 
 /* ─── Subtitle drag & trim ─── */
@@ -2271,8 +2617,8 @@ function initSubTrim(handle,i,side){
   });
 }
 
-/* ─── Subtitle selection ─── */
-function selectSub(i){
+/* ─── Timeline Subtitle selection ─── */
+function selectTimelineSub(i){
   selectedSub=i;
   document.querySelectorAll('.tl-sub-clip').forEach((el,j)=>el.classList.toggle('sel',j===i));
   // Move playhead without selecting clip
@@ -2291,7 +2637,7 @@ function deselectSub(){
 function deleteSelectedSub(){
   if(selectedSub<0||selectedSub>=SUBS.length)return;
   save();
-  SUBS[selectedSub]='';
+  SUBS[selectedSub]=[];
   subTiming[selectedSub]={start:0,end:0,_manual:false};
   deselectSub();
   recalc();renderTL();
@@ -2322,7 +2668,7 @@ function toggleSubtitleDisplay(){
   if(subTrack)subTrack.style.display=subtitlesVisible?'':'none';
   // Refresh current subtitle display
   if(subtitlesVisible){
-    showSubAtTime(gTime);
+    applySubStyle();
   } else {
     document.getElementById('subOv').classList.add('h');
   }
@@ -2364,7 +2710,7 @@ function addUploadedAsNewClips(uploaded){
   save();
   uploaded.forEach(v=>{
     CLIPS.push({source:v.name,source_idx:0,start:0,end:v.duration,score:0});
-    SUBS.push('');clipMeta.push({speed:1,transition:'none',transDur:0.3});
+    SUBS.push([]);clipMeta.push({speed:1,transition:'none',transDur:0.3});
     clipSubStyles.push({...subStyleDefault});clipCrops.push({x:0,y:0,w:100,h:100});clipZooms.push({scale:1,panX:0,panY:0});
     subTiming.push({start:0,end:0}); // will be recalculated by recalc()
   });
@@ -2490,6 +2836,50 @@ if(CLIPS.length){
   initEditorState();
   document.getElementById('srcOverlay').classList.add('hidden');
 }
+
+/* ─── PostMessage API for parent frame (BrxceStudio) ─── */
+window.addEventListener('message', function(e) {
+  if (!e.data || e.data.type !== 'brxce-load-preset') return;
+  const preset = e.data.project;
+  if (!preset) return;
+  
+  currentProjectId = preset.id || ('preset_' + Date.now());
+  currentProjectName = preset.name || '프리셋 프로젝트';
+  CLIPS = (preset.clips || []).map(c => ({
+    source: c.source || '',
+    start: c.start || 0,
+    end: c.end || 5,
+    source_idx: c.source_idx || 0
+  }));
+  SUBS = (preset.clips || []).map(c => {
+    if (c.subtitle) return [{text: c.subtitle, style: {...subStyleDefault}}];
+    if (c.subtitles && Array.isArray(c.subtitles)) return c.subtitles;
+    return [];
+  });
+  clipMeta = CLIPS.map(c => ({
+    speed: c.speed || (preset.clips && preset.clips[CLIPS.indexOf(c)]?.speed) || 1,
+    transition: 'none',
+    transDur: 0.3
+  }));
+  // Re-read speed from preset clips
+  (preset.clips || []).forEach((c, i) => {
+    if (c.speed && clipMeta[i]) clipMeta[i].speed = c.speed;
+  });
+  clipSubStyles = CLIPS.map(() => ({...subStyleDefault}));
+  clipCrops = CLIPS.map(() => ({x:0, y:0, w:100, h:100}));
+  clipZooms = (preset.clips || []).map(c => c.zoom || {scale:1, panX:0, panY:0});
+  subTiming = [];
+  hist = []; cur = 0;
+  
+  recalc(); renderTL();
+  if (CLIPS.length) sel(0);
+  applySubStyle(); refreshPresetList();
+  document.getElementById('srcOverlay').classList.add('hidden');
+  document.title = currentProjectName + ' — Editor';
+  
+  // Notify parent that preset was loaded
+  window.parent.postMessage({type: 'brxce-preset-loaded', id: currentProjectId}, '*');
+});
 </script>
 </body>
 </html>

@@ -11,3 +11,4 @@ out
 engine/node_modules
 test-results/
 __pycache__
+apps/studio/public/video-editor/_thumbs/

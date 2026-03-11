@@ -73,6 +73,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.handle_project_delete()
         elif self.path == "/api/upload":
             self.handle_upload()
+        elif self.path == "/api/upload-external":
+            self.handle_upload_external()
         else:
             self.send_error(404)
 
@@ -89,6 +91,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.handle_download()
         elif self.path == "/api/list-videos":
             self.handle_list_videos()
+        elif self.path.startswith("/api/thumbnail/"):
+            self.handle_thumbnail()
         elif self.path == "/api/projects":
             self.handle_project_list()
         elif self.path.startswith("/api/projects/load/"):
@@ -305,6 +309,71 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                     "fps": fps
                 })
         self.send_json({"videos": videos})
+
+    def handle_thumbnail(self):
+        """Generate and serve a thumbnail for a video file."""
+        import urllib.parse
+        name = urllib.parse.unquote(self.path.split("/api/thumbnail/", 1)[1])
+        video_path = BASE / name
+        if not video_path.exists():
+            self.send_error(404, "Video not found")
+            return
+        
+        # Cache thumbnails in _thumbs/
+        thumb_dir = BASE / "_thumbs"
+        thumb_dir.mkdir(exist_ok=True)
+        thumb_path = thumb_dir / f"{video_path.stem}.jpg"
+        
+        if not thumb_path.exists():
+            try:
+                subprocess.run([
+                    "ffmpeg", "-y", "-i", str(video_path),
+                    "-ss", "0.5", "-vframes", "1",
+                    "-vf", "scale=160:-2",
+                    "-q:v", "8",
+                    str(thumb_path)
+                ], capture_output=True, timeout=10)
+            except Exception:
+                self.send_error(500, "Thumbnail generation failed")
+                return
+        
+        if not thumb_path.exists():
+            self.send_error(500, "Thumbnail not generated")
+            return
+        
+        data = thumb_path.read_bytes()
+        self.send_response(200)
+        self.send_header("Content-Type", "image/jpeg")
+        self.send_header("Content-Length", len(data))
+        self.send_header("Cache-Control", "public, max-age=86400")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+        self.wfile.write(data)
+
+    def handle_upload_external(self):
+        """Symlink an external video file into the editor directory."""
+        length = int(self.headers.get("Content-Length", 0))
+        body = json.loads(self.rfile.read(length)) if length else {}
+        src_path = Path(body.get("path", "")).expanduser()
+        
+        if not src_path.exists():
+            self.send_json({"error": f"File not found: {src_path}"})
+            return
+        
+        dest = BASE / src_path.name
+        if not dest.exists():
+            dest.symlink_to(src_path)
+        
+        dur = get_video_duration(str(dest))
+        fps = get_video_fps(str(dest))
+        size_mb = dest.stat().st_size / 1024 / 1024
+        
+        self.send_json({
+            "name": dest.name,
+            "duration": round(dur, 1),
+            "size": round(size_mb, 1),
+            "fps": fps
+        })
 
     def handle_analyze(self):
         length = int(self.headers.get("Content-Length", 0))
