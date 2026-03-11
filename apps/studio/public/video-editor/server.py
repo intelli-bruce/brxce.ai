@@ -1011,10 +1011,7 @@ def run_render(data):
         output = BASE / f"edited_output{suffix}.mp4"
 
         if subs:
-            # Measured: CSS AppleSD 23px → 50px text (11.6% of 432px)
-            # ffmpeg drawtext AppleSD fontsize=65 → 126px (11.7% of 1080px)
-            # Scale = 65/23 = 2.826
-            SCALE = 2.83  # CSS→ffmpeg drawtext measured scale
+            SCALE = 2.5  # resolution ratio 432→1080
 
             # Split subs: emoji → PNG overlay, text-only → drawtext
             emoji_subs = []
@@ -1036,9 +1033,8 @@ def run_render(data):
                 text_color = ss.get("color", "#ffffff")
                 show_stroke = ss.get("stroke", False)
                 stroke_color = ss.get("strokeColor", "#000000") if show_stroke else None
-                # CSS -webkit-text-stroke is total width (both sides); ffmpeg borderw is per-side
-                # CSS 5px → 2.5px per side → scale with resolution ratio (2.5)
-                stroke_width = int(ss.get("strokeWidth", 2) / 2 * 2.5) if show_stroke else 0
+                # CSS -webkit-text-stroke: total width; ffmpeg borderw: per-side
+                stroke_width = int(ss.get("strokeWidth", 2) / 2 * SCALE) if show_stroke else 0
                 show_bg = ss.get("bg", True)
                 bg_color = ss.get("bgColor", "#000000") if show_bg else None
                 bg_alpha = ss.get("bgAlpha", 0.6) if show_bg else 0
@@ -1054,13 +1050,12 @@ def run_render(data):
 
                 # Background: render as rounded-corner PNG
                 if show_bg and bg_color:
-                    RES_SCALE = 2.5  # pure resolution ratio 432→1080
-                    pad_h = int(12 * RES_SCALE)  # 30px
-                    pad_v = int(4 * RES_SCALE)   # 10px
-                    radius = int(6 * RES_SCALE)  # 15px
+                    pad_h = int(12 * SCALE)  # 30px
+                    pad_v = int(4 * SCALE)   # 10px
+                    radius = int(6 * SCALE)  # 15px
                     if show_stroke:
-                        pad_h = max(pad_h, stroke_width + int(4 * RES_SCALE))
-                        pad_v = max(pad_v, stroke_width + int(2 * RES_SCALE))
+                        pad_h = max(pad_h, stroke_width + int(4 * SCALE))
+                        pad_v = max(pad_v, stroke_width + int(2 * SCALE))
                     # Measure text size with this font
                     from PIL import ImageFont, Image, ImageDraw
                     try:
