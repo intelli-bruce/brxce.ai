@@ -1268,11 +1268,11 @@ def render_subtitle_image(text, font_size, out_path, frame_w=1080, frame_h=1920,
     tw = bbox[2] - bbox[0]
     th = bbox[3] - bbox[1]
     
-    # All scales: phone 432px → 1080px = 2.5x
-    PX_SCALE = 2.5
-    pad_h = int(12 * PX_SCALE)   # ~30px
-    pad_v = int(4 * PX_SCALE)    # ~10px
-    radius = int(6 * PX_SCALE)   # ~15px
+    # Padding proportional to font size (matches CSS padding: 4px 12px at any font size)
+    # CSS: pad_h=12px at font_size ~16-40px → ratio ~0.5x font_size
+    pad_h = max(int(font_size * 0.35), 8)
+    pad_v = max(int(font_size * 0.15), 4)
+    radius = max(int(font_size * 0.2), 6)
     
     img_w = tw + pad_h * 2
     img_h = th + pad_v * 2
@@ -1296,7 +1296,7 @@ def render_subtitle_image(text, font_size, out_path, frame_w=1080, frame_h=1920,
     # Stroke (outline)
     show_stroke = style.get("stroke", False)
     stroke_color = hex_to_rgba(style.get("strokeColor", "#000000")) if show_stroke else None
-    stroke_width = int(style.get("strokeWidth", 2) * PX_SCALE) if show_stroke else 0
+    stroke_width = int(style.get("strokeWidth", 2) * font_size / 16) if show_stroke else 0
     
     if has_emoji and HAS_PILMOJI:
         # Use pilmoji for proper color emoji rendering
