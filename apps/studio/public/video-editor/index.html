@@ -1652,7 +1652,7 @@ function seekToGlobal(t){
       break;
     }
   }
-  updatePlayhead();updateTC();
+  updatePlayhead();updateTC();showSubAtTime(gTime);
 }
 
 function playC(i,offsetSec){
@@ -1714,7 +1714,7 @@ function playC(i,offsetSec){
       return;
     }
     gTime=starts[i]+(vid.currentTime-c.start)/spd;
-    updatePlayhead();updateTC();
+    updatePlayhead();updateTC();showSubAtTime(gTime);
   };
   vid.addEventListener('timeupdate',_onTU);
 }
