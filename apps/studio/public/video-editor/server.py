@@ -1036,32 +1036,39 @@ def run_render(data):
                 bg_color = ss.get("bgColor", "#000000") if show_bg else None
                 bg_alpha = ss.get("bgAlpha", 0.6) if show_bg else 0
 
-                # Find font path
                 font_family = ss.get("font", "")
                 font_path = resolve_font_path(font_family, text)
                 escaped_text = text.replace("'", "'\\''").replace(":", "\\:").replace("%", "%%")
 
-                # Position: x centers text, y positions
                 x_expr = f"(w-text_w)/2+({sx}-50)*w/100"
                 y_expr = f"h*{sy/100:.4f}-text_h/2"
+                enable = f"enable='between(t,{st:.3f},{en:.3f})'"
+                base = f"fontfile='{font_path}':text='{escaped_text}':fontsize={font_size}:x={x_expr}:y={y_expr}"
 
-                dt = f"drawtext=fontfile='{font_path}':text='{escaped_text}'"
-                dt += f":fontsize={font_size}:fontcolor={text_color}"
-                dt += f":x={x_expr}:y={y_expr}"
-
+                # Multi-pass: 1) background box  2) stroke  3) fill text
+                # This ensures box covers stroke, and text is centered in box
                 if show_bg and bg_color:
-                    r_bg = int(bg_color[1:3], 16)
-                    g_bg = int(bg_color[3:5], 16)
-                    b_bg = int(bg_color[5:7], 16)
-                    box_pad = int(4 * SCALE)
-                    dt += f":box=1:boxcolor=0x{bg_color[1:]}@{bg_alpha:.2f}:boxborderw={box_pad}"
+                    box_pad = int(12 * SCALE)  # horizontal-like padding
+                    if show_stroke:
+                        box_pad = max(box_pad, stroke_width + int(4 * SCALE))
+                    # Pass 1: background box (invisible text, just the box)
+                    dt_bg = f"drawtext={base}:fontcolor=0x000000@0.0"
+                    dt_bg += f":box=1:boxcolor=0x{bg_color[1:]}@{bg_alpha:.2f}:boxborderw={box_pad}"
+                    dt_bg += f":{enable}"
+                    drawtext_filters.append(dt_bg)
 
                 if show_stroke and stroke_width > 0:
-                    dt += f":borderw={stroke_width}:bordercolor={stroke_color}"
+                    # Pass 2: stroke only (thick border, same color as stroke)
+                    dt_stroke = f"drawtext={base}:fontcolor={stroke_color}"
+                    dt_stroke += f":borderw={stroke_width}:bordercolor={stroke_color}"
+                    dt_stroke += f":{enable}"
+                    drawtext_filters.append(dt_stroke)
 
-                dt += f":enable='between(t,{st:.3f},{en:.3f})'"
-                drawtext_filters.append(dt)
-                print(f"[Sub {idx}] drawtext: {text[:20]}, size={font_size}, pos=({sx},{sy})")
+                # Pass 3: fill text (clean, on top)
+                dt_fill = f"drawtext={base}:fontcolor={text_color}:{enable}"
+                drawtext_filters.append(dt_fill)
+
+                print(f"[Sub {idx}] drawtext ({3 if show_stroke else (2 if show_bg else 1)} pass): {text[:20]}, size={font_size}")
 
             # --- Build PNG overlay for emoji subs ---
             overlay_inputs = []
