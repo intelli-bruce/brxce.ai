@@ -2953,16 +2953,28 @@ window.addEventListener('message', function(e) {
     end: c.end || 5,
     source_idx: c.source_idx || 0
   }));
-  // Build global subs from preset clips
+  // Build global subs: prefer globalSubs array, fallback to per-clip subtitle
   SUBS = [];
-  let _presetOffset = 0;
-  (preset.clips || []).forEach(c => {
-    const dur = (c.end || 5) - (c.start || 0);
-    if (c.subtitle) {
-      SUBS.push({id: nextSubId(), text: c.subtitle, style: {...subStyleDefault}, start: _presetOffset, end: _presetOffset + dur});
-    }
-    _presetOffset += dur;
-  });
+  if (preset.globalSubs && Array.isArray(preset.globalSubs) && preset.globalSubs.length) {
+    preset.globalSubs.forEach(gs => {
+      SUBS.push({
+        id: nextSubId(),
+        text: gs.text || '',
+        style: gs.style ? {...subStyleDefault, ...gs.style} : {...subStyleDefault},
+        start: gs.start || 0,
+        end: gs.end || 3
+      });
+    });
+  } else {
+    let _presetOffset = 0;
+    (preset.clips || []).forEach(c => {
+      const dur = (c.end || 5) - (c.start || 0);
+      if (c.subtitle) {
+        SUBS.push({id: nextSubId(), text: c.subtitle, style: {...subStyleDefault}, start: _presetOffset, end: _presetOffset + dur});
+      }
+      _presetOffset += dur;
+    });
+  }
   clipMeta = CLIPS.map(c => ({
     speed: c.speed || (preset.clips && preset.clips[CLIPS.indexOf(c)]?.speed) || 1,
     transition: 'none',
