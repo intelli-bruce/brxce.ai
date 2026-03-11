@@ -1011,43 +1011,99 @@ def run_render(data):
         output = BASE / f"edited_output{suffix}.mp4"
 
         if subs:
-            # Render each subtitle as a PNG image, then overlay with enable timing
-            sub_pngs = []
-            overlay_inputs = []
-            overlay_filters = []
+            SCALE = 2.5  # phone 432px → 1080px
 
+            # Split subs: emoji → PNG overlay, text-only → drawtext
+            emoji_subs = []
+            text_subs = []
             for idx, (st, en, text, ss) in enumerate(subs):
-                SCALE = 2.5  # phone 432px → 1080px render (pure resolution ratio)
+                if EMOJI_RE.search(text):
+                    emoji_subs.append((idx, st, en, text, ss))
+                else:
+                    text_subs.append((idx, st, en, text, ss))
+
+            # --- Build drawtext filters for text-only subs ---
+            drawtext_filters = []
+            for idx, st, en, text, ss in text_subs:
                 font_size = int(ss.get("size", 16) * SCALE)
                 sx = ss.get("x", 50)
                 sy = ss.get("y", 80)
+                text_color = ss.get("color", "#ffffff")
+                show_stroke = ss.get("stroke", False)
+                stroke_color = ss.get("strokeColor", "#000000") if show_stroke else None
+                stroke_width = int(ss.get("strokeWidth", 2) * SCALE) if show_stroke else 0
+                show_bg = ss.get("bg", True)
+                bg_color = ss.get("bgColor", "#000000") if show_bg else None
+                bg_alpha = ss.get("bgAlpha", 0.6) if show_bg else 0
 
+                # Find font path
+                font_family = ss.get("font", "")
+                font_path = resolve_font_path(font_family, text)
+                escaped_text = text.replace("'", "'\\''").replace(":", "\\:").replace("%", "%%")
+
+                # Position: x centers text, y positions
+                x_expr = f"(w-text_w)/2+({sx}-50)*w/100"
+                y_expr = f"h*{sy/100:.4f}-text_h/2"
+
+                dt = f"drawtext=fontfile='{font_path}':text='{escaped_text}'"
+                dt += f":fontsize={font_size}:fontcolor={text_color}"
+                dt += f":x={x_expr}:y={y_expr}"
+
+                if show_bg and bg_color:
+                    r_bg = int(bg_color[1:3], 16)
+                    g_bg = int(bg_color[3:5], 16)
+                    b_bg = int(bg_color[5:7], 16)
+                    box_pad = int(4 * SCALE)
+                    dt += f":box=1:boxcolor=0x{bg_color[1:]}@{bg_alpha:.2f}:boxborderw={box_pad}"
+
+                if show_stroke and stroke_width > 0:
+                    dt += f":borderw={stroke_width}:bordercolor={stroke_color}"
+
+                dt += f":enable='between(t,{st:.3f},{en:.3f})'"
+                drawtext_filters.append(dt)
+                print(f"[Sub {idx}] drawtext: {text[:20]}, size={font_size}, pos=({sx},{sy})")
+
+            # --- Build PNG overlay for emoji subs ---
+            overlay_inputs = []
+            overlay_filters = []
+            for eidx, (idx, st, en, text, ss) in enumerate(emoji_subs):
+                font_size = int(ss.get("size", 16) * SCALE)
+                sx = ss.get("x", 50)
+                sy = ss.get("y", 80)
                 png_path = tmp_dir / f"sub_{idx:03d}.png"
-                print(f"[Sub {idx}] text={text}, stroke={ss.get('stroke')}, strokeColor={ss.get('strokeColor')}, strokeWidth={ss.get('strokeWidth')}")
                 img_w, img_h = render_subtitle_image(text, font_size, str(png_path), W, H, style=ss)
-                sub_pngs.append(png_path)
-
-                # Position: center the PNG at (sx%, sy%) of frame
                 ox = int(sx / 100 * W - img_w / 2)
                 oy = int(sy / 100 * H - img_h / 2)
                 ox = max(0, min(W - img_w, ox))
                 oy = max(0, min(H - img_h, oy))
-
                 overlay_inputs.extend(["-i", str(png_path)])
-
-                # Build overlay chain
-                if idx == 0:
-                    prev = "0:v"
-                else:
-                    prev = f"v{idx}"
-                out_label = f"v{idx+1}"
-
+                inp_idx = eidx + 1  # 0 is main video
+                prev = "0:v" if eidx == 0 else f"ev{eidx}"
+                out_label = f"ev{eidx+1}"
                 overlay_filters.append(
-                    f"[{prev}][{idx+1}:v]overlay={ox}:{oy}:enable='between(t,{st:.3f},{en:.3f})'[{out_label}]"
+                    f"[{prev}][{inp_idx}:v]overlay={ox}:{oy}:enable='between(t,{st:.3f},{en:.3f})'[{out_label}]"
                 )
+                print(f"[Sub {idx}] PNG overlay (emoji): {text[:20]}, size={font_size}")
 
-            fc = ";".join(overlay_filters)
-            final_label = f"v{len(subs)}"
+            # Combine filters
+            all_filters = []
+            if overlay_filters and drawtext_filters:
+                # PNG overlays first, then drawtext
+                all_filters = overlay_filters.copy()
+                last_overlay = f"ev{len(emoji_subs)}"
+                # Apply drawtext to the last overlay output
+                dt_chain = ",".join(drawtext_filters)
+                all_filters.append(f"[{last_overlay}]{dt_chain}[final]")
+                final_label = "final"
+            elif overlay_filters:
+                all_filters = overlay_filters
+                final_label = f"ev{len(emoji_subs)}"
+            elif drawtext_filters:
+                dt_chain = ",".join(drawtext_filters)
+                all_filters = [f"[0:v]{dt_chain}[final]"]
+                final_label = "final"
+
+            fc = ";".join(all_filters)
 
             cmd = [
                 "ffmpeg", "-y", "-i", str(merged),
@@ -1057,7 +1113,7 @@ def run_render(data):
                 "-c:v", "libx264", "-preset", "fast", "-crf", "18",
                 str(output)
             ]
-            print(f"[Render] PNG overlay subs: {len(subs)} entries")
+            print(f"[Render] Subs: {len(text_subs)} drawtext + {len(emoji_subs)} PNG overlay")
             r = subprocess.run(cmd, capture_output=True, text=True)
             if r.returncode != 0:
                 raise RuntimeError(f"Subtitle burn failed: {r.stderr[-500:]}")
@@ -1075,6 +1131,62 @@ def run_render(data):
     finally:
         # Cleanup tmp
         shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+def resolve_font_path(font_family, text=""):
+    """Resolve CSS font-family string to actual font file path."""
+    HOME = Path.home()
+    UFONTS = HOME / "Library" / "Fonts"
+    has_cjk = bool(re.search(r'[\uAC00-\uD7AF\u3130-\u318F\u4E00-\u9FFF]', text))
+    
+    FONT_MAP_RESOLVE = {
+        "Apple SD":     ["/System/Library/Fonts/AppleSDGothicNeo.ttc"],
+        "Noto Sans KR": [str(UFONTS / "NotoSansKR-Bold.ttf"), str(UFONTS / "NotoSansKR-Medium.ttf")],
+        "Binggrae":     [str(UFONTS / "Binggrae.otf")],
+        "Samanco":      [str(UFONTS / "BinggraeSamanco.otf")],
+        "ONE Mobile":   [str(UFONTS / "ONE Mobile OTF Bold.otf")],
+        "HDharmony":    [str(UFONTS / "현대하모니+B.ttf"), str(UFONTS / "현대하모니+M.ttf")],
+        "Myungjo":      ["/System/Library/Fonts/AppleMyungjo.ttc"],
+        "Gowun Batang": [str(UFONTS / "GowunBatang-Bold.ttf")],
+        "Batang":       ["/System/Library/Fonts/Supplemental/Batang.ttc"],
+        "HSYuji":       [str(UFONTS / "HS유지체.otf")],
+        "Gotgam":       [str(UFONTS / "SANGJU Gotgam.otf")],
+        "Dajungdagam":  [str(UFONTS / "SANGJU Dajungdagam.otf")],
+        "Gyeongcheon":  [str(UFONTS / "SANGJU Gyeongcheon Island.otf")],
+        "Recipekorea":  [str(UFONTS / "Recipekorea 饭内眉 FONT.otf")],
+        "MBC 1961":     [str(UFONTS / "MBC 1961 OTF M.otf")],
+        "Impact":       ["/System/Library/Fonts/Supplemental/Impact.ttf"],
+        "Courier":      ["/System/Library/Fonts/Courier.ttc"],
+        "Georgia":      ["/System/Library/Fonts/Supplemental/Georgia.ttf"],
+        "Arial":        ["/System/Library/Fonts/Supplemental/Arial.ttf"],
+    }
+    NO_CJK = {"Impact", "Courier", "Georgia", "Arial"}
+    match_map = [
+        ("Samanco", "Samanco"), ("Binggrae", "Binggrae"),
+        ("ONE Mobile", "ONE Mobile"), ("HDharmony", "HDharmony"), ("현대하모니", "HDharmony"),
+        ("Gowun Batang", "Gowun Batang"), ("고운바탕", "Gowun Batang"),
+        ("Batang", "Batang"), ("바탕", "Batang"),
+        ("Myungjo", "Myungjo"), ("명조", "Myungjo"),
+        ("HSYuji", "HSYuji"), ("유지", "HSYuji"),
+        ("Gotgam", "Gotgam"), ("곶감", "Gotgam"),
+        ("Dajungdagam", "Dajungdagam"), ("다정다감", "Dajungdagam"),
+        ("Gyeongcheon", "Gyeongcheon"), ("경천섬", "Gyeongcheon"),
+        ("Recipekorea", "Recipekorea"), ("레시피", "Recipekorea"),
+        ("MBC", "MBC 1961"),
+        ("Noto Sans KR", "Noto Sans KR"), ("Noto", "Noto Sans KR"),
+        ("Impact", "Impact"), ("Courier", "Courier"),
+        ("Georgia", "Georgia"), ("Arial", "Arial"),
+    ]
+    default_path = os.path.expanduser("~/Library/Fonts/NotoSansKR-Bold.ttf")
+    for keyword, key in match_map:
+        if keyword in font_family:
+            if key in NO_CJK and has_cjk:
+                return default_path
+            for p in FONT_MAP_RESOLVE.get(key, []):
+                if Path(p).exists():
+                    return p
+            break
+    return default_path if Path(default_path).exists() else "/System/Library/Fonts/AppleSDGothicNeo.ttc"
 
 
 EMOJI_RE = re.compile('['
