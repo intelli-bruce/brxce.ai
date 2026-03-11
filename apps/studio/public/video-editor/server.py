@@ -13,6 +13,11 @@ import threading
 import urllib.parse
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
+try:
+    from pilmoji import Pilmoji
+    HAS_PILMOJI = True
+except ImportError:
+    HAS_PILMOJI = False
 
 PORT = 8090
 BASE = Path(__file__).parent.resolve()
@@ -1017,6 +1022,7 @@ def run_render(data):
                 sy = ss.get("y", 80)
 
                 png_path = tmp_dir / f"sub_{idx:03d}.png"
+                print(f"[Sub {idx}] text={text}, stroke={ss.get('stroke')}, strokeColor={ss.get('strokeColor')}, strokeWidth={ss.get('strokeWidth')}")
                 img_w, img_h = render_subtitle_image(text, font_size, str(png_path), W, H, style=ss)
                 sub_pngs.append(png_path)
 
@@ -1186,36 +1192,16 @@ def render_subtitle_image(text, font_size, out_path, frame_w=1080, frame_h=1920,
         bg_alpha = 0.6
     bg_color = hex_to_rgba(bg_color_hex, bg_alpha) if show_bg else (0, 0, 0, 0)
     
-    # Measure text (account for emoji if present)
+    # Measure text
     has_emoji = bool(EMOJI_RE.search(text))
     dummy = Image.new("RGBA", (1, 1))
     dd = ImageDraw.Draw(dummy)
     
-    if has_emoji:
-        try:
-            emoji_font = ImageFont.truetype(EMOJI_FONT_PATH, font_size)
-        except:
-            emoji_font = font
-        # Measure segment by segment
-        tw = 0
-        th = 0
-        last_end = 0
-        for m in EMOJI_RE.finditer(text):
-            if m.start() > last_end:
-                seg = text[last_end:m.start()]
-                sb = dd.textbbox((0, 0), seg, font=font)
-                tw += sb[2] - sb[0]
-                th = max(th, sb[3] - sb[1])
-            eseg = m.group()
-            eb = dd.textbbox((0, 0), eseg, font=emoji_font)
-            tw += eb[2] - eb[0]
-            th = max(th, eb[3] - eb[1])
-            last_end = m.end()
-        if last_end < len(text):
-            seg = text[last_end:]
-            sb = dd.textbbox((0, 0), seg, font=font)
-            tw += sb[2] - sb[0]
-            th = max(th, sb[3] - sb[1])
+    if has_emoji and HAS_PILMOJI:
+        # pilmoji: measure with Pilmoji for accurate emoji sizing
+        with Pilmoji(dummy) as pilmoji:
+            tw = pilmoji.getsize(text, font=font)[0]
+            th = font_size + 10  # approximate height
         bbox = (0, 0, tw, th)
     else:
         bbox = dd.textbbox((0, 0), text, font=font)
@@ -1250,41 +1236,18 @@ def render_subtitle_image(text, font_size, out_path, frame_w=1080, frame_h=1920,
     stroke_color = hex_to_rgba(style.get("strokeColor", "#000000")) if show_stroke else None
     stroke_width = int(style.get("strokeWidth", 2)) if show_stroke else 0
     
-    if has_emoji:
-        # Render text segment by segment: emoji with Apple Color Emoji, rest with normal font
-        try:
-            emoji_font = ImageFont.truetype(EMOJI_FONT_PATH, font_size)
-        except:
-            emoji_font = font
-        
-        # Split text into segments: (is_emoji, text)
-        segments = []
-        last_end = 0
-        for m in EMOJI_RE.finditer(text):
-            if m.start() > last_end:
-                segments.append((False, text[last_end:m.start()]))
-            segments.append((True, m.group()))
-            last_end = m.end()
-        if last_end < len(text):
-            segments.append((False, text[last_end:]))
-        
-        cursor_x = tx
-        for is_emoji, seg in segments:
-            if is_emoji:
-                # Render emoji with embedded color
-                try:
-                    draw.text((cursor_x, ty), seg, font=emoji_font, embedded_color=True)
-                except TypeError:
-                    draw.text((cursor_x, ty), seg, font=emoji_font, fill=text_color)
-                seg_bbox = draw.textbbox((0, 0), seg, font=emoji_font)
-            else:
-                if show_stroke:
-                    draw.text((cursor_x, ty), seg, font=font, fill=text_color,
-                              stroke_width=stroke_width, stroke_fill=stroke_color)
-                else:
-                    draw.text((cursor_x, ty), seg, font=font, fill=text_color)
-                seg_bbox = draw.textbbox((0, 0), seg, font=font)
-            cursor_x += seg_bbox[2] - seg_bbox[0]
+    if has_emoji and HAS_PILMOJI:
+        # Use pilmoji for proper color emoji rendering
+        if show_stroke:
+            # Draw stroke first, then emoji text on top
+            draw.text((tx, ty), text, font=font, fill=text_color,
+                      stroke_width=stroke_width, stroke_fill=stroke_color)
+            # Overlay emoji with pilmoji (emoji only, text already drawn)
+            with Pilmoji(img) as pilmoji:
+                pilmoji.text((tx, ty), text, font=font, fill=text_color)
+        else:
+            with Pilmoji(img) as pilmoji:
+                pilmoji.text((tx, ty), text, font=font, fill=text_color)
     else:
         if show_stroke:
             draw.text((tx, ty), text, font=font, fill=text_color,
