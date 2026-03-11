@@ -1111,6 +1111,8 @@ def run_render(data):
                 final_label = "final"
 
             fc = ";".join(all_filters)
+            print(f"[Render] filter_complex: {fc[:500]}")
+            import sys; sys.stdout.flush()
 
             cmd = [
                 "ffmpeg", "-y", "-i", str(merged),
@@ -1197,20 +1199,20 @@ def resolve_font_path(font_family, text=""):
 
 
 EMOJI_RE = re.compile('['
-    '\U0001F600-\U0001F64F'
-    '\U0001F300-\U0001F5FF'
-    '\U0001F680-\U0001F6FF'
-    '\U0001F1E0-\U0001F1FF'
-    '\U00002702-\U000027B0'
-    '\U000024C2-\U0001F251'
-    '\U0001F900-\U0001F9FF'
-    '\U0001FA00-\U0001FA6F'
-    '\U0001FA70-\U0001FAFF'
-    '\U00002600-\U000026FF'
-    '\U0000FE00-\U0000FE0F'
-    '\U0000200D'
-    '\U00002640-\U00002642'
-    '\U0000203C-\U00003299'
+    '\U0001F600-\U0001F64F'  # emoticons
+    '\U0001F300-\U0001F5FF'  # symbols & pictographs
+    '\U0001F680-\U0001F6FF'  # transport & map
+    '\U0001F1E0-\U0001F1FF'  # flags
+    '\U0001F900-\U0001F9FF'  # supplemental symbols
+    '\U0001FA00-\U0001FA6F'  # chess, extended-A
+    '\U0001FA70-\U0001FAFF'  # symbols extended-A
+    '\U00002702-\U000027B0'  # dingbats
+    '\U000024C2-\U000024FF'  # enclosed alphanumerics (NOT beyond U+24FF to avoid CJK)
+    '\U00002600-\U000026FF'  # misc symbols
+    '\U00002640-\U00002642'  # gender symbols
+    '\U0000FE00-\U0000FE0F'  # variation selectors
+    '\U0000200D'             # zero width joiner
+    '\U0000203C-\U00002049'  # misc symbols (limited, NOT beyond U+2049)
     ']+', re.UNICODE)
 
 EMOJI_FONT_PATH = "/System/Library/Fonts/Apple Color Emoji.ttc"
