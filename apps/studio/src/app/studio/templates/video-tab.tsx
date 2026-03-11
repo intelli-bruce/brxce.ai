@@ -206,7 +206,7 @@ function PresetIcon({ icon, color }: { icon: string; color: string }) {
 export default function VideoTab() {
   const router = useRouter();
   const [selectedPreset, setSelectedPreset] = useState<VideoPreset | null>(null);
-  const [availableVideos, setAvailableVideos] = useState<string[]>([]);
+  const [availableVideos, setAvailableVideos] = useState<{ name: string; duration: number; size: number; fps: number }[]>([]);
   const [selectedVideos, setSelectedVideos] = useState<string[]>([]);
   const [loadingVideos, setLoadingVideos] = useState(false);
 
@@ -364,6 +364,34 @@ export default function VideoTab() {
               </p>
             </div>
 
+            {/* Add external video */}
+            <div className="px-4 pt-4">
+              <button
+                onClick={() => {
+                  const path = prompt("외부 영상 파일 경로 (절대경로):");
+                  if (!path) return;
+                  fetch("http://localhost:8090/api/upload-external", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ path }),
+                  })
+                    .then((r) => r.json())
+                    .then((d) => {
+                      if (d.name) {
+                        setAvailableVideos((prev) => [
+                          ...prev,
+                          { name: d.name, duration: d.duration || 0, size: d.size || 0, fps: d.fps || 30 },
+                        ]);
+                      }
+                    })
+                    .catch(() => alert("영상 추가 실패"));
+                }}
+                className="w-full py-2.5 rounded-lg border border-dashed border-[#333] text-xs text-white/40 hover:border-[#ff6b35] hover:text-[#ff6b35] transition"
+              >
+                + 외부 영상 추가 (파일 경로)
+              </button>
+            </div>
+
             {/* Video list */}
             <div className="flex-1 overflow-y-auto p-4">
               {loadingVideos ? (
@@ -375,25 +403,36 @@ export default function VideoTab() {
                 </div>
               ) : (
                 <div className="grid grid-cols-3 gap-2">
-                  {availableVideos.map((name) => {
-                    const isSelected = selectedVideos.includes(name);
-                    const idx = selectedVideos.indexOf(name);
+                  {availableVideos.map((vid, vi) => {
+                    const isSelected = selectedVideos.includes(vid.name);
+                    const idx = selectedVideos.indexOf(vid.name);
                     return (
                       <button
-                        key={name}
-                        onClick={() => toggleVideo(name)}
-                        className={`relative text-left p-3 rounded-lg border transition text-xs ${
+                        key={`${vid.name}-${vi}`}
+                        onClick={() => toggleVideo(vid.name)}
+                        className={`relative text-left p-2 rounded-lg border transition text-xs ${
                           isSelected
                             ? "border-[#ff6b35] bg-[#ff6b35]/10"
                             : "border-[#222] bg-[#0a0a0a] hover:border-[#333]"
                         }`}
                       >
                         {isSelected && (
-                          <span className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-[#ff6b35] text-white text-[10px] flex items-center justify-center font-bold">
+                          <span className="absolute top-1.5 right-1.5 z-10 w-5 h-5 rounded-full bg-[#ff6b35] text-white text-[10px] flex items-center justify-center font-bold">
                             {idx + 1}
                           </span>
                         )}
-                        <span className="text-white/70 truncate block">{name}</span>
+                        {/* Thumbnail */}
+                        <div className="w-full aspect-video rounded bg-[#111] mb-1.5 overflow-hidden">
+                          <img
+                            src={`http://localhost:8090/api/thumbnail/${encodeURIComponent(vid.name)}`}
+                            alt=""
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                          />
+                        </div>
+                        <span className="text-white/70 truncate block">{vid.name}</span>
+                        <span className="text-white/30 block mt-0.5">{vid.duration.toFixed(1)}초 · {vid.size}MB</span>
                       </button>
                     );
                   })}
