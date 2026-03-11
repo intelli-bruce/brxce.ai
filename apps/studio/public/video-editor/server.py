@@ -1296,7 +1296,8 @@ def render_subtitle_image(text, font_size, out_path, frame_w=1080, frame_h=1920,
     # Stroke (outline)
     show_stroke = style.get("stroke", False)
     stroke_color = hex_to_rgba(style.get("strokeColor", "#000000")) if show_stroke else None
-    stroke_width = int(style.get("strokeWidth", 2) * font_size / 16) if show_stroke else 0
+    # CSS text-stroke: total width → per-side = /2, then scale 2.5x
+    stroke_width = max(int(style.get("strokeWidth", 2) / 2 * 2.5), 1) if show_stroke else 0
     
     if has_emoji and HAS_PILMOJI:
         # Use pilmoji for proper color emoji rendering
