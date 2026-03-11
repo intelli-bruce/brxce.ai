@@ -134,12 +134,13 @@ export function AppSidebar() {
       }
       return true
     }
-    // query param 없는 일반 경로 — 같은 pathname에 tab param이 있으면 비활성
-    if (pathname.startsWith(href)) {
-      const tab = searchParams.get("tab")
-      if (tab && pathname === href.split("?")[0]) return false
+    // query param 없는 일반 경로
+    if (pathname === href) {
+      // 같은 pathname을 쓰는 ?tab= 링크가 있을 수 있으므로, tab이 있으면 비활성
+      if (searchParams.get("tab")) return false
       return true
     }
+    // 하위 세그먼트 매칭은 하지 않음 (prefix 겹침 방지)
     return false
   }
 

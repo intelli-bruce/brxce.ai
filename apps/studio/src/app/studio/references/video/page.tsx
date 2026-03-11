@@ -68,6 +68,8 @@ export default function VideoReferencesPage() {
   // Import
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<string>("");
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importUrl, setImportUrl] = useState("");
 
   const fetchAccounts = useCallback(async () => {
     try {
@@ -159,25 +161,7 @@ export default function VideoReferencesPage() {
           </p>
         </div>
         <button
-          onClick={() => {
-            const url = prompt("영상 URL (Instagram/YouTube/TikTok):");
-            if (url) {
-              setImporting(true);
-              fetch("/api/references/video/import", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ url }),
-              })
-                .then((r) => r.json())
-                .then((d) => setImportResult(`✅ ${d.message || "임포트 완료"}`))
-                .catch((e) => setImportResult(`❌ ${e.message}`))
-                .finally(() => {
-                  setImporting(false);
-                  fetchVideos();
-                  fetchAccounts();
-                });
-            }
-          }}
+          onClick={() => { setShowImportModal(true); setImportUrl(""); }}
           disabled={importing}
           className="px-4 py-2 bg-[#ff6b35] text-white rounded-lg text-sm font-medium hover:bg-[#e55a2b] disabled:opacity-50"
         >
@@ -452,8 +436,80 @@ export default function VideoReferencesPage() {
           </div>
         </div>
       )}
+
+      {/* Import Modal */}
+      {showImportModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center"
+          onClick={() => setShowImportModal(false)}
+        >
+          <div
+            className="bg-[#111] rounded-2xl p-6 w-[480px] space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold text-[#fafafa]">📥 영상 레퍼런스 임포트</h3>
+            <p className="text-sm text-[#888]">
+              Instagram, YouTube, TikTok 영상 URL을 입력하세요.
+            </p>
+            <input
+              autoFocus
+              value={importUrl}
+              onChange={(e) => setImportUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && importUrl.trim()) {
+                  handleImport(importUrl.trim());
+                }
+              }}
+              placeholder="https://www.instagram.com/reel/..."
+              className="w-full bg-[#0a0a0a] border border-[#333] rounded-lg px-4 py-3 text-sm text-[#fafafa] placeholder-[#555] focus:outline-none focus:border-[#ff6b35]"
+            />
+            {importResult && (
+              <div className="text-sm p-2 bg-[#0a0a0a] rounded-lg">{importResult}</div>
+            )}
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => { setShowImportModal(false); setImportResult(""); }}
+                className="px-4 py-2 bg-[#1a1a1a] rounded-lg text-sm text-[#888] hover:text-white"
+              >
+                닫기
+              </button>
+              <button
+                onClick={() => importUrl.trim() && handleImport(importUrl.trim())}
+                disabled={importing || !importUrl.trim()}
+                className="px-4 py-2 bg-[#ff6b35] text-white rounded-lg text-sm font-medium hover:bg-[#e55a2b] disabled:opacity-50"
+              >
+                {importing ? "임포트 중..." : "임포트"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
+
+  function handleImport(url: string) {
+    setImporting(true);
+    setImportResult("");
+    fetch("/api/references/video/import", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.error) {
+          setImportResult(`❌ ${d.error}`);
+        } else {
+          setShowImportModal(false);
+          setImportUrl("");
+          setImportResult("");
+          fetchVideos();
+          fetchAccounts();
+        }
+      })
+      .catch((e) => setImportResult(`❌ ${e.message}`))
+      .finally(() => setImporting(false));
+  }
 }
 
 function VideoCard({
