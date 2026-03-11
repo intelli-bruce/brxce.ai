@@ -1017,7 +1017,7 @@ def run_render(data):
             overlay_filters = []
 
             for idx, (st, en, text, ss) in enumerate(subs):
-                SCALE = 2.5  # preview phone 432px → 1080p (1080/432=2.5)
+                SCALE = 3.9  # CSS→Pillow font scale (measured: CSS 23px=74px, Pillow 90px=188px → 90/23≈3.9)
                 font_size = int(ss.get("size", 16) * SCALE)
                 sx = ss.get("x", 50)
                 sy = ss.get("y", 80)
@@ -1209,9 +1209,8 @@ def render_subtitle_image(text, font_size, out_path, frame_w=1080, frame_h=1920,
     tw = bbox[2] - bbox[0]
     th = bbox[3] - bbox[1]
     
-    # Fixed padding scaled to 1080p (preview phone 432px → 1080px = 2.5x)
-    # Preview CSS: padding 4px 12px, border-radius 6px
-    RENDER_SCALE = 2.5
+    # CSS→Pillow scale (measured from actual browser rendering)
+    RENDER_SCALE = 3.9
     pad_h = int(12 * RENDER_SCALE)   # ~42px
     pad_v = int(4 * RENDER_SCALE)    # ~14px
     radius = int(6 * RENDER_SCALE)   # ~21px
