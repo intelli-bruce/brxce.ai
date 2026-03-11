@@ -77,6 +77,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.handle_project_save()
         elif self.path == "/api/projects/delete":
             self.handle_project_delete()
+        elif self.path == "/api/projects/rename":
+            self.handle_project_rename()
         elif self.path == "/api/upload":
             self.handle_upload()
         elif self.path == "/api/upload-external":
@@ -216,6 +218,21 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if fpath.exists():
             fpath.unlink()
         self.send_json({"status": "deleted"})
+
+    def handle_project_rename(self):
+        length = int(self.headers.get("Content-Length", 0))
+        body = json.loads(self.rfile.read(length)) if length else {}
+        pid = body.get("id")
+        new_name = body.get("name", "")
+        if not pid:
+            self.send_json({"error": "No id"})
+            return
+        fpath = BASE / "_projects" / f"{pid}.json"
+        if fpath.exists():
+            data = json.loads(fpath.read_text())
+            data["name"] = new_name
+            fpath.write_text(json.dumps(data, ensure_ascii=False))
+        self.send_json({"status": "renamed"})
 
     def handle_upload(self):
         """Handle multipart file upload."""

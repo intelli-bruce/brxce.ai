@@ -2234,7 +2234,7 @@ function loadProjectList(){
       item.innerHTML=`
         <div style="font-size:18px">🎬</div>
         <div class="proj-info">
-          <div class="proj-name">${p.name||p.id}</div>
+          <div class="proj-name" ondblclick="event.stopPropagation();renameProject('${p.id}',this)">${p.name||p.id}</div>
           <div class="proj-meta">${p.clipCount}클립 · ${p.totalDuration}초 · ${dateStr}</div>
           ${srcs?`<div class="proj-meta">${srcs}</div>`:''}
         </div>
@@ -2301,6 +2301,27 @@ function saveProject(){
       btn.textContent='✅ 저장됨';
       setTimeout(()=>{btn.textContent='💾 저장'},1500);
     });
+}
+
+function renameProject(pid, el){
+  const old=el.textContent;
+  const input=document.createElement('input');
+  input.type='text';input.value=old;
+  input.style.cssText='background:#111;border:1px solid #2563eb;color:#fff;font-size:12px;font-weight:600;padding:2px 6px;border-radius:4px;width:100%';
+  el.replaceWith(input);input.focus();input.select();
+  const save=()=>{
+    const newName=input.value.trim()||old;
+    const span=document.createElement('div');
+    span.className='proj-name';span.textContent=newName;
+    span.setAttribute('ondblclick',`event.stopPropagation();renameProject('${pid}',this)`);
+    input.replaceWith(span);
+    if(newName!==old){
+      fetch(apiUrl('/api/projects/rename'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:pid,name:newName})});
+      if(currentProjectId===pid)currentProjectName=newName;
+    }
+  };
+  input.addEventListener('blur',save);
+  input.addEventListener('keydown',e=>{if(e.key==='Enter')input.blur();if(e.key==='Escape'){input.value=old;input.blur()}});
 }
 
 function deleteProject(pid){
@@ -2977,13 +2998,27 @@ if(CLIPS.length){
 }
 
 /* ─── PostMessage API for parent frame (BrxceStudio) ─── */
-window.addEventListener('message', function(e) {
+window.addEventListener('message', async function(e) {
   if (!e.data || e.data.type !== 'brxce-load-preset') return;
   const preset = e.data.project;
   if (!preset) return;
   
-  currentProjectId = preset.id || ('preset_' + Date.now());
-  currentProjectName = preset.name || '프리셋 프로젝트';
+  currentProjectId = 'preset_' + Date.now();
+  // Auto-number: fetch existing projects to check name conflicts
+  const baseName = preset.name || '프리셋 프로젝트';
+  currentProjectName = baseName;
+  try {
+    const resp = await fetch(apiUrl('/api/projects'));
+    const pdata = await resp.json();
+    if (pdata.projects && pdata.projects.length) {
+      const names = pdata.projects.map(p => p.name || '');
+      if (names.includes(baseName)) {
+        let n = 2;
+        while (names.includes(`${baseName} ${n}`)) n++;
+        currentProjectName = `${baseName} ${n}`;
+      }
+    }
+  } catch(e) {}
   CLIPS = (preset.clips || []).map(c => ({
     source: c.source || '',
     start: c.start || 0,
