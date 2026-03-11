@@ -1011,7 +1011,7 @@ def run_render(data):
         output = BASE / f"edited_output{suffix}.mp4"
 
         if subs:
-            SCALE = 2.0
+            SCALE = 1.0
 
             # Split subs: emoji → PNG overlay, text-only → drawtext
             emoji_subs = []
