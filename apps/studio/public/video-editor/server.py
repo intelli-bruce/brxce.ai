@@ -1128,14 +1128,15 @@ def resolve_font_path(font_family, text=""):
         "Recipekorea":  [str(UFONTS / "Recipekorea 饭内眉 FONT.otf")],
         "MBC 1961":     [str(UFONTS / "MBC 1961 OTF M.otf")],
         "Montserrat":   [str(UFONTS / "Montserrat-ExtraBold.ttf"), str(UFONTS / "Montserrat-Bold.ttf")],
-        "Jost":         [str(UFONTS / "Jost-ExtraBold.ttf"), str(UFONTS / "Jost-Bold.ttf")],
+        "Jost":          [str(UFONTS / "Jost-ExtraBold.ttf"), str(UFONTS / "Jost-Bold.ttf")],
+        "Nunito":        [str(UFONTS / "Nunito-ExtraBold.ttf"), str(UFONTS / "Nunito-Bold.ttf")],
         "Bebas Neue":   [str(UFONTS / "BebasNeue-Regular.ttf")],
         "Impact":       ["/System/Library/Fonts/Supplemental/Impact.ttf"],
         "Courier":      ["/System/Library/Fonts/Courier.ttc"],
         "Georgia":      ["/System/Library/Fonts/Supplemental/Georgia.ttf"],
         "Arial":        ["/System/Library/Fonts/Supplemental/Arial.ttf"],
     }
-    NO_CJK = {"Impact", "Courier", "Georgia", "Arial", "Montserrat", "Jost", "Bebas Neue"}
+    NO_CJK = {"Impact", "Courier", "Georgia", "Arial", "Montserrat", "Jost", "Nunito", "Bebas Neue"}
     match_map = [
         ("Samanco", "Samanco"), ("Binggrae", "Binggrae"),
         ("ONE Mobile", "ONE Mobile"), ("HDharmony", "HDharmony"), ("현대하모니", "HDharmony"),
@@ -1150,7 +1151,7 @@ def resolve_font_path(font_family, text=""):
         ("MBC", "MBC 1961"),
         ("Apple SD", "Apple SD"), ("AppleSD", "Apple SD"),
         ("Noto Sans KR", "Noto Sans KR"), ("Noto", "Noto Sans KR"),
-        ("Montserrat", "Montserrat"), ("Jost", "Jost"), ("Bebas", "Bebas Neue"), ("Impact", "Impact"), ("Courier", "Courier"),
+        ("Montserrat", "Montserrat"), ("Jost", "Jost"), ("Nunito", "Nunito"), ("Bebas", "Bebas Neue"), ("Impact", "Impact"), ("Courier", "Courier"),
         ("Georgia", "Georgia"), ("Arial", "Arial"),
     ]
     default_path = os.path.expanduser("~/Library/Fonts/NotoSansKR-Bold.ttf")
@@ -1219,7 +1220,8 @@ def render_subtitle_image(text, font_size, out_path, frame_w=1080, frame_h=1920,
         "MBC 1961":     [str(UFONTS / "MBC 1961 OTF M.otf"), str(UFONTS / "MBC 1961굴림 OTF M.otf")],
         # Latin display
         "Montserrat":   [str(UFONTS / "Montserrat-ExtraBold.ttf"), str(UFONTS / "Montserrat-Bold.ttf")],
-        "Jost":         [str(UFONTS / "Jost-ExtraBold.ttf"), str(UFONTS / "Jost-Bold.ttf")],
+        "Jost":          [str(UFONTS / "Jost-ExtraBold.ttf"), str(UFONTS / "Jost-Bold.ttf")],
+        "Nunito":        [str(UFONTS / "Nunito-ExtraBold.ttf"), str(UFONTS / "Nunito-Bold.ttf")],
         "Bebas Neue":   [str(UFONTS / "BebasNeue-Regular.ttf")],
         # Latin only (no Korean)
         "Impact":       ["/System/Library/Fonts/Supplemental/Impact.ttf"],
@@ -1228,7 +1230,7 @@ def render_subtitle_image(text, font_size, out_path, frame_w=1080, frame_h=1920,
         "Arial":        ["/System/Library/Fonts/Supplemental/Arial.ttf"],
     }
     
-    NO_CJK = {"Impact", "Courier", "Georgia", "Arial", "Montserrat", "Jost", "Bebas Neue"}
+    NO_CJK = {"Impact", "Courier", "Georgia", "Arial", "Montserrat", "Jost", "Nunito", "Bebas Neue"}
     
     # Match font family string to registry key
     selected = None
@@ -1246,7 +1248,7 @@ def render_subtitle_image(text, font_size, out_path, frame_w=1080, frame_h=1920,
         ("MBC", "MBC 1961"),
         ("Apple SD", "Apple SD"), ("AppleSD", "Apple SD"),
         ("Noto Sans KR", "Noto Sans KR"), ("Noto", "Noto Sans KR"),
-        ("Montserrat", "Montserrat"), ("Jost", "Jost"), ("Bebas", "Bebas Neue"), ("Impact", "Impact"), ("Courier", "Courier"),
+        ("Montserrat", "Montserrat"), ("Jost", "Jost"), ("Nunito", "Nunito"), ("Bebas", "Bebas Neue"), ("Impact", "Impact"), ("Courier", "Courier"),
         ("Georgia", "Georgia"), ("Arial", "Arial"),
     ]
     for keyword, key in match_map:
