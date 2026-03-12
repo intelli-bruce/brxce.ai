@@ -1190,6 +1190,9 @@ def render_subtitle_image(text, font_size, out_path, frame_w=1080, frame_h=1920,
     """Render a subtitle as a transparent PNG with optional background box and custom style."""
     style = style or {}
     
+    # Support \n literal as line break
+    text = text.replace("\\n", "\n")
+    
     # Font selection — must support Korean (CJK) if text contains Korean
     has_cjk = bool(re.search(r'[\uAC00-\uD7AF\u3130-\u318F\u4E00-\u9FFF]', text))
     
@@ -1302,7 +1305,7 @@ def render_subtitle_image(text, font_size, out_path, frame_w=1080, frame_h=1920,
             th = font_size + 10  # approximate height
         bbox = (0, 0, tw, th)
     else:
-        bbox = dd.textbbox((0, 0), text, font=font)
+        bbox = dd.multiline_textbbox((0, 0), text, font=font)
     tw = bbox[2] - bbox[0]
     th = bbox[3] - bbox[1]
     
@@ -1341,7 +1344,7 @@ def render_subtitle_image(text, font_size, out_path, frame_w=1080, frame_h=1920,
         # Use pilmoji for proper color emoji rendering
         if show_stroke:
             # Draw stroke first, then emoji text on top
-            draw.text((tx, ty), text, font=font, fill=text_color,
+            draw.multiline_text((tx, ty), text, font=font, fill=text_color,
                       stroke_width=stroke_width, stroke_fill=stroke_color)
             # Overlay emoji with pilmoji (emoji only, text already drawn)
             with Pilmoji(img) as pilmoji:
@@ -1351,10 +1354,10 @@ def render_subtitle_image(text, font_size, out_path, frame_w=1080, frame_h=1920,
                 pilmoji.text((tx, ty), text, font=font, fill=text_color)
     else:
         if show_stroke:
-            draw.text((tx, ty), text, font=font, fill=text_color,
+            draw.multiline_text((tx, ty), text, font=font, fill=text_color,
                       stroke_width=stroke_width, stroke_fill=stroke_color)
         else:
-            draw.text((tx, ty), text, font=font, fill=text_color)
+            draw.multiline_text((tx, ty), text, font=font, fill=text_color)
     
     img.save(out_path, "PNG")
     return img_w, img_h

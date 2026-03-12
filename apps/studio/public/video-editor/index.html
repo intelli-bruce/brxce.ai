@@ -2662,7 +2662,7 @@ function showSubAtTime(t){
     const st=sub.style||subStyleDefault;
     const span=document.createElement('span');
     span.className='sub-tx'+(gi===curSubIdx?' sub-active':'');
-    span.textContent=sub.text;
+    span.innerHTML=sub.text.replace(/\\n/g,'<br>').replace(/\n/g,'<br>');
     span.style.fontSize=(st.size||16)+'px';
     span.style.left=(st.x||50)+'%';
     span.style.top=(st.y||80)+'%';
