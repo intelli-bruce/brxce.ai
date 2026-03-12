@@ -296,7 +296,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                     subprocess.run([
                         "ffmpeg", "-y", "-loop", "1", "-i", str(dest), "-t", str(dur_sec),
                         "-vf", "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:black",
-                        "-c:v", "libx264", "-preset", "fast", "-crf", "20", "-pix_fmt", "yuv420p", "-r", "30",
+                        "-c:v", "libx264", "-preset", "slow", "-crf", "12", "-pix_fmt", "yuv420p", "-r", "30",
                         str(still_path)
                     ], capture_output=True, timeout=30)
                     if still_path.exists():
@@ -907,7 +907,7 @@ def run_render(data):
                     "-ss", f"{start:.3f}", "-t", f"{end-start:.3f}",
                     "-i", str(src),
                     "-filter_complex", fc,
-                    "-c:v", "libx264", "-preset", "fast", "-crf", "18",
+                    "-c:v", "libx264", "-preset", "slow", "-crf", "12",
                     "-an", "-t", f"{dur:.3f}",
                     str(tmp_out)
                 ]
@@ -950,7 +950,7 @@ def run_render(data):
                     "-ss", f"{start:.3f}", "-t", f"{end-start:.3f}",
                     "-i", str(src),
                     "-filter_complex", fc,
-                    "-c:v", "libx264", "-preset", "fast", "-crf", "18",
+                    "-c:v", "libx264", "-preset", "slow", "-crf", "12",
                     "-an", "-t", f"{dur:.3f}",
                     str(tmp_out)
                 ]
@@ -961,7 +961,7 @@ def run_render(data):
                     "-ss", f"{start:.3f}", "-t", f"{end-start:.3f}",
                     "-i", str(src),
                     "-vf", vf,
-                    "-c:v", "libx264", "-preset", "fast", "-crf", "18",
+                    "-c:v", "libx264", "-preset", "slow", "-crf", "12",
                     "-an", "-t", f"{dur:.3f}",
                     str(tmp_out)
                 ]
@@ -982,7 +982,7 @@ def run_render(data):
 
         merged = tmp_dir / "merged.mp4"
         cmd = ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(concat_file),
-               "-c:v", "libx264", "-preset", "fast", "-crf", "18",
+               "-c:v", "libx264", "-preset", "slow", "-crf", "12",
                "-r", str(output_fps),
                "-pix_fmt", "yuv420p",
                str(merged)]
@@ -1078,7 +1078,7 @@ def run_render(data):
                 *all_overlay_inputs,
                 "-filter_complex", fc,
                 "-map", f"[{final_label}]",
-                "-c:v", "libx264", "-preset", "fast", "-crf", "18",
+                "-c:v", "libx264", "-preset", "slow", "-crf", "12",
                 str(output)
             ]
             print(f"[Render] PNG overlay: {len(subs)} subs")
