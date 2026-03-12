@@ -877,6 +877,9 @@ def run_render(data):
             # Build filter chain
             filters = []
 
+            # Normalize color space to bt709 (some sources use smpte170m)
+            filters.append("colorspace=all=bt709:iall=bt709:fast=1")
+
             # Speed
             if speed != 1:
                 filters.append(f"setpts={1/speed:.4f}*PTS")
@@ -898,6 +901,7 @@ def run_render(data):
                     zoom_filter = f",scale={zw}:{zh},crop={W}:{H}:{zx}:{zy}"
                 
                 fc = (
+                    f"colorspace=all=bt709:iall=bt709:fast=1,"
                     f"{speed_filter}fps={output_fps},"
                     f"scale={W}:{H}:force_original_aspect_ratio=decrease,"
                     f"pad={W}:{H}:(ow-iw)/2:(oh-ih)/2:black{zoom_filter}"
@@ -907,7 +911,7 @@ def run_render(data):
                     "-ss", f"{start:.3f}", "-t", f"{end-start:.3f}",
                     "-i", str(src),
                     "-filter_complex", fc,
-                    "-c:v", "libx264", "-preset", "slow", "-crf", "12",
+                    "-c:v", "libx264", "-preset", "slow", "-crf", "12", "-pix_fmt", "yuv420p",
                     "-an", "-t", f"{dur:.3f}",
                     str(tmp_out)
                 ]
@@ -950,7 +954,7 @@ def run_render(data):
                     "-ss", f"{start:.3f}", "-t", f"{end-start:.3f}",
                     "-i", str(src),
                     "-filter_complex", fc,
-                    "-c:v", "libx264", "-preset", "slow", "-crf", "12",
+                    "-c:v", "libx264", "-preset", "slow", "-crf", "12", "-pix_fmt", "yuv420p",
                     "-an", "-t", f"{dur:.3f}",
                     str(tmp_out)
                 ]
@@ -961,7 +965,7 @@ def run_render(data):
                     "-ss", f"{start:.3f}", "-t", f"{end-start:.3f}",
                     "-i", str(src),
                     "-vf", vf,
-                    "-c:v", "libx264", "-preset", "slow", "-crf", "12",
+                    "-c:v", "libx264", "-preset", "slow", "-crf", "12", "-pix_fmt", "yuv420p",
                     "-an", "-t", f"{dur:.3f}",
                     str(tmp_out)
                 ]
@@ -982,7 +986,7 @@ def run_render(data):
 
         merged = tmp_dir / "merged.mp4"
         cmd = ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(concat_file),
-               "-c:v", "libx264", "-preset", "slow", "-crf", "12",
+               "-c:v", "libx264", "-preset", "slow", "-crf", "12", "-pix_fmt", "yuv420p",
                "-r", str(output_fps),
                "-pix_fmt", "yuv420p",
                str(merged)]
@@ -1078,7 +1082,7 @@ def run_render(data):
                 *all_overlay_inputs,
                 "-filter_complex", fc,
                 "-map", f"[{final_label}]",
-                "-c:v", "libx264", "-preset", "slow", "-crf", "12",
+                "-c:v", "libx264", "-preset", "slow", "-crf", "12", "-pix_fmt", "yuv420p",
                 str(output)
             ]
             print(f"[Render] PNG overlay: {len(subs)} subs")
