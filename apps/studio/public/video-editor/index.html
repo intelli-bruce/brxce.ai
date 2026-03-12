@@ -203,11 +203,15 @@ body{background:#0f0f0f;color:#e0e0e0;font-family:-apple-system,'Apple SD Gothic
 .src-item{display:flex;align-items:center;gap:10px;padding:8px 12px;background:#222;border:1px solid #333;border-radius:6px;cursor:grab;transition:.1s}
 .src-item:hover{border-color:#555}
 .src-item.selected{border-color:#2563eb;background:#1e293b}
+.src-item .src-thumb{width:40px;height:70px;object-fit:cover;border-radius:4px;background:#111;flex-shrink:0}
 .src-item .src-check{width:16px;height:16px;accent-color:#2563eb}
 .src-item .src-idx{font-size:10px;color:#555;width:20px;text-align:center}
-.src-item .src-name{flex:1;font-size:12px;color:#ccc;font-weight:500}
+.src-item .src-name{flex:1;font-size:12px;color:#ccc;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .src-item .src-meta{font-size:10px;color:#666}
 .src-item .src-drag{color:#444;cursor:grab;font-size:14px}
+.src-dropzone{border:2px dashed #444;border-radius:8px;padding:24px;text-align:center;color:#666;font-size:12px;cursor:pointer;transition:border-color .2s,background .2s;margin-bottom:16px}
+.src-dropzone:hover{border-color:#2563eb;background:#1a1a2e}
+.src-dropzone.dragover{border-color:#2563eb;background:#1a1a2e}
 .src-options{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;padding:12px;background:#161616;border-radius:8px}
 .src-options label{font-size:10px;color:#888;display:flex;flex-direction:column;gap:4px}
 .src-options input,.src-options select{background:#222;border:1px solid #3a3a3a;color:#ddd;padding:4px 8px;border-radius:4px;font-size:11px}
@@ -236,6 +240,29 @@ body{background:#0f0f0f;color:#e0e0e0;font-family:-apple-system,'Apple SD Gothic
     <div class="src-list" id="projectList"><div class="src-loading">프로젝트 불러오는 중...</div></div>
     <div class="src-actions" style="margin-top:12px">
       <button class="btn" onclick="skipToEditor()">기존 편집 유지 →</button>
+    </div>
+
+    <hr style="border:none;border-top:1px solid #2a2a2a;margin:20px 0">
+    <h2 style="font-size:16px;color:#e0e0e0;margin-bottom:4px">➕ 새 프로젝트</h2>
+    <p style="font-size:11px;color:#555;margin-bottom:12px">영상을 선택하고 분석을 시작하세요</p>
+    <div class="src-list" id="srcList"></div>
+    <div class="src-dropzone" id="srcDropzone" onclick="document.getElementById('fileUpload').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="this.classList.remove('dragover');handleFileDrop(event)">
+      📂 영상/이미지 파일을 드래그하거나 클릭하여 추가
+    </div>
+    <input type="file" id="fileUpload" multiple accept="video/*,image/*" style="display:none" onchange="uploadFiles(this.files)">
+    <div class="src-options">
+      <label>프로젝트명<input type="text" id="projName" placeholder="새 프로젝트"></label>
+      <label>최대 길이(초)<input type="number" id="optMaxDur" value="60" min="10" max="300"></label>
+      <label>클립 최소(초)<input type="number" id="optClipMin" value="1.5" step="0.5" min="0.5"></label>
+      <label>클립 최대(초)<input type="number" id="optClipMax" value="8" step="0.5" min="1"></label>
+      <label>장면 감지<input type="range" id="optScene" value="30" min="10" max="80"></label>
+      <label>자막<select id="optAutoSub"><option value="none">없음</option><option value="auto" selected>자동 생성</option><option value="srt">SRT 파일</option></select></label>
+      <label>API Key<input type="text" id="optApiKey" placeholder="선택사항"></label>
+      <label>자막 컨텍스트<input type="text" id="subContext" placeholder="영상 주제/분위기"></label>
+    </div>
+    <div class="src-actions">
+      <button class="btn" onclick="loadVideoList()">🔄 서버 영상 불러오기</button>
+      <button class="btn" style="background:#2563eb" onclick="startAnalyze()">🚀 분석 시작</button>
     </div>
   </div>
 </div>
@@ -2351,6 +2378,7 @@ function loadVideoList(){
       item.draggable=true;
       item.dataset.name=v.name;
       item.innerHTML=`
+        <img class="src-thumb" src="${apiUrl('/api/thumbnail/'+encodeURIComponent(v.name))}" alt="" onerror="this.style.display='none'">
         <input type="checkbox" class="src-check" checked>
         <span class="src-idx">${i+1}</span>
         <span class="src-name">🎥 ${v.name}</span>
@@ -2387,7 +2415,7 @@ function loadVideoList(){
 
 function handleFileDrop(e){
   e.preventDefault();e.currentTarget.style.borderColor='';
-  const files=[...e.dataTransfer.files].filter(f=>f.type.startsWith('video/'));
+  const files=[...e.dataTransfer.files].filter(f=>f.type.startsWith('video/')||f.type.startsWith('image/'));
   if(files.length)uploadFiles(files);
 }
 
@@ -2428,6 +2456,7 @@ function addVideosToList(videos){
     item.draggable=true;
     item.dataset.name=v.name;
     item.innerHTML=`
+      <img class="src-thumb" src="${apiUrl('/api/thumbnail/'+encodeURIComponent(v.name))}" alt="" onerror="this.style.display='none'">
       <input type="checkbox" class="src-check" checked>
       <span class="src-idx">${idx+1}</span>
       <span class="src-name">🎥 ${v.name}</span>
