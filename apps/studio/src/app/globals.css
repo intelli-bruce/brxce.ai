@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@source not "../../public/video-editor";
 @plugin "@tailwindcss/typography";
 
 @theme inline {
@@ -48,14 +49,14 @@ body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
-/* prose-dark from @brxce/ui — single source of truth */
+/* prose-dark from @brxce/ui -- single source of truth */
 @import "@brxce/ui/styles";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
 
-/* Dark-only studio — dark tokens applied directly to :root */
+/* Dark-only studio -- dark tokens applied directly to :root */
 :root {
   --radius: 0.625rem;
   --background: oklch(0.145 0 0);
