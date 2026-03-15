@@ -451,6 +451,24 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             shutil.copyfileobj(f, self.wfile)
 
 
+def get_color_space(path):
+    """Detect source color space: 'hdr', 'smpte170m', or 'bt709'."""
+    try:
+        r = subprocess.run(
+            ["ffprobe", "-v", "quiet", "-show_entries",
+             "stream=color_space,color_transfer,color_primaries",
+             "-of", "csv=p=0", path],
+            capture_output=True, text=True, timeout=5
+        )
+        out = r.stdout.lower()
+        if "bt2020" in out or "arib-std-b67" in out or "smpte2084" in out:
+            return "hdr"
+        if "smpte170m" in out or "bt470" in out:
+            return "smpte170m"
+    except:
+        pass
+    return "bt709"
+
 def get_video_duration(path):
     try:
         r = subprocess.run(
@@ -877,8 +895,13 @@ def run_render(data):
             # Build filter chain
             filters = []
 
-            # Normalize color space to bt709 (some sources use smpte170m)
-            filters.append("colorspace=all=bt709:iall=bt709:fast=1")
+            # Detect HDR/color space and normalize to bt709 SDR
+            src_cs = get_color_space(str(src))
+            if src_cs == "hdr":
+                # HDR (bt2020/HLG/PQ) → SDR bt709 with tone mapping
+                filters.append("zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p")
+            elif src_cs == "smpte170m":
+                filters.append("colorspace=all=bt709:iall=bt601-6-625:fast=1")
 
             # Speed
             if speed != 1:
@@ -900,8 +923,13 @@ def run_render(data):
                     zy = max(0, int((zh - H) / 2 - (zoom["panY"] / 100) * H))
                     zoom_filter = f",scale={zw}:{zh},crop={W}:{H}:{zx}:{zy}"
                 
+                cs_filter = ""
+                if src_cs == "hdr":
+                    cs_filter = "zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p,"
+                elif src_cs == "smpte170m":
+                    cs_filter = "colorspace=all=bt709:iall=bt601-6-625:fast=1,"
                 fc = (
-                    f"colorspace=all=bt709:iall=bt709:fast=1,"
+                    f"{cs_filter}"
                     f"{speed_filter}fps={output_fps},"
                     f"scale={W}:{H}:force_original_aspect_ratio=decrease,"
                     f"pad={W}:{H}:(ow-iw)/2:(oh-ih)/2:black{zoom_filter}"
