@@ -6,12 +6,18 @@ import mimetypes
 import os
 import subprocess
 import sys
+import re
 import tempfile
 import shutil
 import threading
 import urllib.parse
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
+try:
+    from pilmoji import Pilmoji
+    HAS_PILMOJI = True
+except ImportError:
+    HAS_PILMOJI = False
 
 PORT = 8090
 BASE = Path(__file__).parent.resolve()
@@ -71,8 +77,12 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.handle_project_save()
         elif self.path == "/api/projects/delete":
             self.handle_project_delete()
+        elif self.path == "/api/projects/rename":
+            self.handle_project_rename()
         elif self.path == "/api/upload":
             self.handle_upload()
+        elif self.path == "/api/upload-external":
+            self.handle_upload_external()
         else:
             self.send_error(404)
 
@@ -89,6 +99,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.handle_download()
         elif self.path == "/api/list-videos":
             self.handle_list_videos()
+        elif self.path.startswith("/api/thumbnail/"):
+            self.handle_thumbnail()
         elif self.path == "/api/projects":
             self.handle_project_list()
         elif self.path.startswith("/api/projects/load/"):
@@ -207,6 +219,21 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             fpath.unlink()
         self.send_json({"status": "deleted"})
 
+    def handle_project_rename(self):
+        length = int(self.headers.get("Content-Length", 0))
+        body = json.loads(self.rfile.read(length)) if length else {}
+        pid = body.get("id")
+        new_name = body.get("name", "")
+        if not pid:
+            self.send_json({"error": "No id"})
+            return
+        fpath = BASE / "_projects" / f"{pid}.json"
+        if fpath.exists():
+            data = json.loads(fpath.read_text())
+            data["name"] = new_name
+            fpath.write_text(json.dumps(data, ensure_ascii=False))
+        self.send_json({"status": "renamed"})
+
     def handle_upload(self):
         """Handle multipart file upload."""
         content_type = self.headers.get("Content-Type", "")
@@ -269,7 +296,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                     subprocess.run([
                         "ffmpeg", "-y", "-loop", "1", "-i", str(dest), "-t", str(dur_sec),
                         "-vf", "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:black",
-                        "-c:v", "libx264", "-preset", "fast", "-crf", "20", "-pix_fmt", "yuv420p", "-r", "30",
+                        "-c:v", "libx264", "-preset", "slow", "-crf", "12", "-pix_fmt", "yuv420p", "-r", "30",
                         str(still_path)
                     ], capture_output=True, timeout=30)
                     if still_path.exists():
@@ -305,6 +332,71 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                     "fps": fps
                 })
         self.send_json({"videos": videos})
+
+    def handle_thumbnail(self):
+        """Generate and serve a thumbnail for a video file."""
+        import urllib.parse
+        name = urllib.parse.unquote(self.path.split("/api/thumbnail/", 1)[1])
+        video_path = BASE / name
+        if not video_path.exists():
+            self.send_error(404, "Video not found")
+            return
+        
+        # Cache thumbnails in _thumbs/
+        thumb_dir = BASE / "_thumbs"
+        thumb_dir.mkdir(exist_ok=True)
+        thumb_path = thumb_dir / f"{video_path.stem}.jpg"
+        
+        if not thumb_path.exists():
+            try:
+                subprocess.run([
+                    "ffmpeg", "-y", "-i", str(video_path),
+                    "-ss", "0.5", "-vframes", "1",
+                    "-vf", "scale=160:-2",
+                    "-q:v", "8",
+                    str(thumb_path)
+                ], capture_output=True, timeout=10)
+            except Exception:
+                self.send_error(500, "Thumbnail generation failed")
+                return
+        
+        if not thumb_path.exists():
+            self.send_error(500, "Thumbnail not generated")
+            return
+        
+        data = thumb_path.read_bytes()
+        self.send_response(200)
+        self.send_header("Content-Type", "image/jpeg")
+        self.send_header("Content-Length", len(data))
+        self.send_header("Cache-Control", "public, max-age=86400")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+        self.wfile.write(data)
+
+    def handle_upload_external(self):
+        """Symlink an external video file into the editor directory."""
+        length = int(self.headers.get("Content-Length", 0))
+        body = json.loads(self.rfile.read(length)) if length else {}
+        src_path = Path(body.get("path", "")).expanduser()
+        
+        if not src_path.exists():
+            self.send_json({"error": f"File not found: {src_path}"})
+            return
+        
+        dest = BASE / src_path.name
+        if not dest.exists():
+            dest.symlink_to(src_path)
+        
+        dur = get_video_duration(str(dest))
+        fps = get_video_fps(str(dest))
+        size_mb = dest.stat().st_size / 1024 / 1024
+        
+        self.send_json({
+            "name": dest.name,
+            "duration": round(dur, 1),
+            "size": round(size_mb, 1),
+            "fps": fps
+        })
 
     def handle_analyze(self):
         length = int(self.headers.get("Content-Length", 0))
@@ -358,6 +450,24 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         with open(fpath, "rb") as f:
             shutil.copyfileobj(f, self.wfile)
 
+
+def get_color_space(path):
+    """Detect source color space: 'hdr', 'smpte170m', or 'bt709'."""
+    try:
+        r = subprocess.run(
+            ["ffprobe", "-v", "quiet", "-show_entries",
+             "stream=color_space,color_transfer,color_primaries",
+             "-of", "csv=p=0", path],
+            capture_output=True, text=True, timeout=5
+        )
+        out = r.stdout.lower()
+        if "bt2020" in out or "arib-std-b67" in out or "smpte2084" in out:
+            return "hdr"
+        if "smpte170m" in out or "bt470" in out:
+            return "smpte170m"
+    except:
+        pass
+    return "bt709"
 
 def get_video_duration(path):
     try:
@@ -785,6 +895,14 @@ def run_render(data):
             # Build filter chain
             filters = []
 
+            # Detect HDR/color space and normalize to bt709 SDR
+            src_cs = get_color_space(str(src))
+            if src_cs == "hdr":
+                # HDR (bt2020/HLG/PQ) → SDR bt709 with tone mapping
+                filters.append("zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p")
+            elif src_cs == "smpte170m":
+                filters.append("colorspace=all=bt709:iall=bt601-6-625:fast=1")
+
             # Speed
             if speed != 1:
                 filters.append(f"setpts={1/speed:.4f}*PTS")
@@ -793,23 +911,35 @@ def run_render(data):
             filters.append(f"fps={output_fps}")
 
             # Scale to output — letterbox with blur bg for landscape sources
-            if is_landscape and not (zoom["scale"] != 1 or zoom["panX"] != 0 or zoom["panY"] != 0):
+            if is_landscape:
                 # Use filter_complex: blur bg + contain overlay
                 speed_filter = f"setpts={1/speed:.4f}*PTS," if speed != 1 else ""
+                # Apply zoom after letterbox compositing
+                zoom_filter = ""
+                if zoom["scale"] != 1 or zoom["panX"] != 0 or zoom["panY"] != 0:
+                    zw = int(W * zoom["scale"])
+                    zh = int(H * zoom["scale"])
+                    zx = max(0, int((zw - W) / 2 - (zoom["panX"] / 100) * W))
+                    zy = max(0, int((zh - H) / 2 - (zoom["panY"] / 100) * H))
+                    zoom_filter = f",scale={zw}:{zh},crop={W}:{H}:{zx}:{zy}"
+                
+                cs_filter = ""
+                if src_cs == "hdr":
+                    cs_filter = "zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p,"
+                elif src_cs == "smpte170m":
+                    cs_filter = "colorspace=all=bt709:iall=bt601-6-625:fast=1,"
                 fc = (
+                    f"{cs_filter}"
                     f"{speed_filter}fps={output_fps},"
-                    f"split[main][bg];"
-                    f"[bg]scale={W}:{H}:force_original_aspect_ratio=increase,"
-                    f"crop={W}:{H},boxblur=20:5[blurred];"
-                    f"[main]scale={W}:{H}:force_original_aspect_ratio=decrease[fg];"
-                    f"[blurred][fg]overlay=(W-w)/2:(H-h)/2"
+                    f"scale={W}:{H}:force_original_aspect_ratio=decrease,"
+                    f"pad={W}:{H}:(ow-iw)/2:(oh-ih)/2:black{zoom_filter}"
                 )
                 cmd = [
                     "ffmpeg", "-y",
                     "-ss", f"{start:.3f}", "-t", f"{end-start:.3f}",
                     "-i", str(src),
                     "-filter_complex", fc,
-                    "-c:v", "libx264", "-preset", "fast", "-crf", "18",
+                    "-c:v", "libx264", "-preset", "slow", "-crf", "12", "-pix_fmt", "yuv420p",
                     "-an", "-t", f"{dur:.3f}",
                     str(tmp_out)
                 ]
@@ -852,7 +982,7 @@ def run_render(data):
                     "-ss", f"{start:.3f}", "-t", f"{end-start:.3f}",
                     "-i", str(src),
                     "-filter_complex", fc,
-                    "-c:v", "libx264", "-preset", "fast", "-crf", "18",
+                    "-c:v", "libx264", "-preset", "slow", "-crf", "12", "-pix_fmt", "yuv420p",
                     "-an", "-t", f"{dur:.3f}",
                     str(tmp_out)
                 ]
@@ -863,7 +993,7 @@ def run_render(data):
                     "-ss", f"{start:.3f}", "-t", f"{end-start:.3f}",
                     "-i", str(src),
                     "-vf", vf,
-                    "-c:v", "libx264", "-preset", "fast", "-crf", "18",
+                    "-c:v", "libx264", "-preset", "slow", "-crf", "12", "-pix_fmt", "yuv420p",
                     "-an", "-t", f"{dur:.3f}",
                     str(tmp_out)
                 ]
@@ -884,7 +1014,7 @@ def run_render(data):
 
         merged = tmp_dir / "merged.mp4"
         cmd = ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(concat_file),
-               "-c:v", "libx264", "-preset", "fast", "-crf", "18",
+               "-c:v", "libx264", "-preset", "slow", "-crf", "12", "-pix_fmt", "yuv420p",
                "-r", str(output_fps),
                "-pix_fmt", "yuv420p",
                str(merged)]
@@ -893,69 +1023,97 @@ def run_render(data):
         if r.returncode != 0:
             raise RuntimeError(f"Concat failed: {r.stderr[-500:]}")
 
-        # Subtitles (respect subtitlesEnabled flag)
+        # Subtitles — global subtitle support
         subs = []
         subtitles_enabled = data.get("subtitlesEnabled", True)
-        t_offset = 0
-        for i, clip in enumerate(clips):
-            speed = clip.get("speed", 1)
-            dur = (clip["end"] - clip["start"]) / speed
-            sub_text = clip.get("subtitle", "")
-            if sub_text and subtitles_enabled:
-                sub_style = clip.get("subStyle", {"size": 16, "x": 50, "y": 80})
-                subs.append((t_offset, t_offset + dur, sub_text, sub_style))
-            t_offset += dur
+        
+        if subtitles_enabled:
+            # Prefer globalSubs (new format: [{text, style, start, end}])
+            global_subs = data.get("globalSubs", [])
+            if global_subs:
+                for gs in global_subs:
+                    text = gs.get("text", "")
+                    style = gs.get("style", {"size": 16, "x": 50, "y": 80})
+                    start = gs.get("start", 0)
+                    end = gs.get("end", 0)
+                    if text and end > start:
+                        subs.append((start, end, text, style))
+            else:
+                # Fallback: legacy clip-based subtitles
+                t_offset = 0
+                for i, clip in enumerate(clips):
+                    speed = clip.get("speed", 1)
+                    dur = (clip["end"] - clip["start"]) / speed
+                    clip_subs = clip.get("subtitles", [])
+                    legacy_sub = clip.get("subtitle", "")
+                    if not clip_subs and legacy_sub:
+                        clip_subs = [{"text": legacy_sub, "style": None}]
+                    for sub_entry in clip_subs:
+                        if isinstance(sub_entry, str):
+                            sub_text = sub_entry
+                            sub_style = clip.get("subStyle", {"size": 16, "x": 50, "y": 80})
+                        elif isinstance(sub_entry, dict):
+                            sub_text = sub_entry.get("text", "")
+                            sub_style = sub_entry.get("style") or clip.get("subStyle", {"size": 16, "x": 50, "y": 80})
+                        else:
+                            continue
+                        if sub_text:
+                            subs.append((t_offset, t_offset + dur, sub_text, sub_style))
+                    t_offset += dur
 
         max_dur = data.get("maxDuration", 0)
         suffix = f"_{max_dur}s" if max_dur else ""
         output = BASE / f"edited_output{suffix}.mp4"
 
         if subs:
-            # Render each subtitle as a PNG image, then overlay with enable timing
-            sub_pngs = []
-            overlay_inputs = []
-            overlay_filters = []
+            SCALE = 2.5  # 432px phone → 1080px render
+
+            # ALL subs rendered as single PNG (text+bg+stroke in one image)
+            all_overlay_inputs = []
+            all_png_overlays = []
 
             for idx, (st, en, text, ss) in enumerate(subs):
-                font_size = int(ss.get("size", 16) * 3.5)
+                font_size = int(ss.get("size", 16) * SCALE)
                 sx = ss.get("x", 50)
                 sy = ss.get("y", 80)
 
                 png_path = tmp_dir / f"sub_{idx:03d}.png"
-                img_w, img_h = render_subtitle_image(text, font_size, str(png_path), W, H)
-                sub_pngs.append(png_path)
+                img_w, img_h = render_subtitle_image(text, font_size, str(png_path), W, H, style=ss)
 
-                # Position: center the PNG at (sx%, sy%) of frame
                 ox = int(sx / 100 * W - img_w / 2)
                 oy = int(sy / 100 * H - img_h / 2)
                 ox = max(0, min(W - img_w, ox))
                 oy = max(0, min(H - img_h, oy))
 
-                overlay_inputs.extend(["-i", str(png_path)])
+                all_overlay_inputs.extend(["-i", str(png_path)])
+                all_png_overlays.append((ox, oy, st, en))
+                print(f"[Sub {idx}] PNG: {text[:20]}, size={font_size}, {img_w}x{img_h}")
 
-                # Build overlay chain
-                if idx == 0:
-                    prev = "0:v"
-                else:
-                    prev = f"v{idx}"
-                out_label = f"v{idx+1}"
-
-                overlay_filters.append(
-                    f"[{prev}][{idx+1}:v]overlay={ox}:{oy}:enable='between(t,{st:.3f},{en:.3f})'[{out_label}]"
+            # Build overlay chain
+            overlay_chain = []
+            for pidx, (ox, oy, st, en) in enumerate(all_png_overlays):
+                inp_idx = pidx + 1
+                prev = "0:v" if pidx == 0 else f"ov{pidx}"
+                out_label = f"ov{pidx + 1}"
+                overlay_chain.append(
+                    f"[{prev}][{inp_idx}:v]overlay={ox}:{oy}:enable='between(t,{st:.3f},{en:.3f})'[{out_label}]"
                 )
 
-            fc = ";".join(overlay_filters)
-            final_label = f"v{len(subs)}"
+            all_filters = overlay_chain
+            final_label = f"ov{len(all_png_overlays)}"
+
+            fc = ";".join(all_filters)
+            print(f"[Render] filter_complex: {fc[:500]}")
 
             cmd = [
                 "ffmpeg", "-y", "-i", str(merged),
-                *overlay_inputs,
+                *all_overlay_inputs,
                 "-filter_complex", fc,
                 "-map", f"[{final_label}]",
-                "-c:v", "libx264", "-preset", "fast", "-crf", "18",
+                "-c:v", "libx264", "-preset", "slow", "-crf", "12", "-pix_fmt", "yuv420p",
                 str(output)
             ]
-            print(f"[Render] PNG overlay subs: {len(subs)} entries")
+            print(f"[Render] PNG overlay: {len(subs)} subs")
             r = subprocess.run(cmd, capture_output=True, text=True)
             if r.returncode != 0:
                 raise RuntimeError(f"Subtitle burn failed: {r.stderr[-500:]}")
@@ -975,24 +1133,215 @@ def run_render(data):
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
-def render_subtitle_image(text, font_size, out_path, frame_w=1080, frame_h=1920):
-    """Render a subtitle as a transparent PNG with rounded black background box."""
+def resolve_font_path(font_family, text=""):
+    """Resolve CSS font-family string to actual font file path."""
+    HOME = Path.home()
+    UFONTS = HOME / "Library" / "Fonts"
+    has_cjk = bool(re.search(r'[\uAC00-\uD7AF\u3130-\u318F\u4E00-\u9FFF]', text))
+    
+    FONT_MAP_RESOLVE = {
+        "Apple SD":     ["/System/Library/Fonts/AppleSDGothicNeo.ttc"],
+        "Noto Sans KR": [str(UFONTS / "NotoSansKR-Bold.ttf"), str(UFONTS / "NotoSansKR-Medium.ttf")],
+        "Binggrae":     [str(UFONTS / "Binggrae.otf")],
+        "Samanco":      [str(UFONTS / "BinggraeSamanco.otf")],
+        "ONE Mobile":   [str(UFONTS / "ONE Mobile OTF Bold.otf")],
+        "HDharmony":    [str(UFONTS / "현대하모니+B.ttf"), str(UFONTS / "현대하모니+M.ttf")],
+        "Myungjo":      ["/System/Library/Fonts/AppleMyungjo.ttc"],
+        "Gowun Batang": [str(UFONTS / "GowunBatang-Bold.ttf")],
+        "Batang":       ["/System/Library/Fonts/Supplemental/Batang.ttc"],
+        "HSYuji":       [str(UFONTS / "HS유지체.otf")],
+        "Gotgam":       [str(UFONTS / "SANGJU Gotgam.otf")],
+        "Dajungdagam":  [str(UFONTS / "SANGJU Dajungdagam.otf")],
+        "Gyeongcheon":  [str(UFONTS / "SANGJU Gyeongcheon Island.otf")],
+        "Recipekorea":  [str(UFONTS / "Recipekorea 饭内眉 FONT.otf")],
+        "MBC 1961":     [str(UFONTS / "MBC 1961 OTF M.otf")],
+        "Montserrat":   [str(UFONTS / "Montserrat-ExtraBold.ttf"), str(UFONTS / "Montserrat-Bold.ttf")],
+        "Jost":          [str(UFONTS / "Jost-ExtraBold.ttf"), str(UFONTS / "Jost-Bold.ttf")],
+        "Nunito":        [str(UFONTS / "Nunito-ExtraBold.ttf"), str(UFONTS / "Nunito-Bold.ttf")],
+        "Inter":         [str(UFONTS / "Inter-ExtraBold.ttf"), str(UFONTS / "Inter-Bold.ttf")],
+        "Bebas Neue":   [str(UFONTS / "BebasNeue-Regular.ttf")],
+        "Impact":       ["/System/Library/Fonts/Supplemental/Impact.ttf"],
+        "Courier":      ["/System/Library/Fonts/Courier.ttc"],
+        "Georgia":      ["/System/Library/Fonts/Supplemental/Georgia.ttf"],
+        "Arial":        ["/System/Library/Fonts/Supplemental/Arial.ttf"],
+    }
+    NO_CJK = {"Impact", "Courier", "Georgia", "Arial", "Montserrat", "Jost", "Nunito", "Inter", "Bebas Neue"}
+    match_map = [
+        ("Samanco", "Samanco"), ("Binggrae", "Binggrae"),
+        ("ONE Mobile", "ONE Mobile"), ("HDharmony", "HDharmony"), ("현대하모니", "HDharmony"),
+        ("Gowun Batang", "Gowun Batang"), ("고운바탕", "Gowun Batang"),
+        ("Batang", "Batang"), ("바탕", "Batang"),
+        ("Myungjo", "Myungjo"), ("명조", "Myungjo"),
+        ("HSYuji", "HSYuji"), ("유지", "HSYuji"),
+        ("Gotgam", "Gotgam"), ("곶감", "Gotgam"),
+        ("Dajungdagam", "Dajungdagam"), ("다정다감", "Dajungdagam"),
+        ("Gyeongcheon", "Gyeongcheon"), ("경천섬", "Gyeongcheon"),
+        ("Recipekorea", "Recipekorea"), ("레시피", "Recipekorea"),
+        ("MBC", "MBC 1961"),
+        ("Apple SD", "Apple SD"), ("AppleSD", "Apple SD"),
+        ("Noto Sans KR", "Noto Sans KR"), ("Noto", "Noto Sans KR"),
+        ("Montserrat", "Montserrat"), ("Jost", "Jost"), ("Nunito", "Nunito"), ("Inter", "Inter"), ("Bebas", "Bebas Neue"), ("Impact", "Impact"), ("Courier", "Courier"),
+        ("Georgia", "Georgia"), ("Arial", "Arial"),
+    ]
+    default_path = os.path.expanduser("~/Library/Fonts/NotoSansKR-Bold.ttf")
+    for keyword, key in match_map:
+        if keyword in font_family:
+            if key in NO_CJK and has_cjk:
+                return default_path
+            for p in FONT_MAP_RESOLVE.get(key, []):
+                if Path(p).exists():
+                    return p
+            break
+    return default_path if Path(default_path).exists() else "/System/Library/Fonts/AppleSDGothicNeo.ttc"
+
+
+EMOJI_RE = re.compile('['
+    '\U0001F600-\U0001F64F'  # emoticons
+    '\U0001F300-\U0001F5FF'  # symbols & pictographs
+    '\U0001F680-\U0001F6FF'  # transport & map
+    '\U0001F1E0-\U0001F1FF'  # flags
+    '\U0001F900-\U0001F9FF'  # supplemental symbols
+    '\U0001FA00-\U0001FA6F'  # chess, extended-A
+    '\U0001FA70-\U0001FAFF'  # symbols extended-A
+    '\U00002702-\U000027B0'  # dingbats
+    '\U000024C2-\U000024FF'  # enclosed alphanumerics (NOT beyond U+24FF to avoid CJK)
+    '\U00002600-\U000026FF'  # misc symbols
+    '\U00002640-\U00002642'  # gender symbols
+    '\U0000FE00-\U0000FE0F'  # variation selectors
+    '\U0000200D'             # zero width joiner
+    '\U0000203C-\U00002049'  # misc symbols (limited, NOT beyond U+2049)
+    ']+', re.UNICODE)
+
+EMOJI_FONT_PATH = "/System/Library/Fonts/Apple Color Emoji.ttc"
+
+def render_subtitle_image(text, font_size, out_path, frame_w=1080, frame_h=1920, style=None):
+    """Render a subtitle as a transparent PNG with optional background box and custom style."""
+    style = style or {}
+    
+    # Support \n literal as line break
+    text = text.replace("\\n", "\n")
+    
+    # Font selection — must support Korean (CJK) if text contains Korean
+    has_cjk = bool(re.search(r'[\uAC00-\uD7AF\u3130-\u318F\u4E00-\u9FFF]', text))
+    
+    font_family = style.get("font", "")
+    font_path = FONT_PATH  # default: Apple SD Gothic (Korean support)
+    
+    HOME = Path.home()
+    UFONTS = HOME / "Library" / "Fonts"
+    
+    # Font registry: name → [paths] (ordered by preference)
+    FONT_MAP = {
+        # Korean Gothic (sans-serif)
+        "Apple SD":     ["/System/Library/Fonts/AppleSDGothicNeo.ttc"],
+        "Noto Sans KR": [str(UFONTS / "NotoSansKR-Bold.ttf"), str(UFONTS / "NotoSansKR-Medium.ttf"), "/System/Library/Fonts/Supplemental/NotoSansCJKkr-Regular.otf"],
+        "Binggrae":     [str(UFONTS / "Binggrae.otf")],
+        "Samanco":      [str(UFONTS / "BinggraeSamanco.otf")],
+        "ONE Mobile":   [str(UFONTS / "ONE Mobile OTF Bold.otf"), str(UFONTS / "ONE Mobile OTF Regular.otf")],
+        "HDharmony":    [str(UFONTS / "현대하모니+B.ttf"), str(UFONTS / "현대하모니+M.ttf")],
+        # Korean Serif
+        "Myungjo":      ["/System/Library/Fonts/AppleMyungjo.ttc"],
+        "Gowun Batang": [str(UFONTS / "GowunBatang-Bold.ttf"), str(UFONTS / "GowunBatang-Regular.ttf")],
+        "Batang":       ["/System/Library/Fonts/Supplemental/Batang.ttc"],
+        # Handwriting / Display
+        "HSYuji":       [str(UFONTS / "HS유지체.otf")],
+        "Gotgam":       [str(UFONTS / "SANGJU Gotgam.otf")],
+        "Dajungdagam":  [str(UFONTS / "SANGJU Dajungdagam.otf")],
+        "Gyeongcheon":  [str(UFONTS / "SANGJU Gyeongcheon Island.otf")],
+        "Recipekorea":  [str(UFONTS / "Recipekorea 饭内眉 FONT.otf")],
+        "MBC 1961":     [str(UFONTS / "MBC 1961 OTF M.otf"), str(UFONTS / "MBC 1961굴림 OTF M.otf")],
+        # Latin display
+        "Montserrat":   [str(UFONTS / "Montserrat-ExtraBold.ttf"), str(UFONTS / "Montserrat-Bold.ttf")],
+        "Jost":          [str(UFONTS / "Jost-ExtraBold.ttf"), str(UFONTS / "Jost-Bold.ttf")],
+        "Nunito":        [str(UFONTS / "Nunito-ExtraBold.ttf"), str(UFONTS / "Nunito-Bold.ttf")],
+        "Inter":         [str(UFONTS / "Inter-ExtraBold.ttf"), str(UFONTS / "Inter-Bold.ttf")],
+        "Bebas Neue":   [str(UFONTS / "BebasNeue-Regular.ttf")],
+        # Latin only (no Korean)
+        "Impact":       ["/System/Library/Fonts/Supplemental/Impact.ttf"],
+        "Courier":      ["/System/Library/Fonts/Courier.ttc"],
+        "Georgia":      ["/System/Library/Fonts/Supplemental/Georgia.ttf"],
+        "Arial":        ["/System/Library/Fonts/Supplemental/Arial.ttf"],
+    }
+    
+    NO_CJK = {"Impact", "Courier", "Georgia", "Arial", "Montserrat", "Jost", "Nunito", "Inter", "Bebas Neue"}
+    
+    # Match font family string to registry key
+    selected = None
+    match_map = [
+        ("Samanco", "Samanco"), ("Binggrae", "Binggrae"),
+        ("ONE Mobile", "ONE Mobile"), ("HDharmony", "HDharmony"), ("현대하모니", "HDharmony"),
+        ("Gowun Batang", "Gowun Batang"), ("고운바탕", "Gowun Batang"),
+        ("Batang", "Batang"), ("바탕", "Batang"),
+        ("Myungjo", "Myungjo"), ("명조", "Myungjo"),
+        ("HSYuji", "HSYuji"), ("유지", "HSYuji"),
+        ("Gotgam", "Gotgam"), ("곶감", "Gotgam"),
+        ("Dajungdagam", "Dajungdagam"), ("다정다감", "Dajungdagam"),
+        ("Gyeongcheon", "Gyeongcheon"), ("경천섬", "Gyeongcheon"),
+        ("Recipekorea", "Recipekorea"), ("레시피", "Recipekorea"),
+        ("MBC", "MBC 1961"),
+        ("Apple SD", "Apple SD"), ("AppleSD", "Apple SD"),
+        ("Noto Sans KR", "Noto Sans KR"), ("Noto", "Noto Sans KR"),
+        ("Montserrat", "Montserrat"), ("Jost", "Jost"), ("Nunito", "Nunito"), ("Inter", "Inter"), ("Bebas", "Bebas Neue"), ("Impact", "Impact"), ("Courier", "Courier"),
+        ("Georgia", "Georgia"), ("Arial", "Arial"),
+    ]
+    for keyword, key in match_map:
+        if keyword in font_family:
+            selected = key
+            break
+    
+    if selected:
+        if selected in NO_CJK and has_cjk:
+            print(f"[Sub] Font '{selected}' doesn't support Korean, falling back to default")
+        else:
+            for p in FONT_MAP.get(selected, []):
+                if Path(p).exists():
+                    font_path = p
+                    break
+    
     try:
-        font = ImageFont.truetype(FONT_PATH, font_size)
+        font = ImageFont.truetype(font_path, font_size)
     except:
         font = ImageFont.load_default()
     
+    # Parse colors
+    def hex_to_rgba(hex_color, alpha=1.0):
+        hex_color = hex_color.lstrip('#')
+        if len(hex_color) == 6:
+            r, g, b = int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
+            return (r, g, b, int(alpha * 255))
+        return (255, 255, 255, 255)
+    
+    text_color = hex_to_rgba(style.get("color", "#ffffff"))
+    show_bg = style.get("bg", True)
+    if isinstance(show_bg, str):
+        show_bg = True  # Legacy: string bg means enabled
+    bg_color_hex = style.get("bgColor", "#000000")
+    bg_alpha = style.get("bgAlpha", 0.6)
+    if not isinstance(bg_alpha, (int, float)):
+        bg_alpha = 0.6
+    bg_color = hex_to_rgba(bg_color_hex, bg_alpha) if show_bg else (0, 0, 0, 0)
+    
     # Measure text
+    has_emoji = bool(EMOJI_RE.search(text))
     dummy = Image.new("RGBA", (1, 1))
     dd = ImageDraw.Draw(dummy)
-    bbox = dd.textbbox((0, 0), text, font=font)
+    
+    if has_emoji and HAS_PILMOJI:
+        # pilmoji: measure with Pilmoji for accurate emoji sizing
+        with Pilmoji(dummy) as pilmoji:
+            tw = pilmoji.getsize(text, font=font)[0]
+            th = font_size + 10  # approximate height
+        bbox = (0, 0, tw, th)
+    else:
+        bbox = dd.multiline_textbbox((0, 0), text, font=font)
     tw = bbox[2] - bbox[0]
     th = bbox[3] - bbox[1]
     
-    # Padding and radius matching editor style
-    pad_h = int(font_size * 0.7)  # horizontal padding
-    pad_v = int(font_size * 0.35)  # vertical padding
-    radius = int(font_size * 0.4)  # border radius
+    # Padding proportional to font size (matches CSS padding: 4px 12px at any font size)
+    # CSS: pad_h=12px at font_size ~16-40px → ratio ~0.5x font_size
+    pad_h = max(int(font_size * 0.35), 8)
+    pad_v = max(int(font_size * 0.15), 4)
+    radius = max(int(font_size * 0.2), 6)
     
     img_w = tw + pad_h * 2
     img_h = th + pad_v * 2
@@ -1000,17 +1349,43 @@ def render_subtitle_image(text, font_size, out_path, frame_w=1080, frame_h=1920)
     img = Image.new("RGBA", (img_w, img_h), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
     
-    # Rounded rectangle background — rgba(0,0,0,0.6) = alpha 153
-    draw.rounded_rectangle(
-        [(0, 0), (img_w - 1, img_h - 1)],
-        radius=radius,
-        fill=(0, 0, 0, 153)
-    )
+    if show_bg:
+        draw.rounded_rectangle(
+            [(0, 0), (img_w - 1, img_h - 1)],
+            radius=radius,
+            fill=bg_color
+        )
     
-    # White bold text centered in box
     tx = pad_h - bbox[0]
     ty = pad_v - bbox[1]
-    draw.text((tx, ty), text, font=font, fill=(255, 255, 255, 255))
+    
+    # Check if text has emoji
+    has_emoji = bool(EMOJI_RE.search(text))
+    
+    # Stroke (outline)
+    show_stroke = style.get("stroke", False)
+    stroke_color = hex_to_rgba(style.get("strokeColor", "#000000")) if show_stroke else None
+    # CSS text-stroke: total width → per-side = /2, then scale 2.5x
+    stroke_width = max(int(style.get("strokeWidth", 2) / 2 * 2.5), 1) if show_stroke else 0
+    
+    if has_emoji and HAS_PILMOJI:
+        # Use pilmoji for proper color emoji rendering
+        if show_stroke:
+            # Draw stroke first, then emoji text on top
+            draw.multiline_text((tx, ty), text, font=font, fill=text_color,
+                      stroke_width=stroke_width, stroke_fill=stroke_color)
+            # Overlay emoji with pilmoji (emoji only, text already drawn)
+            with Pilmoji(img) as pilmoji:
+                pilmoji.text((tx, ty), text, font=font, fill=text_color)
+        else:
+            with Pilmoji(img) as pilmoji:
+                pilmoji.text((tx, ty), text, font=font, fill=text_color)
+    else:
+        if show_stroke:
+            draw.multiline_text((tx, ty), text, font=font, fill=text_color,
+                      stroke_width=stroke_width, stroke_fill=stroke_color)
+        else:
+            draw.multiline_text((tx, ty), text, font=font, fill=text_color)
     
     img.save(out_path, "PNG")
     return img_w, img_h
